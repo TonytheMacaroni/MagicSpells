@@ -12,6 +12,7 @@ import org.bukkit.event.entity.EntityDamageEvent;
 
 import com.nisovin.magicspells.util.MagicConfig;
 import com.nisovin.magicspells.spells.InstantSpell;
+import com.nisovin.magicspells.util.config.ConfigData;
 import com.nisovin.magicspells.spells.TargetedEntitySpell;
 import com.nisovin.magicspells.spelleffects.EffectPosition;
 import com.nisovin.magicspells.spells.TargetedEntityFromLocationSpell;
@@ -20,9 +21,10 @@ public class VelocitySpell extends InstantSpell implements TargetedEntitySpell, 
 
 	private final Set<UUID> jumping;
 
-	private double speed;
+	private ConfigData<Double> speed;
 
 	private boolean cancelDamage;
+	private boolean powerAffectsSpeed;
 	private boolean addVelocityInstead;
 
 	public VelocitySpell(MagicConfig config, String spellName) {
@@ -30,14 +32,70 @@ public class VelocitySpell extends InstantSpell implements TargetedEntitySpell, 
 
 		jumping = new HashSet<>();
 
-		speed = getConfigFloat("speed", 40) / 10F;
+		speed = getConfigDataDouble("speed", 40);
 
 		cancelDamage = getConfigBoolean("cancel-damage", true);
 		addVelocityInstead = getConfigBoolean("add-velocity-instead", false);
+		powerAffectsSpeed = getConfigBoolean("power-affects-speed", true);
 	}
 
-	private boolean launch(LivingEntity caster, LivingEntity target, Vector velocity) {
+	@Override
+	public PostCastAction castSpell(LivingEntity caster, SpellCastState state, float power, String[] args) {
+		if (state == SpellCastState.NORMAL) {
+			launch(caster, caster, null, power, args);
+		}
+		return PostCastAction.HANDLE_NORMALLY;
+	}
+
+	@Override
+	public boolean castAtEntityFromLocation(LivingEntity caster, Location from, LivingEntity target, float power, String[] args) {
+		return launch(caster, target, from, power, args);
+	}
+
+	@Override
+	public boolean castAtEntityFromLocation(LivingEntity caster, Location from, LivingEntity target, float power) {
+		return launch(caster, target, from, power, null);
+	}
+
+	@Override
+	public boolean castAtEntityFromLocation(Location from, LivingEntity target, float power, String[] args) {
+		return launch(null, target, from, power, args);
+	}
+
+	@Override
+	public boolean castAtEntityFromLocation(Location from, LivingEntity target, float power) {
+		return launch(null, target, from, power, null);
+	}
+
+	@Override
+	public boolean castAtEntity(LivingEntity caster, LivingEntity target, float power, String[] args) {
+		return launch(caster, target, null, power, args);
+	}
+
+	@Override
+	public boolean castAtEntity(LivingEntity caster, LivingEntity target, float power) {
+		return launch(caster, target, null, power, null);
+	}
+
+	@Override
+	public boolean castAtEntity(LivingEntity target, float power, String[] args) {
+		return launch(null, target, null, power, args);
+	}
+
+	@Override
+	public boolean castAtEntity(LivingEntity target, float power) {
+		return launch(null, target, null, power, null);
+	}
+
+	private boolean launch(LivingEntity caster, LivingEntity target, Location from, float power, String[] args) {
 		if (target == null) return false;
+
+		if (from == null) from = target.getLocation();
+
+		double speed = this.speed.get(caster, caster, power, args) / 10;
+		if (powerAffectsSpeed) speed *= power;
+
+		Vector velocity = from.getDirection().normalize().multiply(speed * power);
 
 		if (addVelocityInstead) target.setVelocity(target.getVelocity().add(velocity));
 		else target.setVelocity(velocity);
@@ -46,38 +104,6 @@ public class VelocitySpell extends InstantSpell implements TargetedEntitySpell, 
 		if (caster != null) playSpellEffects(EffectPosition.CASTER, caster);
 
 		return true;
-	}
-
-	private Vector getVelocity(Location location, float power) {
-		return location.getDirection().normalize().multiply(speed * power);
-	}
-
-	@Override
-	public PostCastAction castSpell(LivingEntity caster, SpellCastState state, float power, String[] args) {
-		if (state == SpellCastState.NORMAL) {
-			launch(caster, caster, getVelocity(caster.getEyeLocation(), power));
-		}
-		return PostCastAction.HANDLE_NORMALLY;
-	}
-
-	@Override
-	public boolean castAtEntityFromLocation(LivingEntity caster, Location from, LivingEntity target, float power) {
-		return launch(caster, target, getVelocity(from, power));
-	}
-
-	@Override
-	public boolean castAtEntityFromLocation(Location from, LivingEntity target, float power) {
-		return launch(null, target, getVelocity(from, power));
-	}
-
-	@Override
-	public boolean castAtEntity(LivingEntity caster, LivingEntity target, float power) {
-		return launch(caster, target, getVelocity(target.getEyeLocation(), power));
-	}
-
-	@Override
-	public boolean castAtEntity(LivingEntity target, float power) {
-		return launch(null, target, getVelocity(target.getEyeLocation(), power));
 	}
 
 	@EventHandler
@@ -91,14 +117,6 @@ public class VelocitySpell extends InstantSpell implements TargetedEntitySpell, 
 
 	public Set<UUID> getJumping() {
 		return jumping;
-	}
-
-	public double getSpeed() {
-		return speed;
-	}
-
-	public void setSpeed(double speed) {
-		this.speed = speed;
 	}
 
 	public boolean shouldCancelDamage() {
