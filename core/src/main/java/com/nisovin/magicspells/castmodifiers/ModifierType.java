@@ -590,7 +590,7 @@ public enum ModifierType {
 				return data;
 			}
 
-			String[] splits = text.split(";");
+			String[] splits = text.split(";", 2);
 			if (splits.length < 2) {
 				data.invalidText = "VarMod is not defined.";
 				return data;
@@ -603,8 +603,7 @@ public enum ModifierType {
 				String[] varDataSplits = varData.split(":");
 				if (varDataSplits[0].startsWith("target")) variableOwner = VariableOwner.TARGET;
 				variableName = varDataSplits[1];
-			}
-			else variableName = varData;
+			} else variableName = varData;
 
 			data.variableOwner = variableOwner;
 			data.mod = new VariableMod(splits[1]);
