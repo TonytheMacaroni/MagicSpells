@@ -596,6 +596,10 @@ public class VariableManager {
 		Variable variable = getVariable(var);
 		if (variable == null) return 0 + "";
 
+		return processVariableMods(variable, mod, playerToMod, caster, target, power, args);
+	}
+
+	public String processVariableMods(Variable variable, VariableMod mod, Player playerToMod, Player caster, Player target, float power, String[] args) {
 		VariableMod.Operation op = mod.getOperation();
 
 		if (variable instanceof PlayerStringVariable || variable instanceof GlobalStringVariable) {
