@@ -92,7 +92,7 @@ public enum ModifierType {
 		
 		@Override
 		public boolean apply(SpellCastEvent event, boolean check, CustomData customData) {
-			if (check) event.increasePower((CustomDataFloat.from(customData)));
+			if (check) event.increasePower((CustomDataFloat.from(customData, event)));
 			return true;
 		}
 
@@ -100,7 +100,7 @@ public enum ModifierType {
 		public boolean apply(ManaChangeEvent event, boolean check, CustomData customData) {
 			if (check) {
 				int gain = event.getNewAmount() - event.getOldAmount();
-				gain = Math.round(gain * CustomDataFloat.from(customData));
+				gain = Math.round(gain * CustomDataFloat.from(customData, event));
 				int newAmt = event.getOldAmount() + gain;
 				if (newAmt > event.getMaxMana()) newAmt = event.getMaxMana();
 				event.setNewAmount(newAmt);
@@ -110,7 +110,7 @@ public enum ModifierType {
 
 		@Override
 		public boolean apply(SpellTargetEvent event, boolean check, CustomData customData) {
-			if (check) event.increasePower(CustomDataFloat.from(customData));
+			if (check) event.increasePower(CustomDataFloat.from(customData, event));
 			return true;
 		}
 
@@ -135,14 +135,14 @@ public enum ModifierType {
 		
 		@Override
 		public boolean apply(SpellCastEvent event, boolean check, CustomData customData) {
-			if (check) event.setPower(event.getPower() + CustomDataFloat.from(customData));
+			if (check) event.setPower(event.getPower() + CustomDataFloat.from(customData, event));
 			return true;
 		}
 
 		@Override
 		public boolean apply(ManaChangeEvent event, boolean check, CustomData customData) {
 			if (check) {
-				int newAmt = event.getNewAmount() + (int) CustomDataFloat.from(customData);
+				int newAmt = event.getNewAmount() + (int) CustomDataFloat.from(customData, event);
 				if (newAmt > event.getMaxMana()) newAmt = event.getMaxMana();
 				if (newAmt < 0) newAmt = 0;
 				event.setNewAmount(newAmt);
@@ -152,7 +152,7 @@ public enum ModifierType {
 
 		@Override
 		public boolean apply(SpellTargetEvent event, boolean check, CustomData customData) {
-			if (check) event.setPower(event.getPower() + CustomDataFloat.from(customData));
+			if (check) event.setPower(event.getPower() + CustomDataFloat.from(customData, event));
 			return true;
 		}
 
@@ -177,7 +177,7 @@ public enum ModifierType {
 		
 		@Override
 		public boolean apply(SpellCastEvent event, boolean check, CustomData customData) {
-			if (check) event.setCooldown(CustomDataFloat.from(customData));
+			if (check) event.setCooldown(CustomDataFloat.from(customData, event));
 			return true;
 		}
 
@@ -212,7 +212,7 @@ public enum ModifierType {
 		
 		@Override
 		public boolean apply(SpellCastEvent event, boolean check, CustomData customData) {
-			if (check) event.setReagents(event.getReagents().multiply(CustomDataFloat.from(customData)));
+			if (check) event.setReagents(event.getReagents().multiply(CustomDataFloat.from(customData, event)));
 			return true;
 		}
 
@@ -247,7 +247,7 @@ public enum ModifierType {
 		
 		@Override
 		public boolean apply(SpellCastEvent event, boolean check, CustomData customData) {
-			if (check) event.setCastTime((int) CustomDataFloat.from(customData));
+			if (check) event.setCastTime((int) CustomDataFloat.from(customData, event));
 			return true;
 		}
 
