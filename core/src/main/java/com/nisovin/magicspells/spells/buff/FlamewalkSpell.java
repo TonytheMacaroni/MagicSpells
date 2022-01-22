@@ -11,7 +11,7 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 
 import com.nisovin.magicspells.MagicSpells;
-import com.nisovin.magicspells.util.SpellData;
+import com.nisovin.magicspells.util.CastData;
 import com.nisovin.magicspells.spells.BuffSpell;
 import com.nisovin.magicspells.util.MagicConfig;
 import com.nisovin.magicspells.util.compat.EventUtil;
@@ -21,7 +21,7 @@ import com.nisovin.magicspells.events.MagicSpellsEntityDamageByEntityEvent;
 
 public class FlamewalkSpell extends BuffSpell {
 
-	private final Map<UUID, SpellData> entities;
+	private final Map<UUID, CastData> entities;
 
 	private ConfigData<Integer> fireTicks;
 	private ConfigData<Double> radius;
@@ -47,7 +47,7 @@ public class FlamewalkSpell extends BuffSpell {
 
 	@Override
 	public boolean castBuff(LivingEntity entity, float power, String[] args) {
-		entities.put(entity.getUniqueId(), new SpellData(power, args));
+		entities.put(entity.getUniqueId(), new CastData(power, args));
 		if (burner == null) burner = new Burner();
 		return true;
 	}
@@ -76,7 +76,7 @@ public class FlamewalkSpell extends BuffSpell {
 		burner = null;
 	}
 
-	public Map<UUID, SpellData> getEntities() {
+	public Map<UUID, CastData> getEntities() {
 		return entities;
 	}
 
@@ -110,7 +110,7 @@ public class FlamewalkSpell extends BuffSpell {
 					continue;
 				}
 
-				SpellData data = entities.get(entity.getUniqueId());
+				CastData data = entities.get(entity.getUniqueId());
 				playSpellEffects(EffectPosition.DELAYED, entity);
 
 				double radius = Math.min(FlamewalkSpell.this.radius.get(entity, null, data.power(), data.args()), MagicSpells.getGlobalRadius());

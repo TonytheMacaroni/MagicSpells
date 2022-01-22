@@ -16,7 +16,7 @@ import org.bukkit.event.player.PlayerToggleSneakEvent;
 
 import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.util.TimeUtil;
-import com.nisovin.magicspells.util.SpellData;
+import com.nisovin.magicspells.util.CastData;
 import com.nisovin.magicspells.util.BlockUtils;
 import com.nisovin.magicspells.spells.BuffSpell;
 import com.nisovin.magicspells.util.MagicConfig;
@@ -24,7 +24,7 @@ import com.nisovin.magicspells.util.config.ConfigData;
 
 public class WindwalkSpell extends BuffSpell {
 
-	private final Map<UUID, SpellData> entities;
+	private final Map<UUID, CastData> entities;
 
 	private ConfigData<Integer> maxY;
 	private ConfigData<Integer> maxAltitude;
@@ -67,7 +67,7 @@ public class WindwalkSpell extends BuffSpell {
 			entity.setVelocity(new Vector(0, launchSpeed, 0));
 		}
 
-		entities.put(entity.getUniqueId(), new SpellData(power, args));
+		entities.put(entity.getUniqueId(), new CastData(power, args));
 
 		player.setAllowFlight(true);
 		player.setFlying(true);
@@ -113,7 +113,7 @@ public class WindwalkSpell extends BuffSpell {
 		heightMonitor = null;
 	}
 
-	public Map<UUID, SpellData> getEntities() {
+	public Map<UUID, CastData> getEntities() {
 		return entities;
 	}
 
@@ -153,7 +153,7 @@ public class WindwalkSpell extends BuffSpell {
 				if (!pl.isValid()) continue;
 				addUseAndChargeCost(pl);
 
-				SpellData data = entities.get(id);
+				CastData data = entities.get(id);
 
 				int maxY = WindwalkSpell.this.maxY.get(pl, null, data.power(), data.args());
 				if (maxY > 0) {

@@ -8,7 +8,7 @@ import java.util.HashMap;
 import org.bukkit.event.EventHandler;
 import org.bukkit.entity.LivingEntity;
 
-import com.nisovin.magicspells.util.SpellData;
+import com.nisovin.magicspells.util.CastData;
 import com.nisovin.magicspells.spells.BuffSpell;
 import com.nisovin.magicspells.util.MagicConfig;
 import com.nisovin.magicspells.util.SpellFilter;
@@ -18,7 +18,7 @@ import com.nisovin.magicspells.util.config.ConfigData;
 
 public class ClaritySpell extends BuffSpell {
 
-	private final Map<UUID, SpellData> entities;
+	private final Map<UUID, CastData> entities;
 
 	private ConfigData<Float> multiplier;
 
@@ -44,7 +44,7 @@ public class ClaritySpell extends BuffSpell {
 
 	@Override
 	public boolean castBuff(LivingEntity entity, float power, String[] args) {
-		entities.put(entity.getUniqueId(), new SpellData(power, args));
+		entities.put(entity.getUniqueId(), new CastData(power, args));
 		return true;
 	}
 
@@ -69,7 +69,7 @@ public class ClaritySpell extends BuffSpell {
 		if (!isActive(caster)) return;
 		if (!filter.check(event.getSpell())) return;
 
-		SpellData data = entities.get(caster.getUniqueId());
+		CastData data = entities.get(caster.getUniqueId());
 
 		float multiplier = this.multiplier.get(caster, null, data.power(), data.args());
 		if (powerAffectsMultiplier) {

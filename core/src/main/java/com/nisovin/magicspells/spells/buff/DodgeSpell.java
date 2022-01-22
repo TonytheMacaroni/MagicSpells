@@ -14,7 +14,7 @@ import org.bukkit.entity.LivingEntity;
 import com.nisovin.magicspells.Spell;
 import com.nisovin.magicspells.Subspell;
 import com.nisovin.magicspells.MagicSpells;
-import com.nisovin.magicspells.util.SpellData;
+import com.nisovin.magicspells.util.CastData;
 import com.nisovin.magicspells.util.BlockUtils;
 import com.nisovin.magicspells.spells.BuffSpell;
 import com.nisovin.magicspells.util.SpellFilter;
@@ -28,7 +28,7 @@ import de.slikey.effectlib.util.RandomUtils;
 
 public class DodgeSpell extends BuffSpell {
 
-	private final Map<UUID, SpellData> entities;
+	private final Map<UUID, CastData> entities;
 
 	private ConfigData<Double> distance;
 
@@ -77,7 +77,7 @@ public class DodgeSpell extends BuffSpell {
 
 	@Override
 	public boolean castBuff(LivingEntity entity, float power, String[] args) {
-		entities.put(entity.getUniqueId(), new SpellData(power, args));
+		entities.put(entity.getUniqueId(), new CastData(power, args));
 		return true;
 	}
 
@@ -122,7 +122,7 @@ public class DodgeSpell extends BuffSpell {
 		Location entityLoc = entity.getLocation().clone();
 		playSpellEffects(EffectPosition.SPECIAL, entityLoc);
 
-		SpellData data = entities.get(entity.getUniqueId());
+		CastData data = entities.get(entity.getUniqueId());
 		Vector v = RandomUtils.getRandomCircleVector().multiply(distance.get(entity, tracker.getCaster(), data.power(), data.args()));
 
 		targetLoc.add(v);
@@ -138,7 +138,7 @@ public class DodgeSpell extends BuffSpell {
 		if (spellAfterDodge != null) spellAfterDodge.castAtLocation(entity, targetLoc, 1F);
 	}
 
-	public Map<UUID, SpellData> getEntities() {
+	public Map<UUID, CastData> getEntities() {
 		return entities;
 	}
 

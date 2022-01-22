@@ -9,7 +9,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.entity.LivingEntity;
 
-import com.nisovin.magicspells.util.SpellData;
+import com.nisovin.magicspells.util.CastData;
 import com.nisovin.magicspells.spells.BuffSpell;
 import com.nisovin.magicspells.util.MagicConfig;
 import com.nisovin.magicspells.mana.ManaChangeReason;
@@ -18,7 +18,7 @@ import com.nisovin.magicspells.util.config.ConfigData;
 
 public class ManaRegenSpell extends BuffSpell {
 
-	private final Map<UUID, SpellData> entities;
+	private final Map<UUID, CastData> entities;
 
 	private ConfigData<Integer> regenModAmt;
 
@@ -32,7 +32,7 @@ public class ManaRegenSpell extends BuffSpell {
 
 	@Override
 	public boolean castBuff(LivingEntity entity, float power, String[] args) {
-		entities.put(entity.getUniqueId(), new SpellData(power, args));
+		entities.put(entity.getUniqueId(), new CastData(power, args));
 		return true;
 	}
 
@@ -62,7 +62,7 @@ public class ManaRegenSpell extends BuffSpell {
 		if (!isActive(pl)) return;
 		if (!event.getReason().equals(ManaChangeReason.REGEN)) return;
 
-		SpellData data = entities.get(pl.getUniqueId());
+		CastData data = entities.get(pl.getUniqueId());
 
 		int newAmt = event.getNewAmount() + regenModAmt.get(pl, null, data.power(), data.args());
 		if (newAmt > event.getMaxMana()) newAmt = event.getMaxMana();
@@ -72,7 +72,7 @@ public class ManaRegenSpell extends BuffSpell {
 		event.setNewAmount(newAmt);
 	}
 
-	public Map<UUID, SpellData> getEntities() {
+	public Map<UUID, CastData> getEntities() {
 		return entities;
 	}
 

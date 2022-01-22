@@ -27,7 +27,7 @@ import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import com.nisovin.magicspells.util.Util;
 import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.util.TimeUtil;
-import com.nisovin.magicspells.util.SpellData;
+import com.nisovin.magicspells.util.CastData;
 import com.nisovin.magicspells.util.TargetInfo;
 import com.nisovin.magicspells.util.BlockUtils;
 import com.nisovin.magicspells.util.MagicConfig;
@@ -40,7 +40,7 @@ import com.nisovin.magicspells.events.MagicSpellsEntityDamageByEntityEvent;
 
 public class FireballSpell extends TargetedSpell implements TargetedEntityFromLocationSpell {
 
-	private Map<Fireball, SpellData> fireballs;
+	private Map<Fireball, CastData> fireballs;
 
 	private int taskId;
 
@@ -141,7 +141,7 @@ public class FireballSpell extends TargetedSpell implements TargetedEntityFromLo
 			} else {
 				fireball = caster.getWorld().spawn(loc, Fireball.class);
 				caster.getWorld().playEffect(caster.getLocation(), Effect.GHAST_SHOOT, 0);
-				fireballs.put(fireball, new SpellData(power, args));
+				fireballs.put(fireball, new CastData(power, args));
 			}
 
 			fireball.setShooter(caster);
@@ -164,7 +164,7 @@ public class FireballSpell extends TargetedSpell implements TargetedEntityFromLo
 		Fireball fireball = from.getWorld().spawn(loc, Fireball.class);
 		fireball.setGravity(fireballGravity);
 		if (caster != null) fireball.setShooter(caster);
-		fireballs.put(fireball, new SpellData(power, args));
+		fireballs.put(fireball, new CastData(power, args));
 
 		if (caster != null) playSpellEffects(EffectPosition.CASTER, caster);
 		else playSpellEffects(EffectPosition.CASTER, from);
@@ -206,7 +206,7 @@ public class FireballSpell extends TargetedSpell implements TargetedEntityFromLo
 		playSpellEffects(EffectPosition.TARGET, fireball.getLocation());
 
 		LivingEntity caster = fireball.getShooter() instanceof LivingEntity le ? le : null;
-		SpellData data = fireballs.get(fireball);
+		CastData data = fireballs.get(fireball);
 
 		if (noExplosion) {
 			event.setCancelled(true);
@@ -267,7 +267,7 @@ public class FireballSpell extends TargetedSpell implements TargetedEntityFromLo
 		ProjectileSource shooter = fireball.getShooter();
 		if (!(shooter instanceof LivingEntity caster)) return;
 
-		SpellData data = fireballs.get(fireball);
+		CastData data = fireballs.get(fireball);
 
 		if (!validTargetList.canTarget(caster, target)) event.setCancelled(true);
 		else {

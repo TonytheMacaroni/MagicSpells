@@ -14,7 +14,7 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.entity.LivingEntity;
 
 import com.nisovin.magicspells.MagicSpells;
-import com.nisovin.magicspells.util.SpellData;
+import com.nisovin.magicspells.util.CastData;
 import com.nisovin.magicspells.util.BlockUtils;
 import com.nisovin.magicspells.spells.BuffSpell;
 import com.nisovin.magicspells.util.MagicConfig;
@@ -22,7 +22,7 @@ import com.nisovin.magicspells.util.config.ConfigData;
 
 public class WaterwalkSpell extends BuffSpell {
 
-	private final Map<UUID, SpellData> entities;
+	private final Map<UUID, CastData> entities;
 
 	private ConfigData<Float> speed;
 
@@ -39,7 +39,7 @@ public class WaterwalkSpell extends BuffSpell {
 	@Override
 	public boolean castBuff(LivingEntity entity, float power, String[] args) {
 		if (!(entity instanceof Player)) return true;
-		entities.put(entity.getUniqueId(), new SpellData(power, args));
+		entities.put(entity.getUniqueId(), new CastData(power, args));
 		startTicker();
 		return true;
 	}
@@ -87,7 +87,7 @@ public class WaterwalkSpell extends BuffSpell {
 		ticker = null;
 	}
 
-	public Map<UUID, SpellData> getEntities() {
+	public Map<UUID, CastData> getEntities() {
 		return entities;
 	}
 
@@ -131,7 +131,7 @@ public class WaterwalkSpell extends BuffSpell {
 				feet = pl.getLocation().getBlock();
 				underfeet = feet.getRelative(BlockFace.DOWN);
 
-				SpellData data = entities.get(id);
+				CastData data = entities.get(id);
 				if (BlockUtils.isAir(feet.getType()) && underfeet.getType() == Material.WATER) {
 					if (!pl.isFlying()) {
 						pl.setAllowFlight(true);

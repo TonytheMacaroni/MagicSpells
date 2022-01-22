@@ -9,7 +9,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.entity.LivingEntity;
 
-import com.nisovin.magicspells.util.SpellData;
+import com.nisovin.magicspells.util.CastData;
 import com.nisovin.magicspells.spells.BuffSpell;
 import com.nisovin.magicspells.util.MagicConfig;
 import com.nisovin.magicspells.util.SpellFilter;
@@ -18,7 +18,7 @@ import com.nisovin.magicspells.util.config.ConfigData;
 
 public class SpellHasteSpell extends BuffSpell {
 
-	private final Map<UUID, SpellData> entities;
+	private final Map<UUID, CastData> entities;
 
 	private ConfigData<Float> castTimeModAmt;
 	private ConfigData<Float> cooldownModAmt;
@@ -49,7 +49,7 @@ public class SpellHasteSpell extends BuffSpell {
 
 	@Override
 	public boolean castBuff(LivingEntity entity, float power, String[] args) {
-		entities.put(entity.getUniqueId(), new SpellData(power, args));
+		entities.put(entity.getUniqueId(), new CastData(power, args));
 		return true;
 	}
 
@@ -75,7 +75,7 @@ public class SpellHasteSpell extends BuffSpell {
 		LivingEntity caster = event.getCaster();
 		if (!isActive(caster)) return;
 
-		SpellData data = entities.get(event.getCaster().getUniqueId());
+		CastData data = entities.get(event.getCaster().getUniqueId());
 		if (data == null) return;
 
 		float castTimeModAmt = this.castTimeModAmt.get(caster, null, data.power(), data.args()) / 100f;
@@ -99,7 +99,7 @@ public class SpellHasteSpell extends BuffSpell {
 		}
 	}
 
-	public Map<UUID, SpellData> getEntities() {
+	public Map<UUID, CastData> getEntities() {
 		return entities;
 	}
 

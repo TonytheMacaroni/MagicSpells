@@ -11,7 +11,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.entity.LivingEntity;
 
 import com.nisovin.magicspells.MagicSpells;
-import com.nisovin.magicspells.util.SpellData;
+import com.nisovin.magicspells.util.CastData;
 import com.nisovin.magicspells.spells.BuffSpell;
 import com.nisovin.magicspells.util.MagicConfig;
 import com.nisovin.magicspells.handlers.DebugHandler;
@@ -22,7 +22,7 @@ import com.nisovin.magicspells.events.SpellPreImpactEvent;
 // NO API CHANGES - NEEDS TOTAL REWORK
 public class ReflectSpell extends BuffSpell {
 
-	private Map<UUID, SpellData> reflectors;
+	private Map<UUID, CastData> reflectors;
 	private Set<String> shieldBreakerNames;
 	private Set<String> delayedReflectionSpells;
 
@@ -49,7 +49,7 @@ public class ReflectSpell extends BuffSpell {
 
 	@Override
 	public boolean castBuff(LivingEntity entity, float power, String[] args) {
-		reflectors.put(entity.getUniqueId(), new SpellData(power, args));
+		reflectors.put(entity.getUniqueId(), new CastData(power, args));
 		return true;
 	}
 
@@ -90,7 +90,7 @@ public class ReflectSpell extends BuffSpell {
 		addUse(target);
 		event.setTarget(event.getCaster());
 
-		SpellData data = reflectors.get(target.getUniqueId());
+		CastData data = reflectors.get(target.getUniqueId());
 		event.setPower(event.getPower() * reflectedSpellPowerMultiplier.get(target, event.getCaster(), data.power(), data.args()) * (spellPowerAffectsReflectedPower ? data.power() : 1));
 	}
 
@@ -126,7 +126,7 @@ public class ReflectSpell extends BuffSpell {
 		addUse(target);
 		event.setRedirected(true);
 
-		SpellData data = reflectors.get(target.getUniqueId());
+		CastData data = reflectors.get(target.getUniqueId());
 		event.setPower(event.getPower() * reflectedSpellPowerMultiplier.get(target, event.getCaster(), data.power(), data.args()) * (spellPowerAffectsReflectedPower ? data.power() : 1));
 	}
 

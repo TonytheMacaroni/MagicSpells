@@ -15,7 +15,7 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 
-import com.nisovin.magicspells.util.SpellData;
+import com.nisovin.magicspells.util.CastData;
 import com.nisovin.magicspells.spells.BuffSpell;
 import com.nisovin.magicspells.util.MagicConfig;
 import com.nisovin.magicspells.spells.DamageSpell;
@@ -24,7 +24,7 @@ import com.nisovin.magicspells.events.SpellApplyDamageEvent;
 
 public class ResistSpell extends BuffSpell {
 
-	private final Map<UUID, SpellData> entities;
+	private final Map<UUID, CastData> entities;
 
 	private final Set<String> spellDamageTypes;
 
@@ -63,7 +63,7 @@ public class ResistSpell extends BuffSpell {
 
 	@Override
 	public boolean castBuff(LivingEntity entity, float power, String[] args) {
-		entities.put(entity.getUniqueId(), new SpellData(power, args));
+		entities.put(entity.getUniqueId(), new CastData(power, args));
 		return true;
 	}
 
@@ -93,7 +93,7 @@ public class ResistSpell extends BuffSpell {
 		if (!spellDamageTypes.contains(spellDamageType)) return;
 
 		LivingEntity caster = event.getTarget();
-		SpellData data = entities.get(caster.getUniqueId());
+		CastData data = entities.get(caster.getUniqueId());
 
 		float modifier = multiplier.get(caster, event.getCaster(), data.power(), data.args());
 		if (powerAffectsMultiplier) {
@@ -119,7 +119,7 @@ public class ResistSpell extends BuffSpell {
 			if (e.getDamager() instanceof LivingEntity damager)
 				target = damager;
 
-		SpellData data = entities.get(caster.getUniqueId());
+		CastData data = entities.get(caster.getUniqueId());
 
 		float modifier = multiplier.get(caster, target, data.power(), data.args());
 		if (powerAffectsMultiplier) {
@@ -131,7 +131,7 @@ public class ResistSpell extends BuffSpell {
 		event.setDamage(event.getDamage() * modifier);
 	}
 
-	public Map<UUID, SpellData> getEntities() {
+	public Map<UUID, CastData> getEntities() {
 		return entities;
 	}
 

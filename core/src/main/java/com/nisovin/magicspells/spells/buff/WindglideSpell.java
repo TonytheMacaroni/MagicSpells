@@ -15,7 +15,7 @@ import org.bukkit.event.entity.EntityToggleGlideEvent;
 
 import com.nisovin.magicspells.Subspell;
 import com.nisovin.magicspells.MagicSpells;
-import com.nisovin.magicspells.util.SpellData;
+import com.nisovin.magicspells.util.CastData;
 import com.nisovin.magicspells.spells.BuffSpell;
 import com.nisovin.magicspells.util.MagicConfig;
 import com.nisovin.magicspells.util.config.ConfigData;
@@ -23,7 +23,7 @@ import com.nisovin.magicspells.spelleffects.EffectPosition;
 
 public class WindglideSpell extends BuffSpell {
 
-	private final Map<UUID, SpellData> entities;
+	private final Map<UUID, CastData> entities;
 
 	private Subspell glideSpell;
 	private Subspell collisionSpell;
@@ -82,7 +82,7 @@ public class WindglideSpell extends BuffSpell {
 
 	@Override
 	public boolean castBuff(LivingEntity entity, float power, String[] args) {
-		entities.put(entity.getUniqueId(), new SpellData(power, args));
+		entities.put(entity.getUniqueId(), new CastData(power, args));
 		entity.setGliding(true);
 		return true;
 	}
@@ -190,7 +190,7 @@ public class WindglideSpell extends BuffSpell {
 				if (entity == null || !entity.isValid()) continue;
 				if (!(entity instanceof LivingEntity caster)) continue;
 
-				SpellData data = entities.get(id);
+				CastData data = entities.get(id);
 
 				double velocity = WindglideSpell.this.velocity.get(caster, null, data.power(), data.args()) / 10;
 				double height = WindglideSpell.this.height.get(caster, null, data.power(), data.args());

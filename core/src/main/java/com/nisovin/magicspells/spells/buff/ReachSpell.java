@@ -21,7 +21,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.event.player.PlayerInteractEvent;
 
 import com.nisovin.magicspells.util.Util;
-import com.nisovin.magicspells.util.SpellData;
+import com.nisovin.magicspells.util.CastData;
 import com.nisovin.magicspells.util.BlockUtils;
 import com.nisovin.magicspells.spells.BuffSpell;
 import com.nisovin.magicspells.util.MagicConfig;
@@ -32,7 +32,7 @@ import com.nisovin.magicspells.events.MagicSpellsBlockPlaceEvent;
 // TODO this needs exemptions for anticheat
 public class ReachSpell extends BuffSpell {
 
-	private final Map<UUID, SpellData> entities;
+	private final Map<UUID, CastData> entities;
 
 	private final Set<Material> disallowedBreakBlocks;
 	private final Set<Material> disallowedPlaceBlocks;
@@ -72,7 +72,7 @@ public class ReachSpell extends BuffSpell {
 
 	@Override
 	public boolean castBuff(LivingEntity entity, float power, String[] args) {
-		entities.put(entity.getUniqueId(), new SpellData(power, args));
+		entities.put(entity.getUniqueId(), new CastData(power, args));
 		return true;
 	}
 
@@ -101,7 +101,7 @@ public class ReachSpell extends BuffSpell {
 			return;
 		}
 
-		SpellData data = entities.get(player.getUniqueId());
+		CastData data = entities.get(player.getUniqueId());
 		
 		// Get targeted block
 		Action action = event.getAction();
@@ -173,7 +173,7 @@ public class ReachSpell extends BuffSpell {
 		}
 	}
 
-	public Map<UUID, SpellData> getEntities() {
+	public Map<UUID, CastData> getEntities() {
 		return entities;
 	}
 
