@@ -20,7 +20,6 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.event.player.PlayerInteractEvent;
 
-import com.nisovin.magicspells.Spell;
 import com.nisovin.magicspells.util.Util;
 import com.nisovin.magicspells.util.SpellData;
 import com.nisovin.magicspells.util.BlockUtils;
