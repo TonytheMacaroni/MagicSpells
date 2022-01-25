@@ -235,11 +235,10 @@ public class Subspell {
 				boolean success = false;
 				if (castEvent.getSpellCastState() == SpellCastState.NORMAL) {
 					SpellTargetEvent targetEvent = new SpellTargetEvent(spell, caster, target, castEvent.getPower(), args);
-
-					target = targetEvent.getTarget();
-					power = targetEvent.getPower();
-
 					if (targetEvent.callEvent()) {
+						target = targetEvent.getTarget();
+						power = targetEvent.getPower();
+
 						if (passTargeting) success = passTargetingEntity(caster, target, power, args);
 						else {
 							TargetedEntitySpell targetedEntitySpell = (TargetedEntitySpell) spell;
@@ -333,11 +332,10 @@ public class Subspell {
 				boolean success = false;
 				if (castEvent.getSpellCastState() == SpellCastState.NORMAL) {
 					SpellTargetLocationEvent targetEvent = new SpellTargetLocationEvent(spell, caster, target, castEvent.getPower(), args);
-
-					target = targetEvent.getTargetLocation();
-					power = targetEvent.getPower();
-
 					if (targetEvent.callEvent()) {
+						target = targetEvent.getTargetLocation();
+						power = targetEvent.getPower();
+
 						TargetedLocationSpell targetedSpell = (TargetedLocationSpell) spell;
 						success = caster != null ? targetedSpell.castAtLocation(caster, target, power, args) :
 							targetedSpell.castAtLocation(target, power, args);
@@ -425,19 +423,15 @@ public class Subspell {
 				boolean success = false;
 				if (castEvent.getSpellCastState() == SpellCastState.NORMAL) {
 					SpellTargetEvent targetEntityEvent = new SpellTargetEvent(spell, caster, target, castEvent.getPower(), args);
-					targetEntityEvent.callEvent();
+					if (targetEntityEvent.callEvent()) {
+						target = targetEntityEvent.getTarget();
+						power = targetEntityEvent.getPower();
 
-					target = targetEntityEvent.getTarget();
-					power = targetEntityEvent.getPower();
-
-					if (!targetEntityEvent.isCancelled()) {
 						SpellTargetLocationEvent targetLocationEvent = new SpellTargetLocationEvent(spell, caster, from, power, args);
-						targetLocationEvent.callEvent();
+						if (targetLocationEvent.callEvent()) {
+							power = targetLocationEvent.getPower();
+							from = targetLocationEvent.getTargetLocation();
 
-						power = targetLocationEvent.getPower();
-						from = targetLocationEvent.getTargetLocation();
-
-						if (!targetLocationEvent.isCancelled()) {
 							if (passTargeting)
 								success = passTargetingEntityFromLocation(caster, from, target, power, args);
 							else {
