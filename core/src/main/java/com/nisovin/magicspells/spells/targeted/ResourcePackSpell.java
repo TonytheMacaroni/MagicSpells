@@ -34,7 +34,7 @@ public class ResourcePackSpell extends TargetedSpell {
 	public void initialize() {
 		super.initialize();
 
-		if (hash.length() != HASH_LENGTH) {
+		if (hash != null && hash.length() != HASH_LENGTH) {
 			MagicSpells.error("ResourcePackSpell '" + internalName + "' has an incorrect hash length defined: '" + hash.length() + "' / " + HASH_LENGTH + ".");
 		}
 	}
