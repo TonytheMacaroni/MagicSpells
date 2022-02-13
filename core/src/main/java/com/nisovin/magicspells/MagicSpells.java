@@ -1614,6 +1614,15 @@ public class MagicSpells extends JavaPlugin {
 		try {
 			File folder = new File(plugin.getDataFolder(), "errors");
 			if (!folder.exists()) folder.mkdir();
+
+			// Delete old errors if the folder is too many.
+			File[] oldErrors = folder.listFiles();
+			if (oldErrors != null && oldErrors.length >= 50) {
+				for (File file : oldErrors) {
+					file.delete();
+				}
+			}
+
 			writer = new PrintWriter(new File(folder, System.currentTimeMillis() + ".txt"));
 			Throwable t = ex;
 			while (t != null) {
