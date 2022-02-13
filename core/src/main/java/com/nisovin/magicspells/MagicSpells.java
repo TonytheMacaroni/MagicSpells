@@ -1370,18 +1370,12 @@ public class MagicSpells extends JavaPlugin {
 	public static void sendMessageAndFormat(String message, LivingEntity livingEntity, String[] args, String... replacements) {
 		if (!(livingEntity instanceof Player)) return;
 		if (message == null || message.isEmpty()) return;
-
 		//Do var replacements
 		message = doArgumentAndVariableSubstitution(message, (Player) livingEntity, args);
-
 		//Format
 		message = formatMessage(message, replacements);
-
 		//Send messages
-		for (String msg : message.split("\n")) {
-			if (msg.isEmpty()) continue;
-			livingEntity.sendMessage(Util.getMiniMessage(getTextColor() + msg));
-		}
+		livingEntity.sendMessage(Util.getMiniMessage(getTextColor() + message));
 	}
 
 	public static void sendMessage(Player player, String message) {
