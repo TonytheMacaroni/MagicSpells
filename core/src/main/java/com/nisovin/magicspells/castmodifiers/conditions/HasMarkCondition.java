@@ -25,7 +25,7 @@ public class HasMarkCondition extends Condition {
 	@Override
 	public boolean check(LivingEntity livingEntity) {
 		if (!(livingEntity instanceof Player)) return false;
-		return spell.getMarks().containsKey(livingEntity.getName().toLowerCase());
+		return spell.getMarks().containsKey(livingEntity.getUniqueId());
 	}
 
 	@Override
