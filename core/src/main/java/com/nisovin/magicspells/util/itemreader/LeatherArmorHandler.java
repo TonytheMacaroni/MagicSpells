@@ -1,67 +1,61 @@
 package com.nisovin.magicspells.util.itemreader;
 
+import org.jetbrains.annotations.NotNull;
+
+import org.bukkit.Bukkit;
 import org.bukkit.Color;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
 import org.bukkit.configuration.ConfigurationSection;
 
+import com.nisovin.magicspells.util.ColorUtil;
 import com.nisovin.magicspells.debug.MagicDebug;
-import com.nisovin.magicspells.handlers.DebugHandler;
 import com.nisovin.magicspells.util.magicitems.MagicItemData;
-import static com.nisovin.magicspells.util.magicitems.MagicItemData.MagicItemAttribute.COLOR;
 
-public class LeatherArmorHandler {
+import static com.nisovin.magicspells.util.magicitems.MagicItemData.MagicItemAttributes.COLOR;
 
-	private final static String CONFIG_NAME = COLOR.toString();
+public class LeatherArmorHandler extends ItemHandler {
 
-	public static void process(ConfigurationSection config, ItemMeta meta, MagicItemData data) {
-		if (!(meta instanceof LeatherArmorMeta armorMeta)) return;
-		if (!config.isString(CONFIG_NAME)) return;
+	@Override
+	public boolean process(@NotNull ConfigurationSection config, @NotNull ItemStack item, @NotNull ItemMeta meta, @NotNull MagicItemData data) {
+		if (!(meta instanceof LeatherArmorMeta armorMeta)) return true;
 
-		String colorString = config.getString(CONFIG_NAME, "");
+		if (!config.isString(COLOR.getKey())) return invalidIfSet(config, COLOR);
 
-		Color color;
-		try {
-			int c = Integer.parseInt(colorString.replace("#", ""), 16);
-			color = Color.fromRGB(c);
-		} catch (IllegalArgumentException e) {
-			MagicDebug.warn("Invalid color on magic item: '%s'.", colorString);
-			return;
+		String colorString = config.getString(COLOR.getKey());
+
+		Color color = ColorUtil.getColorFromHexString(colorString, false);
+		if (color == null) {
+			MagicDebug.warn("Invalid 'color' value '%s' %s.", colorString, MagicDebug.resolvePath());
+			return false;
 		}
 
-		armorMeta.setColor(color);
-		data.setAttribute(COLOR, color);
+		if (!color.equals(Bukkit.getItemFactory().getDefaultLeatherColor())) {
+			armorMeta.setColor(color);
+			data.setAttribute(COLOR, color);
+		}
+
+		return true;
 	}
 
-	public static void processItemMeta(ItemMeta meta, MagicItemData data) {
+	@Override
+	public void processItemMeta(@NotNull ItemStack item, @NotNull ItemMeta meta, @NotNull MagicItemData data) {
+		if (!(meta instanceof LeatherArmorMeta armorMeta) || !data.hasAttribute(COLOR)) return;
+
+		armorMeta.setColor(data.getAttribute(COLOR));
+	}
+
+	@Override
+	public void processMagicItemData(@NotNull ItemStack item, @NotNull ItemMeta meta, @NotNull MagicItemData data) {
 		if (!(meta instanceof LeatherArmorMeta armorMeta)) return;
-		if (!data.hasAttribute(COLOR)) return;
-		armorMeta.setColor((Color) data.getAttribute(COLOR));
-	}
 
-	public static void processMagicItemData(ItemMeta meta, MagicItemData data) {
-		if (!(meta instanceof LeatherArmorMeta)) return;
-
-		Color color = ((LeatherArmorMeta) meta).getColor();
-
-		String hex = Integer.toHexString(color.getRed()).toUpperCase() +
-				Integer.toHexString(color.getGreen()).toUpperCase() +
-				Integer.toHexString(color.getBlue()).toUpperCase();
-
-		// default color is null
-		if (!hex.equals("A06540")) data.setAttribute(COLOR, color);
+		Color color = armorMeta.getColor();
+		if (!color.equals(Bukkit.getItemFactory().getDefaultLeatherColor())) data.setAttribute(COLOR, color);
 	}
 
 	public static Color getColor(ItemMeta meta) {
-		if (!(meta instanceof LeatherArmorMeta)) return null;
-
-		Color color = ((LeatherArmorMeta) meta).getColor();
-		String hex = Integer.toHexString(color.getRed()).toUpperCase() +
-				Integer.toHexString(color.getGreen()).toUpperCase() +
-				Integer.toHexString(color.getBlue()).toUpperCase();
-
-		if (hex.equals("A06540")) return null;
-		return color;
+		return meta instanceof LeatherArmorMeta armorMeta ? armorMeta.getColor() : null;
 	}
-	
+
 }

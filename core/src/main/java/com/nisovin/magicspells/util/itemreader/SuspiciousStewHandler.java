@@ -1,50 +1,60 @@
 package com.nisovin.magicspells.util.itemreader;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.List;
 import java.util.ArrayList;
 
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.inventory.meta.SuspiciousStewMeta;
 import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.potion.PotionEffectType;
 
 import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.handlers.PotionEffectHandler;
 import com.nisovin.magicspells.util.magicitems.MagicItemData;
-import static com.nisovin.magicspells.util.magicitems.MagicItemData.MagicItemAttribute.POTION_EFFECTS;
 
-public class SuspiciousStewHandler {
+import static com.nisovin.magicspells.util.magicitems.MagicItemData.MagicItemAttributes.POTION_EFFECTS;
 
-	private static final String CONFIG_NAME = POTION_EFFECTS.toString();
+public class SuspiciousStewHandler extends ItemHandler {
 
-	public static void process(ConfigurationSection config, ItemMeta meta, MagicItemData data) {
-		if (!(meta instanceof SuspiciousStewMeta stewMeta)) return;
-		if (!config.isList(CONFIG_NAME)) return;
+	@Override
+	public boolean process(@NotNull ConfigurationSection config, @NotNull ItemStack item, @NotNull ItemMeta meta, @NotNull MagicItemData data) {
+		if (!(meta instanceof SuspiciousStewMeta stewMeta)) return true;
 
-		List<String> effects = config.getStringList(CONFIG_NAME);
-		List<PotionEffect> potionEffects = new ArrayList<>();
-		for (String str : effects) {
-			PotionEffect potionEffect = buildSuspiciousStewPotionEffect(str);
-			if (potionEffect == null) continue;
+		if (!config.isList(POTION_EFFECTS.getKey())) return invalidIfSet(config, POTION_EFFECTS);
 
-			stewMeta.addCustomEffect(potionEffect, true);
-			potionEffects.add(potionEffect);
+		List<PotionEffect> effects = new ArrayList<>();
+		stewMeta.clearCustomEffects();
+
+		List<String> effectStrings = config.getStringList(POTION_EFFECTS.getKey());
+		for (String effectString : effectStrings) {
+			PotionEffect effect = buildSuspiciousStewPotionEffect(effectString);
+			if (effect == null) return false;
+
+			stewMeta.addCustomEffect(effect, true);
+			effects.add(effect);
 		}
 
-		if (!potionEffects.isEmpty()) data.setAttribute(POTION_EFFECTS, potionEffects);
+		if (!effects.isEmpty()) data.setAttribute(POTION_EFFECTS, effects);
+
+		return true;
 	}
 
-	public static void processItemMeta(ItemMeta meta, MagicItemData data) {
-		if (!(meta instanceof SuspiciousStewMeta stewMeta)) return;
-		if (!data.hasAttribute(POTION_EFFECTS)) return;
+	@Override
+	public void processItemMeta(@NotNull ItemStack item, @NotNull ItemMeta meta, @NotNull MagicItemData data) {
+		if (!(meta instanceof SuspiciousStewMeta stewMeta) || !data.hasAttribute(POTION_EFFECTS)) return;
+
 		stewMeta.clearCustomEffects();
-		((List<PotionEffect>) data.getAttribute(POTION_EFFECTS)).forEach(potionEffect -> stewMeta.addCustomEffect(potionEffect, true));
+		data.getAttribute(POTION_EFFECTS).forEach(potionEffect -> stewMeta.addCustomEffect(potionEffect, true));
 	}
 
-	public static void processMagicItemData(ItemMeta meta, MagicItemData data) {
-		if (!(meta instanceof SuspiciousStewMeta stewMeta)) return;
-		if (!stewMeta.hasCustomEffects()) return;
+	@Override
+	public void processMagicItemData(@NotNull ItemStack item, @NotNull ItemMeta meta, @NotNull MagicItemData data) {
+		if (!(meta instanceof SuspiciousStewMeta stewMeta) || !stewMeta.hasCustomEffects()) return;
+
 		List<PotionEffect> effects = stewMeta.getCustomEffects();
 		if (!effects.isEmpty()) data.setAttribute(POTION_EFFECTS, effects);
 	}
@@ -59,7 +69,7 @@ public class SuspiciousStewHandler {
 
 		PotionEffectType type = PotionEffectHandler.getPotionEffectType(data[0]);
 		if (type == null) {
-			MagicDebug.warn("Invalid potion type '%s' on suspicious stew potion effect on magic item.", data[0]);
+			MagicDebug.warn("Invalid potion type '%s' for potion effect '%s' %s.", data[0], effectString, MagicDebug.resolvePath());
 			return null;
 		}
 
@@ -68,10 +78,11 @@ public class SuspiciousStewHandler {
 			try {
 				duration = Integer.parseInt(data[1]);
 			} catch (NumberFormatException ex) {
-				MagicDebug.warn("Invalid duration '%s' on suspicious stew potion effect on magic item.", data[1]);
+				MagicDebug.warn("Invalid duration '%s' for potion effect '%s' %s.", data[1], effectString, MagicDebug.resolvePath());
 				return null;
 			}
 		}
+
 		return new PotionEffect(type, duration, 0, true);
 	}
 
