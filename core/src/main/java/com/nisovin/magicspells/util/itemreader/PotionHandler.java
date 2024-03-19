@@ -1,103 +1,104 @@
 package com.nisovin.magicspells.util.itemreader;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.List;
 import java.util.ArrayList;
 
 import org.bukkit.Color;
-import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
-import org.bukkit.potion.PotionEffectType;
+import org.bukkit.NamespacedKey;
 import org.bukkit.potion.PotionType;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.configuration.ConfigurationSection;
 
+import com.nisovin.magicspells.util.ColorUtil;
 import com.nisovin.magicspells.debug.MagicDebug;
-import com.nisovin.magicspells.handlers.PotionEffectHandler;
 import com.nisovin.magicspells.util.BooleanUtils;
+import com.nisovin.magicspells.handlers.PotionEffectHandler;
 import com.nisovin.magicspells.util.magicitems.MagicItemData;
-import static com.nisovin.magicspells.util.magicitems.MagicItemData.MagicItemAttribute.*;
 
-public class PotionHandler {
+import static com.nisovin.magicspells.util.magicitems.MagicItemData.MagicItemAttributes.*;
 
-	public static final String POTION_EFFECT_CONFIG_NAME = POTION_EFFECTS.toString();
-	public static final String POTION_TYPE_CONFIG_NAME = POTION_TYPE.toString();
-	public static final String COLOR_CONFIG_NAME = COLOR.toString();
+public class PotionHandler extends ItemHandler {
 
-	public static void process(ConfigurationSection config, ItemMeta meta, MagicItemData data) {
-		if (!(meta instanceof PotionMeta potionMeta)) return;
+	@Override
+	public boolean process(@NotNull ConfigurationSection config, @NotNull ItemStack item, @NotNull ItemMeta meta, @NotNull MagicItemData data) {
+		if (!(meta instanceof PotionMeta potionMeta)) return true;
 
-		if (config.isList(POTION_EFFECT_CONFIG_NAME)) {
+		if (config.isList(POTION_EFFECTS.getKey())) {
+			List<PotionEffect> effects = new ArrayList<>();
 			potionMeta.clearCustomEffects();
-			List<String> potionEffectStrings = config.getStringList(POTION_EFFECT_CONFIG_NAME);
-			List<PotionEffect> potionEffects = new ArrayList<>();
 
-			for (String potionEffect : potionEffectStrings) {
-				PotionEffect eff = buildPotionEffect(potionEffect);
-				if (eff == null) {
-					MagicDebug.warn("Invalid potion effect string on magic item: '%s'.", potionEffect);
-					continue;
-				}
+			List<String> effectStrings = config.getStringList(POTION_EFFECTS.getKey());
+			for (String effectString : effectStrings) {
+				PotionEffect effect = buildPotionEffect(effectString);
+				if (effect == null) return false;
 
-				potionMeta.addCustomEffect(eff, true);
-				potionEffects.add(eff);
+				potionMeta.addCustomEffect(effect, true);
+				effects.add(effect);
 			}
 
-			if (!potionEffects.isEmpty()) data.setAttribute(POTION_EFFECTS, potionEffects);
-		}
+			if (!effects.isEmpty()) data.setAttribute(POTION_EFFECTS, effects);
+		} else if (!invalidIfSet(config, POTION_EFFECTS.getKey())) return false;
 
-		color:
-		if (config.isString(COLOR_CONFIG_NAME) || config.isString("potion-color")) {
-			String colorString = config.getString(COLOR_CONFIG_NAME, config.getString("potion-color", ""));
+		if (config.isString(COLOR.getKey()) || config.isString("potion-color")) {
+			String colorString = config.getString(COLOR.getKey(), config.getString("potion-color", ""));
 
-			Color color;
-			try {
-				int c = Integer.parseInt(colorString.replace("#", ""), 16);
-				color = Color.fromRGB(c);
-			} catch (IllegalArgumentException e) {
-				MagicDebug.warn("Invalid potion color on magic item: '%s'.", colorString);
-				break color;
+			Color color = ColorUtil.getColorFromHexString(colorString, false);
+			if (color == null) {
+				MagicDebug.warn("Invalid 'color' value '%s' %s.", colorString, MagicDebug.resolvePath());
+				return false;
 			}
 
 			potionMeta.setColor(color);
 			data.setAttribute(COLOR, color);
-		}
+		} else if (!invalidIfSet(config, COLOR.getKey(), "potion-color")) return false;
 
-		if (config.isString(POTION_TYPE_CONFIG_NAME) || config.isString("potion-data")) {
-			String potionTypeString = config.getString(POTION_TYPE_CONFIG_NAME, config.getString("potion-data", ""));
+		if (config.isString(POTION_TYPE.getKey()) || config.isString("potion-data")) {
+			String potionTypeString = config.getString(POTION_TYPE.getKey(), config.getString("potion-data", ""));
 
 			PotionType potionType = getPotionType(potionTypeString);
 			if (potionType == null) {
-				MagicDebug.warn("Invalid potion type on magic item: '%s'.", potionTypeString);
-				return;
+				MagicDebug.warn("Invalid 'potion-type' value '%s' %s.", potionTypeString, MagicDebug.resolvePath());
+				return false;
 			}
 
 			potionMeta.setBasePotionType(potionType);
 			data.setAttribute(POTION_TYPE, potionType);
-		}
+		} else if (!invalidIfSet(config, POTION_TYPE.getKey(), "potion-data")) return false;
+
+		return true;
 	}
 
-	public static void processItemMeta(ItemMeta meta, MagicItemData data) {
+	@Override
+	public void processItemMeta(@NotNull ItemStack item, @NotNull ItemMeta meta, @NotNull MagicItemData data) {
 		if (!(meta instanceof PotionMeta potionMeta)) return;
+
+		if (data.hasAttribute(POTION_TYPE)) potionMeta.setBasePotionType(data.getAttribute(POTION_TYPE));
+		if (data.hasAttribute(COLOR)) potionMeta.setColor(data.getAttribute(COLOR));
 
 		if (data.hasAttribute(POTION_EFFECTS)) {
 			potionMeta.clearCustomEffects();
-			((List<PotionEffect>) data.getAttribute(POTION_EFFECTS)).forEach(potionEffect -> potionMeta.addCustomEffect(potionEffect, true));
+			data.getAttribute(POTION_EFFECTS).forEach(potionEffect -> potionMeta.addCustomEffect(potionEffect, true));
 		}
-		if (data.hasAttribute(COLOR)) potionMeta.setColor((Color) data.getAttribute(COLOR));
-		if (data.hasAttribute(POTION_TYPE)) potionMeta.setBasePotionType((PotionType) data.getAttribute(POTION_TYPE));
 	}
 
-	public static void processMagicItemData(ItemMeta meta, MagicItemData data) {
+	@Override
+	public void processMagicItemData(@NotNull ItemStack item, @NotNull ItemMeta meta, @NotNull MagicItemData data) {
 		if (!(meta instanceof PotionMeta potionMeta)) return;
 
-		data.setAttribute(POTION_TYPE, potionMeta.getBasePotionType());
+		if (potionMeta.hasBasePotionType()) data.setAttribute(POTION_TYPE, potionMeta.getBasePotionType());
+		if (potionMeta.hasColor()) data.setAttribute(COLOR, potionMeta.getColor());
+
 		if (potionMeta.hasCustomEffects()) {
 			List<PotionEffect> effects = potionMeta.getCustomEffects();
 			if (!effects.isEmpty()) data.setAttribute(POTION_EFFECTS, effects);
 		}
-		if (potionMeta.hasColor()) data.setAttribute(COLOR, potionMeta.getColor());
 	}
 
 	public static PotionType getPotionType(ItemMeta meta) {
@@ -139,7 +140,7 @@ public class PotionHandler {
 
 		PotionEffectType t = PotionEffectHandler.getPotionEffectType(data[0]);
 		if (t == null) {
-			MagicDebug.warn("Invalid potion effect type '%s' for potion effect '%s'.", data[0], effectString);
+			MagicDebug.warn("Invalid potion effect type '%s' for potion effect '%s' %s.", data[0], effectString, MagicDebug.resolvePath());
 			return null;
 		}
 
@@ -148,7 +149,7 @@ public class PotionHandler {
 			try {
 				level = Integer.parseInt(data[1]);
 			} catch (NumberFormatException ex) {
-				MagicDebug.warn("Invalid level '%s' for potion effect '%s'.", data[1], effectString);
+				MagicDebug.warn("Invalid level '%s' for potion effect '%s' %s.", data[1], effectString, MagicDebug.resolvePath());
 				return null;
 			}
 		}
@@ -158,7 +159,7 @@ public class PotionHandler {
 			try {
 				duration = Integer.parseInt(data[2]);
 			} catch (NumberFormatException ex) {
-				MagicDebug.warn("Invalid duration '%s' for potion effect '%s'.", data[2], effectString);
+				MagicDebug.warn("Invalid duration '%s' for potion effect '%s' %s.", data[2], effectString, MagicDebug.resolvePath());
 				return null;
 			}
 		}

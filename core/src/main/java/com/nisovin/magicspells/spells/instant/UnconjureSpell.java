@@ -16,7 +16,7 @@ import com.nisovin.magicspells.spells.InstantSpell;
 import com.nisovin.magicspells.handlers.DebugHandler;
 import com.nisovin.magicspells.util.magicitems.MagicItems;
 import com.nisovin.magicspells.util.magicitems.MagicItemData;
-import com.nisovin.magicspells.util.magicitems.MagicItemData.MagicItemAttribute;
+import com.nisovin.magicspells.util.magicitems.MagicItemData.MagicItemAttributes;
 
 public class UnconjureSpell extends InstantSpell {
 
@@ -125,7 +125,7 @@ public class UnconjureSpell extends InstantSpell {
 			if (magicItemData == null) return;
 
 			magicItemData = magicItemData.clone();
-			magicItemData.getIgnoredAttributes().add(MagicItemAttribute.AMOUNT);
+			magicItemData.getIgnoredAttributes().add(MagicItemAttributes.AMOUNT);
 
 			if (splits.length == 1) return;
 

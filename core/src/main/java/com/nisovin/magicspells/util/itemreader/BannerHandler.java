@@ -1,5 +1,7 @@
 package com.nisovin.magicspells.util.itemreader;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.List;
 import java.util.ArrayList;
 
@@ -8,6 +10,7 @@ import io.papermc.paper.registry.RegistryAccess;
 
 import org.bukkit.DyeColor;
 import org.bukkit.NamespacedKey;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.block.banner.Pattern;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.block.banner.PatternType;
@@ -16,24 +19,27 @@ import org.bukkit.configuration.ConfigurationSection;
 
 import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.util.magicitems.MagicItemData;
-import static com.nisovin.magicspells.util.magicitems.MagicItemData.MagicItemAttribute.PATTERNS;
+import static com.nisovin.magicspells.util.magicitems.MagicItemData.MagicItemAttributes.PATTERNS;
 
-public class BannerHandler {
+public class BannerHandler extends ItemHandler {
 
-	private static final String CONFIG_NAME = PATTERNS.toString();
+	@Override
+	public boolean process(@NotNull ConfigurationSection config, @NotNull ItemStack item, @NotNull ItemMeta meta, @NotNull MagicItemData data) {
+		if (!config.isList(PATTERNS.getKey())) return invalidIfSet(config, PATTERNS);
 
-	public static void process(ConfigurationSection config, ItemMeta meta, MagicItemData data) {
-		if (!(meta instanceof BannerMeta bannerMeta)) return;
-		if (!config.isList(CONFIG_NAME)) return;
+		if (!(meta instanceof BannerMeta bannerMeta)) {
+			MagicDebug.warn("Invalid option 'patterns' specified %s - item type '%s' cannot have banner patterns applied.", MagicDebug.resolvePath(), item.getType().getKey().getKey());
+			return false;
+		}
 
 		List<Pattern> patterns = new ArrayList<>();
 
-		List<String> patternStrings = config.getStringList(CONFIG_NAME);
+		List<String> patternStrings = config.getStringList(PATTERNS.getKey());
 		for (String patternString : patternStrings) {
 			String[] patternData = patternString.split(" ");
 			if (patternData.length != 2) {
-				MagicDebug.warn("Invalid banner pattern '%s' on magic item.", patternString);
-				continue;
+				MagicDebug.warn("Invalid banner pattern '%s' %s.", patternString, MagicDebug.resolvePath());
+				return false;
 			}
 
 			String patternTypeString = patternData[0].toLowerCase();
@@ -44,8 +50,8 @@ public class BannerHandler {
 				if (key != null) patternType = RegistryAccess.registryAccess().getRegistry(RegistryKey.BANNER_PATTERN).get(key);
 
 				if (patternType == null) {
-					MagicDebug.warn("Invalid banner pattern '%s' on magic item.", patternData[0]);
-					continue;
+					MagicDebug.warn("Invalid pattern type '%s' in pattern '%s' %s.", patternData[0], patternString, MagicDebug.resolvePath());
+					return false;
 				}
 			}
 
@@ -53,29 +59,47 @@ public class BannerHandler {
 			try {
 				dyeColor = DyeColor.valueOf(patternData[1].toUpperCase());
 			} catch (IllegalArgumentException e) {
-				MagicDebug.warn("Invalid banner color '%s' on magic item.", patternData[1]);
-				continue;
+				MagicDebug.warn("Invalid banner color '%s' in pattern '%s' %s.", patternData[1], patternString, MagicDebug.resolvePath());
+				return false;
 			}
 
-			Pattern pattern = new Pattern(dyeColor, patternType);
-			bannerMeta.addPattern(pattern);
-			patterns.add(pattern);
+			patterns.add(new Pattern(dyeColor, patternType));
 		}
 
+		if (!patterns.isEmpty()) {
+			bannerMeta.setPatterns(patterns);
+			data.setAttribute(PATTERNS, patterns);
+		}
+
+		return true;
+	}
+
+	@Override
+	public void processItemMeta(@NotNull ItemStack item, @NotNull ItemMeta meta, @NotNull MagicItemData data) {
+		if (!(meta instanceof BannerMeta bannerMeta)) return;
+
+		if (data.hasAttribute(PATTERNS)) bannerMeta.setPatterns(data.getAttribute(PATTERNS));
+	}
+
+	@Override
+	public void processMagicItemData(@NotNull ItemStack item, @NotNull ItemMeta meta, @NotNull MagicItemData data) {
+		if (!(meta instanceof BannerMeta bannerMeta)) return;
+
+		List<Pattern> patterns = bannerMeta.getPatterns();
 		if (!patterns.isEmpty()) data.setAttribute(PATTERNS, patterns);
 	}
 
 	public static void processItemMeta(ItemMeta meta, MagicItemData data) {
-		if (!(meta instanceof BannerMeta)) return;
+		if (!(meta instanceof BannerMeta bannerMeta)) return;
 
-		if (data.hasAttribute(PATTERNS)) ((BannerMeta) meta).setPatterns((List<Pattern>) data.getAttribute(PATTERNS));
+		if (data.hasAttribute(PATTERNS)) bannerMeta.setPatterns(data.getAttribute(PATTERNS));
 	}
 
 	public static void processMagicItemData(ItemMeta meta, MagicItemData data) {
-		if (!(meta instanceof BannerMeta)) return;
+		if (!(meta instanceof BannerMeta bannerMeta)) return;
 
 		List<Pattern> patterns = ((BannerMeta) meta).getPatterns();
-		if (!patterns.isEmpty()) data.setAttribute(PATTERNS, ((BannerMeta) meta).getPatterns());
+		if (!patterns.isEmpty()) data.setAttribute(PATTERNS, bannerMeta.getPatterns());
 	}
 
 	private static PatternType fromLegacyIdentifier(String identifier) {
