@@ -34,7 +34,7 @@ public class CraftListener extends PassiveListener {
 			}
 
 			itemData = itemData.clone();
-			itemData.getIgnoredAttributes().add(MagicItemData.MagicItemAttribute.AMOUNT);
+			itemData.getIgnoredAttributes().add(MagicItemData.MagicItemAttributes.AMOUNT);
 
 			items.add(itemData);
 		}
