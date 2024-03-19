@@ -82,8 +82,8 @@ public class DebugConfig {
 			String levelString = overrides.getString(override, "");
 			DebugLevel level;
 			try {
-				level = DebugLevel.valueOf(levelString);
-			} catch (IllegalArgumentException | NullPointerException e) {
+				level = DebugLevel.valueOf(levelString.toUpperCase());
+			} catch (IllegalArgumentException e) {
 				MagicDebug.warn("Invalid debug level of '%s' for category '%s' for 'debug.overrides' %s.", levelString, override, MagicDebug.resolvePath());
 				continue;
 			}

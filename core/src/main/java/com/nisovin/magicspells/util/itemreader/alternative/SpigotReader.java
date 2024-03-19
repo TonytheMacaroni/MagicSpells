@@ -17,7 +17,7 @@ public class SpigotReader implements ItemConfigTransformer {
 
 		ItemStack item = section.getItemStack(DATA_KEY);
 		if (item == null) {
-			MagicDebug.warn("Invalid 'data' for type serializer 'external::spigot': '%s'");
+			MagicDebug.warn("Invalid 'data' for type 'external::spigot' %s.", MagicDebug.resolvePath());
 			return null;
 		}
 
