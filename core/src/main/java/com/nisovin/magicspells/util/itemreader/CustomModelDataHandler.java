@@ -1,30 +1,40 @@
 package com.nisovin.magicspells.util.itemreader;
 
+import org.jetbrains.annotations.NotNull;
+
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.configuration.ConfigurationSection;
 
 import com.nisovin.magicspells.util.magicitems.MagicItemData;
-import static com.nisovin.magicspells.util.magicitems.MagicItemData.MagicItemAttribute.CUSTOM_MODEL_DATA;
 
-public class CustomModelDataHandler {
+import static com.nisovin.magicspells.util.magicitems.MagicItemData.MagicItemAttributes.CUSTOM_MODEL_DATA;
 
-	private static final String CONFIG_NAME = CUSTOM_MODEL_DATA.toString();
+public class CustomModelDataHandler extends ItemHandler {
 
-	public static void process(ConfigurationSection config, ItemMeta meta, MagicItemData data) {
-		if (!config.isInt(CONFIG_NAME)) return;
+	public boolean process(@NotNull ConfigurationSection config, @NotNull ItemStack item, @NotNull ItemMeta meta, @NotNull MagicItemData data) {
+		if (!config.isInt(CUSTOM_MODEL_DATA.getKey())) return invalidIfSet(config, CUSTOM_MODEL_DATA);
 
-		int customModelData = config.getInt(CONFIG_NAME);
+		int customModelData = config.getInt(CUSTOM_MODEL_DATA.getKey());
 
 		meta.setCustomModelData(customModelData);
 		data.setAttribute(CUSTOM_MODEL_DATA, customModelData);
+
+		return true;
 	}
 
-	public static void processItemMeta(ItemMeta meta, MagicItemData data) {
-		if (data.hasAttribute(CUSTOM_MODEL_DATA)) meta.setCustomModelData((int) data.getAttribute(CUSTOM_MODEL_DATA));
+	@Override
+	public void processItemMeta(@NotNull ItemStack item, @NotNull ItemMeta meta, @NotNull MagicItemData data) {
+		if (!data.hasAttribute(CUSTOM_MODEL_DATA)) return;
+
+		meta.setCustomModelData(data.getAttribute(CUSTOM_MODEL_DATA));
 	}
 
-	public static void processMagicItemData(ItemMeta meta, MagicItemData data) {
-		if (meta.hasCustomModelData()) data.setAttribute(CUSTOM_MODEL_DATA, meta.getCustomModelData());
+	@Override
+	public void processMagicItemData(@NotNull ItemStack item, @NotNull ItemMeta meta, @NotNull MagicItemData data) {
+		if (!meta.hasCustomModelData()) return;
+
+		data.setAttribute(CUSTOM_MODEL_DATA, meta.getCustomModelData());
 	}
 
 }

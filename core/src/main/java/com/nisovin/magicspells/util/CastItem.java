@@ -26,7 +26,7 @@ import com.nisovin.magicspells.util.itemreader.PotionHandler;
 import com.nisovin.magicspells.util.itemreader.DurabilityHandler;
 import com.nisovin.magicspells.util.itemreader.WrittenBookHandler;
 import com.nisovin.magicspells.util.itemreader.LeatherArmorHandler;
-import static com.nisovin.magicspells.util.magicitems.MagicItemData.MagicItemAttribute.*;
+import static com.nisovin.magicspells.util.magicitems.MagicItemData.MagicItemAttributes.*;
 
 public class CastItem {
 
@@ -81,44 +81,44 @@ public class CastItem {
 	public CastItem(String string) {
 		MagicItemData data = MagicItems.getMagicItemDataFromString(string);
 		if (data != null) {
-			type = (Material) data.getAttribute(TYPE);
+			type = data.getAttribute(TYPE);
 			if (isTypeValid()) {
 				if (!MagicSpells.ignoreCastItemNames() && data.hasAttribute(NAME)) {
 					if (MagicSpells.ignoreCastItemNameColors())
-						name = PlainTextComponentSerializer.plainText().serialize((Component) data.getAttribute(NAME));
+						name = PlainTextComponentSerializer.plainText().serialize(data.getAttribute(NAME));
 					else
-						name = LegacyComponentSerializer.legacySection().serialize((Component) data.getAttribute(NAME));
+						name = LegacyComponentSerializer.legacySection().serialize(data.getAttribute(NAME));
 				}
 
 				if (!MagicSpells.ignoreCastItemAmount() && data.hasAttribute(AMOUNT))
-					amount = (int) data.getAttribute(AMOUNT);
+					amount = data.getAttribute(AMOUNT);
 
 				if (!MagicSpells.ignoreCastItemDurability(type) && type.getMaxDurability() > 0 && data.hasAttribute(DURABILITY))
-					durability = (int) data.getAttribute(DURABILITY);
+					durability = data.getAttribute(DURABILITY);
 
 				if (!MagicSpells.ignoreCastItemCustomModelData() && data.hasAttribute(CUSTOM_MODEL_DATA))
-					customModelData = (int) data.getAttribute(CUSTOM_MODEL_DATA);
+					customModelData = data.getAttribute(CUSTOM_MODEL_DATA);
 
 				if (!MagicSpells.ignoreCastItemBreakability() && data.hasAttribute(UNBREAKABLE))
-					unbreakable = (boolean) data.getAttribute(UNBREAKABLE);
+					unbreakable = data.getAttribute(UNBREAKABLE);
 
 				if (!MagicSpells.ignoreCastItemColor() && data.hasAttribute(COLOR))
-					color = (Color) data.getAttribute(COLOR);
+					color = data.getAttribute(COLOR);
 
 				if (!MagicSpells.ignoreCastItemPotionType() && data.hasAttribute(POTION_TYPE))
-					potionType = (PotionType) data.getAttribute(POTION_TYPE);
+					potionType = data.getAttribute(POTION_TYPE);
 
 				if (!MagicSpells.ignoreCastItemTitle() && data.hasAttribute(TITLE))
-					title = LegacyComponentSerializer.legacySection().serialize((Component) data.getAttribute(TITLE));
+					title = LegacyComponentSerializer.legacySection().serialize(data.getAttribute(TITLE));
 
 				if (!MagicSpells.ignoreCastItemAuthor() && data.hasAttribute(AUTHOR))
-					author = LegacyComponentSerializer.legacySection().serialize((Component) data.getAttribute(AUTHOR));
+					author = LegacyComponentSerializer.legacySection().serialize(data.getAttribute(AUTHOR));
 
 				if (!MagicSpells.ignoreCastItemEnchants() && data.hasAttribute(ENCHANTS))
-					enchants = (Map<Enchantment, Integer>) data.getAttribute(ENCHANTS);
+					enchants = data.getAttribute(ENCHANTS);
 
 				if (!MagicSpells.ignoreCastItemLore() && data.hasAttribute(LORE)) {
-					List<Component> itemLore = (List<Component>) data.getAttribute(LORE);
+					List<Component> itemLore = data.getAttribute(LORE);
 					lore = itemLore.stream().map(LegacyComponentSerializer.legacySection()::serialize).collect(Collectors.toList());
 				}
 			}

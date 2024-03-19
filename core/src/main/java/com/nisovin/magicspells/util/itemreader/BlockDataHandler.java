@@ -1,7 +1,9 @@
 package com.nisovin.magicspells.util.itemreader;
 
+import org.jetbrains.annotations.NotNull;
+
 import org.bukkit.Bukkit;
-import org.bukkit.Material;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.BlockDataMeta;
@@ -9,38 +11,48 @@ import org.bukkit.configuration.ConfigurationSection;
 
 import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.util.magicitems.MagicItemData;
-import static com.nisovin.magicspells.util.magicitems.MagicItemData.MagicItemAttribute.BLOCK_DATA;
 
-public class BlockDataHandler {
+import static com.nisovin.magicspells.util.magicitems.MagicItemData.MagicItemAttributes.BLOCK_DATA;
 
-	private static final String CONFIG_NAME = BLOCK_DATA.toString();
+public class BlockDataHandler extends ItemHandler {
 
-	public static void process(ConfigurationSection config, ItemMeta meta, MagicItemData data, Material material) {
-		if (!(meta instanceof BlockDataMeta blockDataMeta)) return;
+	@Override
+	public boolean process(@NotNull ConfigurationSection config, @NotNull ItemStack item, @NotNull ItemMeta meta, @NotNull MagicItemData data) {
+		if (!config.isString(BLOCK_DATA.getKey())) return invalidIfSet(config, BLOCK_DATA);
 
-		String blockDataString = config.getString(CONFIG_NAME);
-		if (blockDataString == null) return;
+		if (!(meta instanceof BlockDataMeta blockDataMeta)) {
+			MagicDebug.warn("Invalid option 'block-data' specified %s - item type '%s' cannot have block data applied.", MagicDebug.resolvePath(), item.getType().getKey().getKey());
+			return false;
+		}
+
+		String blockDataString = config.getString(BLOCK_DATA.getKey());
 
 		BlockData blockData;
 		try {
-			blockData = Bukkit.createBlockData(material, blockDataString.toLowerCase());
+			blockData = Bukkit.createBlockData(item.getType(), blockDataString.toLowerCase());
 		} catch (IllegalArgumentException e) {
 			MagicDebug.warn("Invalid block data '%s' on magic item.", blockDataString);
-			return;
+			return false;
 		}
 
 		blockDataMeta.setBlockData(blockData);
 		data.setAttribute(BLOCK_DATA, blockData);
+
+		return true;
 	}
 
-	public static void processItemMeta(ItemMeta meta, MagicItemData data) {
+	@Override
+	public void processItemMeta(@NotNull ItemStack item, @NotNull ItemMeta meta, @NotNull MagicItemData data) {
 		if (!(meta instanceof BlockDataMeta blockDataMeta) || !data.hasAttribute(BLOCK_DATA)) return;
-		blockDataMeta.setBlockData((BlockData) data.getAttribute(BLOCK_DATA));
+
+		blockDataMeta.setBlockData(data.getAttribute(BLOCK_DATA));
 	}
 
-	public static void processMagicItemData(ItemMeta meta, MagicItemData data, Material material) {
+	@Override
+	public void processMagicItemData(@NotNull ItemStack item, @NotNull ItemMeta meta, @NotNull MagicItemData data) {
 		if (!(meta instanceof BlockDataMeta blockDataMeta) || !blockDataMeta.hasBlockData()) return;
-		data.setAttribute(BLOCK_DATA, blockDataMeta.getBlockData(material));
+
+		data.setAttribute(BLOCK_DATA, blockDataMeta.getBlockData(item.getType()));
 	}
 
 }

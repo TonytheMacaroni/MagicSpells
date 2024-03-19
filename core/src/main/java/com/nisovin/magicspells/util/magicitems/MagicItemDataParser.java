@@ -2,10 +2,10 @@ package com.nisovin.magicspells.util.magicitems;
 
 import java.util.*;
 
+import com.google.common.collect.Multimap;
+
 import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
-
-import com.google.common.collect.Multimap;
 
 import net.kyori.adventure.text.Component;
 
@@ -32,7 +32,7 @@ import com.nisovin.magicspells.util.itemreader.AttributeHandler;
 import com.nisovin.magicspells.util.itemreader.FireworkEffectHandler;
 import com.nisovin.magicspells.util.itemreader.SuspiciousStewHandler;
 import com.nisovin.magicspells.util.magicitems.MagicItemData.MagicItemAttribute;
-import static com.nisovin.magicspells.util.magicitems.MagicItemData.MagicItemAttribute.*;
+import static com.nisovin.magicspells.util.magicitems.MagicItemData.MagicItemAttributes.*;
 
 public class MagicItemDataParser {
 
@@ -44,7 +44,7 @@ public class MagicItemDataParser {
 	public static final String DATA_REGEX = "(?=(?:(?:[^\"]*\"){2})*[^\"]*$)(?![^{]*})(?![^\\[]*])\\|+";
 
 	public static MagicItemData parseMagicItemData(String str) {
-		try (var context = MagicDebug.section(DebugCategory.MAGIC_ITEMS, "Parsing string-based magic item '%s'.", str)) {
+		try (var ignored = MagicDebug.section(DebugCategory.MAGIC_ITEMS, "Parsing string-based magic item '%s'.", str)) {
 			return parseInternal(str);
 		}
 	}
@@ -81,7 +81,6 @@ public class MagicItemDataParser {
 
 			data = new MagicItemData();
 			data.setAttribute(TYPE, type);
-			if (type.isAir()) return data;
 		} else {
 			MagicItem magicItem = MagicItems.getMagicItems().get(base);
 			if (magicItem == null) {
@@ -90,9 +89,9 @@ public class MagicItemDataParser {
 			}
 
 			data = magicItem.getMagicItemData().clone();
-			type = (Material) data.getAttribute(TYPE);
-			if (type.isAir()) return data;
+			type = data.getAttribute(TYPE);
 		}
+		if (type.isAir()) return data;
 
 		String key = null;
 		try {
@@ -143,28 +142,24 @@ public class MagicItemDataParser {
 						data.setAttribute(UUID, java.util.UUID.fromString(value.getAsString()));
 					case "attributes" -> {
 						Multimap<Attribute, AttributeModifier> attributes = AttributeHandler.getAttributeModifiers(gson.fromJson(value, List.class));
+						if (attributes == null) return null;
+
 						if (!attributes.isEmpty()) data.setAttribute(ATTRIBUTES, attributes);
 					}
 					case "blacklisted-attributes", "blacklisted_attributes", "blacklistedattributes" -> {
-						Set<MagicItemAttribute> blacklistedAttributes = data.getBlacklistedAttributes();
+						Set<MagicItemAttribute<?>> blacklistedAttributes = data.getBlacklistedAttributes();
 
 						JsonArray attributeStrings = value.getAsJsonArray();
 						for (JsonElement element : attributeStrings) {
-							String rawAttributeString = element.getAsString();
-							String attributeString = rawAttributeString.toUpperCase().replace("-", "_");
+							String attributeString = element.getAsString();
 
-							try {
-								blacklistedAttributes.add(MagicItemAttribute.valueOf(attributeString));
-							} catch (IllegalArgumentException e) {
-								switch (attributeString) {
-									case "ENCHANTMENTS" -> blacklistedAttributes.add(ENCHANTS);
-									case "POTION_DATA" -> blacklistedAttributes.add(POTION_TYPE);
-									default -> {
-										MagicDebug.warn("Invalid blacklisted attribute '%s' %s.", rawAttributeString, MagicDebug.resolvePath());
-										return null;
-									}
-								}
+							MagicItemAttribute<?> attribute = MagicItemAttribute.fromString(attributeString);
+							if (attribute == null) {
+								MagicDebug.warn("Invalid blacklisted attribute '%s' %s.", attributeString, MagicDebug.resolvePath());
+								return null;
 							}
+
+							blacklistedAttributes.add(attribute);
 						}
 					}
 					case "color", "potion-color", "potion_color", "potioncolor" -> {
@@ -194,7 +189,7 @@ public class MagicItemDataParser {
 						if (enchants.isEmpty()) continue;
 
 						if (data.hasAttribute(FAKE_GLINT)) {
-							boolean fakeGlint = (boolean) data.getAttribute(FAKE_GLINT);
+							boolean fakeGlint = data.getAttribute(FAKE_GLINT);
 							if (fakeGlint) data.removeAttribute(FAKE_GLINT);
 						}
 
@@ -204,7 +199,7 @@ public class MagicItemDataParser {
 						if (!value.getAsBoolean()) continue;
 
 						if (data.hasAttribute(ENCHANTS)) {
-							Map<Enchantment, Integer> enchantments = (Map<Enchantment, Integer>) data.getAttribute(ENCHANTS);
+							Map<Enchantment, Integer> enchantments = data.getAttribute(ENCHANTS);
 							if (!enchantments.isEmpty()) continue;
 						}
 
@@ -222,8 +217,12 @@ public class MagicItemDataParser {
 						FireworkEffect.Type fireworkType = FireworkEffect.Type.valueOf(values[0].toUpperCase());
 						boolean trail = Boolean.parseBoolean(values[1]);
 						boolean flicker = Boolean.parseBoolean(values[2]);
-						List<Color> colors = values.length > 3 ? FireworkEffectHandler.getColorsFromString(values[3]) : List.of();
-						List<Color> fadeColors = values.length > 4 ? FireworkEffectHandler.getColorsFromString(values[4]) : List.of();
+
+						List<Color> colors = values.length > 3 ? FireworkEffectHandler.getColorsFromString(values[3], "colors", true) : List.of();
+						if (colors == null) return null;
+
+						List<Color> fadeColors = values.length > 4 ? FireworkEffectHandler.getColorsFromString(values[4], "fade colors", true) : List.of();
+						if (fadeColors == null) return null;
 
 						FireworkEffect effect = FireworkEffect.builder()
 							.flicker(flicker)
@@ -251,8 +250,12 @@ public class MagicItemDataParser {
 							FireworkEffect.Type fireworkType = FireworkEffect.Type.valueOf(values[0].toUpperCase());
 							boolean trail = Boolean.parseBoolean(values[1]);
 							boolean flicker = Boolean.parseBoolean(values[2]);
-							List<Color> colors = FireworkEffectHandler.getColorsFromString(values[3]);
-							List<Color> fadeColors = values.length > 4 ? FireworkEffectHandler.getColorsFromString(values[4]) : List.of();
+
+							List<Color> colors = FireworkEffectHandler.getColorsFromString(values[3], "colors", true);
+							if (colors == null) return null;
+
+							List<Color> fadeColors = values.length > 4 ? FireworkEffectHandler.getColorsFromString(values[4], "fade colors", true) : List.of();
+							if (fadeColors == null) return null;
 
 							FireworkEffect effect = FireworkEffect.builder()
 								.flicker(flicker)
@@ -268,25 +271,19 @@ public class MagicItemDataParser {
 						if (!effects.isEmpty()) data.setAttribute(FIREWORK_EFFECTS, effects);
 					}
 					case "ignored-attributes", "ignored_attributes", "ignoredattributes" -> {
-						Set<MagicItemAttribute> ignoredAttributes = data.getIgnoredAttributes();
+						Set<MagicItemAttribute<?>> ignoredAttributes = data.getIgnoredAttributes();
 
 						JsonArray attributeStrings = value.getAsJsonArray();
 						for (JsonElement element : attributeStrings) {
-							String rawAttributeString = element.getAsString();
-							String attributeString = rawAttributeString.toUpperCase().replace("-", "_");
+							String attributeString = element.getAsString();
 
-							try {
-								ignoredAttributes.add(MagicItemAttribute.valueOf(attributeString));
-							} catch (IllegalArgumentException e) {
-								switch (attributeString) {
-									case "ENCHANTMENTS" -> ignoredAttributes.add(ENCHANTS);
-									case "POTION_DATA" -> ignoredAttributes.add(POTION_TYPE);
-									default -> {
-										MagicDebug.warn("Invalid ignored attribute '%s' %s.", rawAttributeString, MagicDebug.resolvePath());
-										return null;
-									}
-								}
+							MagicItemAttribute<?> attribute = MagicItemAttribute.fromString(attributeString);
+							if (attribute == null) {
+								MagicDebug.warn("Invalid ignored attribute '%s' %s.", attributeString, MagicDebug.resolvePath());
+								return null;
 							}
+
+							ignoredAttributes.add(attribute);
 						}
 					}
 					case "lore" -> {
@@ -347,10 +344,7 @@ public class MagicItemDataParser {
 							String effectString = element.getAsString();
 
 							PotionEffect effect = type == Material.SUSPICIOUS_STEW ? SuspiciousStewHandler.buildSuspiciousStewPotionEffect(effectString) : PotionHandler.buildPotionEffect(effectString);
-							if (effect == null) {
-								MagicDebug.warn("Invalid potion effect '%s' %s.", effectString, MagicDebug.resolvePath());
-								return null;
-							}
+							if (effect == null) return null;
 
 							effects.add(effect);
 						}

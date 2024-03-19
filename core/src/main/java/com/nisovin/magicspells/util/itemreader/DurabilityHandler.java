@@ -1,39 +1,55 @@
 package com.nisovin.magicspells.util.itemreader;
 
+import org.jetbrains.annotations.NotNull;
+
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.configuration.ConfigurationSection;
 
+import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.util.magicitems.MagicItemData;
-import static com.nisovin.magicspells.util.magicitems.MagicItemData.MagicItemAttribute.DURABILITY;
 
-public class DurabilityHandler {
+import static com.nisovin.magicspells.util.magicitems.MagicItemData.MagicItemAttributes.DURABILITY;
 
-	private static final String CONFIG_NAME = DURABILITY.toString();
+public class DurabilityHandler extends ItemHandler {
 
-	public static void process(ConfigurationSection config, ItemMeta meta, MagicItemData data) {
-		if (!(meta instanceof Damageable)) return;
-		if (!config.isInt(CONFIG_NAME)) return;
+	@Override
+	public boolean process(@NotNull ConfigurationSection config, @NotNull ItemStack item, @NotNull ItemMeta meta, @NotNull MagicItemData data) {
+		if (!config.isInt(DURABILITY.getKey())) return invalidIfSet(config, DURABILITY);
 
-		int durability = config.getInt(CONFIG_NAME);
-		((Damageable) meta).setDamage(durability);
+		if (!(meta instanceof Damageable damageable && item.getType().getMaxDurability() > 0)) {
+			MagicDebug.warn("Invalid 'durability' specified %s - item type '%s' does not have durability.", MagicDebug.resolvePath(), item.getType().getKey().getKey());
+			return false;
+		}
+
+		int durability = config.getInt(DURABILITY.getKey());
+
+		damageable.setDamage(durability);
 		data.setAttribute(DURABILITY, durability);
+
+		return true;
 	}
 
-	public static void processItemMeta(ItemMeta meta, MagicItemData data) {
-		if (!(meta instanceof Damageable)) return;
-		if (!data.hasAttribute(DURABILITY)) return;
-		((Damageable) meta).setDamage((int) data.getAttribute(DURABILITY));
+	@Override
+	public void processItemMeta(@NotNull ItemStack item, @NotNull ItemMeta meta, @NotNull MagicItemData data) {
+		if (!data.hasAttribute(DURABILITY) || !(meta instanceof Damageable damageable && item.getType().getMaxDurability() > 0))
+			return;
+
+		damageable.setDamage(data.getAttribute(DURABILITY));
 	}
 
-	public static void processMagicItemData(ItemMeta meta, MagicItemData data) {
-		if (!(meta instanceof Damageable damageableMeta)) return;
-		data.setAttribute(DURABILITY, damageableMeta.getDamage());
+	@Override
+	public void processMagicItemData(@NotNull ItemStack item, @NotNull ItemMeta meta, @NotNull MagicItemData data) {
+		if (!(meta instanceof Damageable damageable && item.getType().getMaxDurability() > 0))
+			return;
+
+		data.setAttribute(DURABILITY, damageable.getDamage());
 	}
 
 	public static int getDurability(ItemMeta meta) {
-		if (!(meta instanceof Damageable)) return -1;
-		return ((Damageable) meta).getDamage();
+		if (!(meta instanceof Damageable damageable)) return -1;
+		return damageable.getDamage();
 	}
 
 }

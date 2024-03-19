@@ -1,34 +1,42 @@
 package com.nisovin.magicspells.util.itemreader;
 
+import org.jetbrains.annotations.NotNull;
+
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.Repairable;
 import org.bukkit.configuration.ConfigurationSection;
 
 import com.nisovin.magicspells.util.magicitems.MagicItemData;
-import static com.nisovin.magicspells.util.magicitems.MagicItemData.MagicItemAttribute.REPAIR_COST;
 
-public class RepairableHandler {
+import static com.nisovin.magicspells.util.magicitems.MagicItemData.MagicItemAttributes.REPAIR_COST;
 
-	private static final String CONFIG_NAME = REPAIR_COST.toString();
+public class RepairableHandler extends ItemHandler {
 
-	public static void process(ConfigurationSection config, ItemMeta meta, MagicItemData data) {
-		if (!(meta instanceof Repairable)) return;
-		if (!config.isInt(CONFIG_NAME)) return;
+	@Override
+	public boolean process(@NotNull ConfigurationSection config, @NotNull ItemStack item, @NotNull ItemMeta meta, @NotNull MagicItemData data) {
+		if (!(meta instanceof Repairable repairable)) return true;
 
-		int repairCost = config.getInt(CONFIG_NAME);
-		((Repairable) meta).setRepairCost(repairCost);
+		if (!config.isInt(REPAIR_COST.getKey())) return invalidIfSet(config, REPAIR_COST);
+
+		int repairCost = config.getInt(REPAIR_COST.getKey());
+		repairable.setRepairCost(repairCost);
 		data.setAttribute(REPAIR_COST, repairCost);
+
+		return true;
 	}
 
-	public static void processItemMeta(ItemMeta meta, MagicItemData data) {
-		if (!(meta instanceof Repairable repairable)) return;
-		if (!data.hasAttribute(REPAIR_COST)) return;
-		repairable.setRepairCost((int) data.getAttribute(REPAIR_COST));
+	@Override
+	public void processItemMeta(@NotNull ItemStack item, @NotNull ItemMeta meta, @NotNull MagicItemData data) {
+		if (!(meta instanceof Repairable repairable) || !data.hasAttribute(REPAIR_COST)) return;
+
+		repairable.setRepairCost(data.getAttribute(REPAIR_COST));
 	}
 
-	public static void processMagicItemData(ItemMeta meta, MagicItemData data) {
-		if (!(meta instanceof Repairable repairable)) return;
-		if (!repairable.hasRepairCost()) return;
+	@Override
+	public void processMagicItemData(@NotNull ItemStack item, @NotNull ItemMeta meta, @NotNull MagicItemData data) {
+		if (!(meta instanceof Repairable repairable) || !repairable.hasRepairCost()) return;
+
 		data.setAttribute(REPAIR_COST, repairable.getRepairCost());
 	}
 	
