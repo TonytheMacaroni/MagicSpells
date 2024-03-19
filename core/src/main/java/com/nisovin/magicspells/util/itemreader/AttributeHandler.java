@@ -1,5 +1,7 @@
 package com.nisovin.magicspells.util.itemreader;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.List;
 
 import com.google.common.io.ByteStreams;
@@ -7,8 +9,8 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.HashMultimap;
 import com.google.common.io.ByteArrayDataOutput;
 
-import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.attribute.AttributeModifier;
@@ -19,49 +21,56 @@ import com.nisovin.magicspells.util.AttributeUtil;
 import com.nisovin.magicspells.util.magicitems.MagicItemData;
 import com.nisovin.magicspells.util.managers.AttributeManager.AttributeInfo;
 
-import static com.nisovin.magicspells.util.magicitems.MagicItemData.MagicItemAttribute.ATTRIBUTES;
+import static com.nisovin.magicspells.util.magicitems.MagicItemData.MagicItemAttributes.ATTRIBUTES;
 
-public class AttributeHandler {
+public class AttributeHandler extends ItemHandler {
 
-	private static final String CONFIG_NAME = ATTRIBUTES.toString();
-
-	public static void process(ConfigurationSection config, ItemMeta meta, MagicItemData data, Material material) {
-		if (!config.isList(CONFIG_NAME)) return;
+	@Override
+	public boolean process(@NotNull ConfigurationSection config, @NotNull ItemStack item, @NotNull ItemMeta meta, @NotNull MagicItemData data) {
+		if (!config.isList(ATTRIBUTES.getKey())) return invalidIfSet(config, ATTRIBUTES);
 
 		Multimap<Attribute, AttributeModifier> attributes = HashMultimap.create();
 
-		List<String> attributeStrings = config.getStringList(CONFIG_NAME);
+		List<String> attributeStrings = config.getStringList(ATTRIBUTES.getKey());
 		for (String attributeString : attributeStrings) {
 			AttributeInfo info = getAttributeModifier(attributeString);
-			if (info == null) continue;
+			if (info == null) return false;
 
-			meta.addAttributeModifier(info.attribute(), info.attributeModifier());
 			attributes.put(info.attribute(), info.attributeModifier());
 		}
 
-		if (!attributes.isEmpty()) data.setAttribute(ATTRIBUTES, attributes);
+		if (!attributes.isEmpty()) {
+			meta.setAttributeModifiers(attributes);
+			data.setAttribute(ATTRIBUTES, attributes);
+		}
+
+		return true;
 	}
 
-	public static void processItemMeta(ItemMeta meta, MagicItemData data) {
+	@Override
+	public void processItemMeta(@NotNull ItemStack item, @NotNull ItemMeta meta, @NotNull MagicItemData data) {
 		if (!data.hasAttribute(ATTRIBUTES)) return;
-		meta.setAttributeModifiers((Multimap<Attribute, AttributeModifier>) data.getAttribute(ATTRIBUTES));
+
+		meta.setAttributeModifiers(data.getAttribute(ATTRIBUTES));
 	}
 
-	public static void processMagicItemData(ItemMeta meta, MagicItemData data) {
+	@Override
+	public void processMagicItemData(@NotNull ItemStack item, @NotNull ItemMeta meta, @NotNull MagicItemData data) {
 		if (!meta.hasAttributeModifiers()) return;
+
 		data.setAttribute(ATTRIBUTES, meta.getAttributeModifiers());
 	}
 
 	public static AttributeInfo getAttributeModifier(String attributeString) {
 		String[] args = attributeString.split(" ");
 		if (args.length < 2 || args.length > 5) {
-			MagicDebug.warn("Invalid attribute modifier '%s' on magic item - too many or too few arguments.", attributeString);
+			MagicDebug.warn("Invalid attribute modifier '%s' %s - too many or too few arguments.", attributeString, MagicDebug.resolvePath());
 			return null;
 		}
 
 		Attribute attribute = AttributeUtil.getAttribute(args[0]);
 		if (attribute == null) {
-			MagicDebug.warn("Invalid attribute '%s' on attribute modifier '%s' on magic item.", args[0], attributeString);
+			MagicDebug.warn("Invalid attribute '%s' on attribute modifier '%s' %s.", args[0], attributeString, MagicDebug.resolvePath());
 			return null;
 		}
 
@@ -69,7 +78,7 @@ public class AttributeHandler {
 		try {
 			value = Double.parseDouble(args[1]);
 		} catch (NumberFormatException e) {
-			MagicDebug.warn("Invalid value '%s' on attribute modifier '%s' on magic item.", args[1], attributeString);
+			MagicDebug.warn("Invalid value '%s' on attribute modifier '%s' %s.", args[1], attributeString, MagicDebug.resolvePath());
 			return null;
 		}
 
@@ -78,7 +87,7 @@ public class AttributeHandler {
 			operation = AttributeUtil.getOperation(args[2]);
 
 			if (operation == null) {
-				MagicDebug.warn("Invalid operation '%s' on attribute modifier '%s' on magic item.", args[2], attributeString);
+				MagicDebug.warn("Invalid operation '%s' on attribute modifier '%s' %s.", args[2], attributeString, MagicDebug.resolvePath());
 				return null;
 			}
 		}
@@ -103,7 +112,7 @@ public class AttributeHandler {
 				};
 
 				if (!valid) {
-					MagicDebug.warn("Invalid slot '%s' on attribute modifier '%s' on magic item.", args[3], attributeString);
+					MagicDebug.warn("Invalid slot '%s' on attribute modifier '%s' %s.", args[3], attributeString, MagicDebug.resolvePath());
 					return null;
 				}
 			}
@@ -114,12 +123,12 @@ public class AttributeHandler {
 			try {
 				uuid = java.util.UUID.fromString(args[4]);
 			} catch (IllegalArgumentException e) {
-				MagicDebug.warn("Invalid UUID '%s' on attribute modifier '%s' on magic item.", args[3], attributeString);
+				MagicDebug.warn("Invalid UUID '%s' on attribute modifier '%s' %s.", args[3], attributeString, MagicDebug.resolvePath());
 				return null;
 			}
 		} else {
 			ByteArrayDataOutput output = ByteStreams.newDataOutput();
-			output.writeUTF(attribute.getKey().asString());
+			output.writeUTF(attribute.name());
 			output.writeUTF(args[0]);
 			output.writeDouble(value);
 			output.writeInt(operation.ordinal());
