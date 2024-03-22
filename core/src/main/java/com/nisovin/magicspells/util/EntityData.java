@@ -41,6 +41,8 @@ import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 
 import com.nisovin.magicspells.MagicSpells;
+import com.nisovin.magicspells.debug.MagicDebug;
+import com.nisovin.magicspells.debug.DebugCategory;
 import com.nisovin.magicspells.util.config.ConfigData;
 import com.nisovin.magicspells.util.config.FunctionData;
 import com.nisovin.magicspells.util.magicitems.MagicItem;
@@ -117,375 +119,401 @@ public class EntityData {
 	}
 
 	public EntityData(ConfigurationSection config, boolean forceOptional) {
-		entityType = ConfigDataUtil.getEntityType(config, "entity", null);
+		try (var ignored = MagicDebug.section(builder -> builder
+			.category(DebugCategory.OPTIONS)
+			.message("Initializing entity data section '%s'.", config.getName())
+			.path(config.getName(), "in entity data section '" + config.getName() + "'")
+		)) {
+			entityType = ConfigDataUtil.getEntityType(config, "entity", null);
 
-		yaw = ConfigDataUtil.getAngle(config, "yaw", Angle.DEFAULT);
-		pitch = ConfigDataUtil.getAngle(config, "pitch", Angle.DEFAULT);
-		relativeOffset = ConfigDataUtil.getVector(config, "relative-offset", new Vector(0, 0, 0));
+			yaw = ConfigDataUtil.getAngle(config, "yaw", Angle.DEFAULT);
+			pitch = ConfigDataUtil.getAngle(config, "pitch", Angle.DEFAULT);
+			relativeOffset = ConfigDataUtil.getVector(config, "relative-offset", new Vector(0, 0, 0));
 
-		Multimap<Class<?>, Transformer<?>> transformers = MultimapBuilder.linkedHashKeys().arrayListValues().build();
+			Multimap<Class<?>, Transformer<?>> transformers = MultimapBuilder.linkedHashKeys().arrayListValues().build();
 
-		// Entity
-		addOptBoolean(transformers, config, "silent", Entity.class, Entity::setSilent);
-		addOptBoolean(transformers, config, "glowing", Entity.class, Entity::setGlowing);
-		addOptBoolean(transformers, config, "gravity", Entity.class, Entity::setGravity);
-		addOptBoolean(transformers, config, "visible-by-default", Entity.class, Entity::setVisibleByDefault);
-		addOptVector(transformers, config, "velocity", Entity.class, Entity::setVelocity);
+			// Entity
+			addOptBoolean(transformers, config, "silent", Entity.class, Entity::setSilent);
+			addOptBoolean(transformers, config, "glowing", Entity.class, Entity::setGlowing);
+			addOptBoolean(transformers, config, "gravity", Entity.class, Entity::setGravity);
+			addOptBoolean(transformers, config, "visible-by-default", Entity.class, Entity::setVisibleByDefault);
+			addOptVector(transformers, config, "velocity", Entity.class, Entity::setVelocity);
 
-		if (config.isList("scoreboard-tags")) {
-			List<String> tagStrings = config.getStringList("scoreboard-tags");
-			if (!tagStrings.isEmpty()) {
-				List<ConfigData<String>> tags = new ArrayList<>();
-				for (String tagString : tagStrings) tags.add(ConfigDataUtil.getString(tagString));
+			if (config.isList("scoreboard-tags")) {
+				List<String> tagStrings = config.getStringList("scoreboard-tags");
+				if (!tagStrings.isEmpty()) {
+					List<ConfigData<String>> tags = new ArrayList<>();
+					for (String tagString : tagStrings) tags.add(ConfigDataUtil.getString(tagString));
 
-				transformers.put(Entity.class, (Entity entity, SpellData data) -> {
-					for (ConfigData<String> tag : tags) entity.addScoreboardTag(tag.get(data));
-				});
-			}
-		}
-
-		// Ageable
-		baby = addBoolean(transformers, config, "baby", false, Ageable.class, (ageable, baby) -> {
-			if (baby) ageable.setBaby();
-			else ageable.setAdult();
-		}, forceOptional);
-
-		addOptInteger(transformers, config, "age", Ageable.class, Ageable::setAge);
-
-		// Attributable
-		List<?> attributeModifierStrings = config.getList("attribute-modifiers");
-		if (attributeModifierStrings != null && !attributeModifierStrings.isEmpty()) {
-			Multimap<Attribute, AttributeModifier> attributeModifiers = AttributeHandler.getAttributeModifiers(attributeModifierStrings, null);
-
-			transformers.put(Attributable.class, (Attributable entity, SpellData data) -> {
-				attributeModifiers.asMap().forEach((attribute, modifiers) -> {
-					AttributeInstance attributeInstance = entity.getAttribute(attribute);
-					if (attributeInstance == null) return;
-
-					modifiers.forEach(attributeInstance::addModifier);
-				});
-			});
-		}
-
-		// Damageable
-		addOptDouble(transformers, config, "health", Damageable.class, Damageable::setHealth);
-
-		// LivingEntity
-		addOptBoolean(transformers, config, "ai", LivingEntity.class, LivingEntity::setAI);
-		addOptEquipment(transformers, config, "equipment.main-hand", EquipmentSlot.HAND);
-		addOptEquipment(transformers, config, "equipment.off-hand", EquipmentSlot.OFF_HAND);
-		addOptEquipment(transformers, config, "equipment.helmet", EquipmentSlot.HEAD);
-		addOptEquipment(transformers, config, "equipment.chestplate", EquipmentSlot.CHEST);
-		addOptEquipment(transformers, config, "equipment.leggings", EquipmentSlot.LEGS);
-		addOptEquipment(transformers, config, "equipment.boots", EquipmentSlot.FEET);
-		addOptEquipment(transformers, config, "equipment.body", Mob.class, EquipmentSlot.BODY);
-
-		// Mob
-		addOptEquipmentDropChance(transformers, config, "equipment.main-hand-drop-chance", EquipmentSlot.HAND);
-		addOptEquipmentDropChance(transformers, config, "equipment.off-hand-drop-chance", EquipmentSlot.OFF_HAND);
-		addOptEquipmentDropChance(transformers, config, "equipment.helmet-drop-chance", EquipmentSlot.HEAD);
-		addOptEquipmentDropChance(transformers, config, "equipment.chestplate-drop-chance", EquipmentSlot.CHEST);
-		addOptEquipmentDropChance(transformers, config, "equipment.leggings-drop-chance", EquipmentSlot.LEGS);
-		addOptEquipmentDropChance(transformers, config, "equipment.boots-drop-chance", EquipmentSlot.FEET);
-		addOptEquipmentDropChance(transformers, config, "equipment.body-drop-chance", EquipmentSlot.BODY);
-
-		// Tameable
-		tamed = addBoolean(transformers, config, "tamed", false, Tameable.class, Tameable::setTamed, forceOptional);
-
-		// AbstractHorse
-		saddled = addBoolean(transformers, config, "saddled", false, AbstractHorse.class, (horse, saddled) -> {
-			if (saddled) horse.getInventory().setSaddle(new ItemStack(Material.SADDLE));
-		}, forceOptional);
-
-		// Armor Stand
-		addBoolean(transformers, config, "small", false, ArmorStand.class, ArmorStand::setSmall, forceOptional);
-		addBoolean(transformers, config, "marker", false, ArmorStand.class, ArmorStand::setMarker, forceOptional);
-		addBoolean(transformers, config, "visible", true, ArmorStand.class, ArmorStand::setVisible, forceOptional);
-		addBoolean(transformers, config, "has-arms", true, ArmorStand.class, ArmorStand::setArms, forceOptional);
-		addBoolean(transformers, config, "has-base-plate", true, ArmorStand.class, ArmorStand::setBasePlate, forceOptional);
-
-		addEulerAngle(transformers, config, "head-angle", EulerAngle.ZERO, ArmorStand.class, ArmorStand::setHeadPose, forceOptional);
-		addEulerAngle(transformers, config, "body-angle", EulerAngle.ZERO, ArmorStand.class, ArmorStand::setBodyPose, forceOptional);
-		addEulerAngle(transformers, config, "left-arm-angle", EulerAngle.ZERO, ArmorStand.class, ArmorStand::setLeftArmPose, forceOptional);
-		addEulerAngle(transformers, config, "right-arm-angle", EulerAngle.ZERO, ArmorStand.class, ArmorStand::setRightArmPose, forceOptional);
-		addEulerAngle(transformers, config, "left-leg-angle", EulerAngle.ZERO, ArmorStand.class, ArmorStand::setLeftLegPose, forceOptional);
-		addEulerAngle(transformers, config, "right-leg-angle", EulerAngle.ZERO, ArmorStand.class, ArmorStand::setRightLegPose, forceOptional);
-
-		// Axolotl
-		fallback(
-			key -> addOptEnum(transformers, config, key, Axolotl.class, Axolotl.Variant.class, Axolotl::setVariant),
-			"axolotl-variant", "type"
-		);
-
-		// Cat
-		fallback(
-			key -> addOptRegistryEntry(transformers, config, key, Cat.class, Registry.CAT_VARIANT, Cat::setCatType),
-			"cat-variant", "type"
-		);
-
-		// CollarColorable
-		fallback(
-			key -> addOptEnum(transformers, config, key, CollarColorable.class, DyeColor.class, CollarColorable::setCollarColor),
-			"collar-color", "color"
-		);
-
-		// ChestedHorse
-		chested = addBoolean(transformers, config, "chested", false, ChestedHorse.class, ChestedHorse::setCarryingChest, forceOptional);
-
-		// Creeper
-		powered = addBoolean(transformers, config, "powered", false, Creeper.class, Creeper::setPowered, forceOptional);
-
-		// Enderman
-		carriedBlockData = fallback(
-			key -> addBlockData(transformers, config, key, null, Enderman.class, Enderman::setCarriedBlock, forceOptional),
-			"carried-block", "material"
-		);
-
-		// Falling Block
-		fallingBlockData = fallback(
-			key -> addOptBlockData(transformers, config, key, FallingBlock.class, FallingBlock::setBlockData),
-			"falling-block", "material"
-		);
-
-		// Fox
-		fallback(
-			key -> addOptEnum(transformers, config, key, Fox.class, Fox.Type.class, Fox::setFoxType),
-			"fox-type", "type"
-		);
-
-		// Frog
-		fallback(
-			key -> addOptRegistryEntry(transformers, config, key, Frog.class, Registry.FROG_VARIANT, Frog::setVariant),
-			"frog-variant", "type"
-		);
-
-		// Horse
-		horseColor = fallback(
-			key -> addOptEnum(transformers, config, key, Horse.class, Horse.Color.class, Horse::setColor),
-			"horse-color", "color"
-		);
-		horseStyle = fallback(
-			key -> addOptEnum(transformers, config, key, Horse.class, Horse.Style.class, Horse::setStyle),
-			"horse-style", "style"
-		);
-
-		// Item
-		dropItemMaterial = addOptMaterial(transformers, config, "material", Item.class, (item, material) -> item.setItemStack(new ItemStack(material)));
-		addOptBoolean(transformers, config, "will-age", Item.class, Item::setWillAge);
-		addOptInteger(transformers, config, "pickup-delay", Item.class, Item::setPickupDelay);
-		addOptBoolean(transformers, config, "can-mob-pickup", Item.class, Item::setCanMobPickup);
-		addOptBoolean(transformers, config, "can-player-pickup", Item.class, Item::setCanPlayerPickup);
-
-		// Interaction
-		addOptFloat(transformers, config, "interaction-height", Interaction.class, Interaction::setInteractionHeight);
-		addOptFloat(transformers, config, "interaction-width", Interaction.class, Interaction::setInteractionWidth);
-		addOptBoolean(transformers, config, "responsive", Interaction.class, Interaction::setResponsive);
-
-		// Llama
-		llamaColor = fallback(
-			key -> addOptEnum(transformers, config, key, Llama.class, Llama.Color.class, Llama::setColor),
-			"llama-variant", "color"
-		);
-		fallback(
-			key -> addOptMaterial(transformers, config, key, Llama.class, (llama, material) -> llama.getInventory().setDecor(new ItemStack(material))),
-			"llama-decor", "material"
-		);
-
-		// Mushroom Cow
-		fallback(
-			key -> addOptEnum(transformers, config, key, MushroomCow.class, MushroomCow.Variant.class, MushroomCow::setVariant),
-			"mooshroom-type", "type"
-		);
-
-		// Panda
-		addOptEnum(transformers, config, "main-gene", Panda.class, Panda.Gene.class, Panda::setMainGene);
-		addOptEnum(transformers, config, "hidden-gene", Panda.class, Panda.Gene.class, Panda::setHiddenGene);
-
-		// Parrot
-		parrotVariant = fallback(
-			key -> addOptEnum(transformers, config, key, Parrot.class, Parrot.Variant.class, Parrot::setVariant),
-			"parrot-variant", "type"
-		);
-
-		// Phantom
-		addInteger(transformers, config, "size", 0, Phantom.class, Phantom::setSize, forceOptional);
-		addOptBoolean(transformers, config, "should-burn-in-day", Phantom.class, Phantom::setShouldBurnInDay);
-
-		// Puffer Fish
-		size = addInteger(transformers, config, "size", 0, PufferFish.class, PufferFish::setPuffState, forceOptional);
-
-		// Rabbit
-		fallback(
-			key -> addOptEnum(transformers, config, key, Rabbit.class, Rabbit.Type.class, Rabbit::setRabbitType),
-			"rabbit-type", "type"
-		);
-
-		// Sheep
-		sheared = addBoolean(transformers, config, "sheared", false, Sheep.class, Sheep::setSheared, forceOptional);
-		color = fallback(
-			key -> addOptEnum(transformers, config, key, Sheep.class, DyeColor.class, Sheep::setColor),
-			"sheep-color", "color"
-		);
-
-		// Shulker
-		fallback(
-			key -> addOptEnum(transformers, config, key, Shulker.class, DyeColor.class, Shulker::setColor),
-			"shulker-color", "color"
-		);
-
-		// Skeleton
-		addOptBoolean(transformers, config, "should-burn-in-day", Skeleton.class, Skeleton::setShouldBurnInDay);
-
-		// Slime
-		addInteger(transformers, config, "size", 0, Slime.class, Slime::setSize, forceOptional);
-
-		// Steerable
-		addBoolean(transformers, config, "saddled", false, Steerable.class, Steerable::setSaddle, forceOptional);
-
-		// Tropical Fish
-		fallback(
-			key -> addOptEnum(transformers, config, key, TropicalFish.class, DyeColor.class, TropicalFish::setBodyColor),
-			"tropical-fish.body-color", "color"
-		);
-		tropicalFishPatternColor = fallback(
-			key -> addOptEnum(transformers, config, key, TropicalFish.class, DyeColor.class, TropicalFish::setPatternColor),
-			"tropical-fish.pattern-color", "pattern-color"
-		);
-		tropicalFishPattern = fallback(
-			key -> addOptEnum(transformers, config, key, TropicalFish.class, TropicalFish.Pattern.class, TropicalFish::setPattern),
-			"tropical-fish.pattern", "type"
-		);
-
-		// Villager
-		profession = fallback(
-			key -> addOptRegistryEntry(transformers, config, key, Villager.class, Registry.VILLAGER_PROFESSION, Villager::setProfession),
-			"villager-profession", "type"
-		);
-		addOptRegistryEntry(transformers, config, "villager-type", Villager.class, Registry.VILLAGER_TYPE, Villager::setVillagerType);
-
-		// Wolf
-		addBoolean(transformers, config, "angry", false, Wolf.class, Wolf::setAngry, forceOptional);
-		addOptRegistryEntry(transformers, config, "wolf-variant", Wolf.class, RegistryKey.WOLF_VARIANT, Wolf::setVariant);
-
-		// Zombie
-		addOptBoolean(transformers, config, "should-burn-in-day", Zombie.class, Zombie::setShouldBurnInDay);
-
-		// Display
-		ConfigData<Quaternionf> leftRotation = getQuaternion(config, "transformation.left-rotation");
-		ConfigData<Quaternionf> rightRotation = getQuaternion(config, "transformation.right-rotation");
-		ConfigData<Vector3f> translation = getVector(config, "transformation.translation");
-		ConfigData<Vector3f> scale = getVector(config, "transformation.scale");
-		ConfigData<Transformation> transformation = data -> null;
-		if (checkNull(leftRotation) && checkNull(rightRotation) && checkNull(translation) && checkNull(scale)) {
-			if (leftRotation.isConstant() && rightRotation.isConstant() && translation.isConstant() && scale.isConstant()) {
-				Quaternionf lr = leftRotation.get();
-				Quaternionf rr = rightRotation.get();
-				Vector3f t = translation.get();
-				Vector3f s = scale.get();
-
-				Transformation transform = new Transformation(t, lr, s, rr);
-				transformation = data -> transform;
-			} else {
-				transformation = data -> {
-					Quaternionf lr = leftRotation.get(data);
-					if (lr == null) return null;
-
-					Quaternionf rr = rightRotation.get(data);
-					if (rr == null) return null;
-
-					Vector3f t = translation.get(data);
-					if (t == null) return null;
-
-					Vector3f s = scale.get(data);
-					if (s == null) return null;
-
-					return new Transformation(t, lr, s, rr);
-				};
-			}
-		}
-		transformers.put(Display.class, new TransformerImpl<>(transformation, Display::setTransformation, true));
-
-		addOptInteger(transformers, config, "teleport-duration", Display.class, Display::setTeleportDuration);
-		addOptInteger(transformers, config, "interpolation-duration", Display.class, Display::setInterpolationDuration);
-		addOptFloat(transformers, config, "view-range", Display.class, Display::setViewRange);
-		addOptFloat(transformers, config, "shadow-radius", Display.class, Display::setShadowRadius);
-		addOptFloat(transformers, config, "shadow-strength", Display.class, Display::setShadowStrength);
-		addOptFloat(transformers, config, "width", Display.class, Display::setDisplayWidth);
-		addOptFloat(transformers, config, "height", Display.class, Display::setDisplayHeight);
-		addOptInteger(transformers, config, "interpolation-delay", Display.class, Display::setInterpolationDelay);
-		addOptEnum(transformers, config, "billboard", Display.class, Display.Billboard.class, Display::setBillboard);
-		addOptARGBColor(transformers, config, "glow-color-override", Display.class, Display::setGlowColorOverride);
-
-		ConfigData<Integer> blockLight = ConfigDataUtil.getInteger(config, "brightness.block");
-		ConfigData<Integer> skyLight = ConfigDataUtil.getInteger(config, "brightness.sky");
-		ConfigData<Display.Brightness> brightness = data -> null;
-		if (checkNull(blockLight) && checkNull(skyLight)) {
-			if (blockLight.isConstant() && skyLight.isConstant()) {
-				int bl = blockLight.get();
-				int sl = skyLight.get();
-
-				if (0 <= bl && bl <= 15 && 0 <= sl && sl <= 15) {
-					Display.Brightness b = new Display.Brightness(bl, sl);
-					brightness = data -> b;
+					transformers.put(Entity.class, (Entity entity, SpellData data) -> {
+						for (ConfigData<String> tag : tags) entity.addScoreboardTag(tag.get(data));
+					});
 				}
-			} else {
-				brightness = data -> {
-					Integer bl = blockLight.get(data);
-					if (bl == null || bl < 0 || bl > 15) return null;
-
-					Integer sl = skyLight.get(data);
-					if (sl == null || sl < 0 || sl > 15) return null;
-
-					return new Display.Brightness(bl, sl);
-				};
 			}
-		}
-		transformers.put(Display.class, new TransformerImpl<>(brightness, Display::setBrightness, true));
 
-		// BlockDisplay
-		addOptBlockData(transformers, config, "block", BlockDisplay.class, BlockDisplay::setBlock);
+			// Ageable
+			baby = addBoolean(transformers, config, "baby", false, Ageable.class, (ageable, baby) -> {
+				if (baby) ageable.setBaby();
+				else ageable.setAdult();
+			}, forceOptional);
 
-		// ItemDisplay
-		addOptMagicItem(transformers, config, "item", ItemDisplay.class, ItemDisplay::setItemStack);
+			addOptInteger(transformers, config, "age", Ageable.class, Ageable::setAge);
 
-		addOptEnum(transformers, config, "item-display-transform", ItemDisplay.class, ItemDisplay.ItemDisplayTransform.class, ItemDisplay::setItemDisplayTransform);
+			// Attributable
+			List<?> attributeModifierStrings = config.getList("attribute-modifiers");
+			if (attributeModifierStrings != null && !attributeModifierStrings.isEmpty()) {
+				Multimap<Attribute, AttributeModifier> attributeModifiers = AttributeHandler.getAttributeModifiers(attributeModifierStrings, null);
 
-		// TextDisplay
-		addOptComponent(transformers, config, "text", TextDisplay.class, TextDisplay::text);
-		addOptInteger(transformers, config, "line-width", TextDisplay.class, TextDisplay::setLineWidth);
-		addOptARGBColor(transformers, config, "background", TextDisplay.class, TextDisplay::setBackgroundColor);
-		addOptByte(transformers, config, "text-opacity", TextDisplay.class, TextDisplay::setTextOpacity);
-		addOptBoolean(transformers, config, "shadow", TextDisplay.class, TextDisplay::setShadowed);
-		addOptBoolean(transformers, config, "see-through", TextDisplay.class, TextDisplay::setSeeThrough);
-		addOptBoolean(transformers, config, "default-background", TextDisplay.class, TextDisplay::setDefaultBackground);
-		addOptEnum(transformers, config, "alignment", TextDisplay.class, TextDisplay.TextAlignment.class, TextDisplay::setAlignment);
+				transformers.put(Attributable.class, (Attributable entity, SpellData data) -> {
+					attributeModifiers.asMap().forEach((attribute, modifiers) -> {
+						AttributeInstance attributeInstance = entity.getAttribute(attribute);
+						if (attributeInstance == null) return;
 
-		for (EntityType entityType : EntityType.values()) {
-			Class<? extends Entity> entityClass = entityType.getEntityClass();
-			if (entityClass == null) continue;
+						modifiers.forEach(attributeInstance::addModifier);
+					});
+				});
+			}
 
-			for (Class<?> transformerType : transformers.keys())
-				if (transformerType.isAssignableFrom(entityClass))
-					options.putAll(entityType, transformers.get(transformerType));
-		}
+			// Damageable
+			addOptDouble(transformers, config, "health", Damageable.class, Damageable::setHealth);
 
-		List<?> delayedDataEntries = config.getList("delayed-entity-data");
-		if (delayedDataEntries == null || delayedDataEntries.isEmpty()) return;
+			// LivingEntity
+			addOptBoolean(transformers, config, "ai", LivingEntity.class, LivingEntity::setAI);
+			addOptEquipment(transformers, config, "equipment.main-hand", EquipmentSlot.HAND);
+			addOptEquipment(transformers, config, "equipment.off-hand", EquipmentSlot.OFF_HAND);
+			addOptEquipment(transformers, config, "equipment.helmet", EquipmentSlot.HEAD);
+			addOptEquipment(transformers, config, "equipment.chestplate", EquipmentSlot.CHEST);
+			addOptEquipment(transformers, config, "equipment.leggings", EquipmentSlot.LEGS);
+			addOptEquipment(transformers, config, "equipment.boots", EquipmentSlot.FEET);
+			addOptEquipment(transformers, config, "equipment.body", Mob.class, EquipmentSlot.BODY);
 
-		for (Object object : delayedDataEntries) {
-			if (!(object instanceof Map<?, ?> map)) continue;
+			// Mob
+			addOptEquipmentDropChance(transformers, config, "equipment.main-hand-drop-chance", EquipmentSlot.HAND);
+			addOptEquipmentDropChance(transformers, config, "equipment.off-hand-drop-chance", EquipmentSlot.OFF_HAND);
+			addOptEquipmentDropChance(transformers, config, "equipment.helmet-drop-chance", EquipmentSlot.HEAD);
+			addOptEquipmentDropChance(transformers, config, "equipment.chestplate-drop-chance", EquipmentSlot.CHEST);
+			addOptEquipmentDropChance(transformers, config, "equipment.leggings-drop-chance", EquipmentSlot.LEGS);
+			addOptEquipmentDropChance(transformers, config, "equipment.boots-drop-chance", EquipmentSlot.FEET);
+			addOptEquipmentDropChance(transformers, config, "equipment.body-drop-chance", EquipmentSlot.BODY);
 
-			ConfigurationSection section = ConfigReaderUtil.mapToSection(map);
+			// Tameable
+			tamed = addBoolean(transformers, config, "tamed", false, Tameable.class, Tameable::setTamed, forceOptional);
 
-			ConfigurationSection dataSection = section.getConfigurationSection("entity-data");
-			if (dataSection == null) continue;
+			// AbstractHorse
+			saddled = addBoolean(transformers, config, "saddled", false, AbstractHorse.class, (horse, saddled) -> {
+				if (saddled) horse.getInventory().setSaddle(new ItemStack(Material.SADDLE));
+			}, forceOptional);
 
-			ConfigData<Long> delay = ConfigDataUtil.getLong(section, "delay", 1);
-			ConfigData<Long> interval = ConfigDataUtil.getLong(section, "interval", 0);
-			ConfigData<Long> iterations = ConfigDataUtil.getLong(section, "iterations", 0);
+			// Armor Stand
+			addBoolean(transformers, config, "small", false, ArmorStand.class, ArmorStand::setSmall, forceOptional);
+			addBoolean(transformers, config, "marker", false, ArmorStand.class, ArmorStand::setMarker, forceOptional);
+			addBoolean(transformers, config, "visible", true, ArmorStand.class, ArmorStand::setVisible, forceOptional);
+			addBoolean(transformers, config, "has-arms", true, ArmorStand.class, ArmorStand::setArms, forceOptional);
+			addBoolean(transformers, config, "has-base-plate", true, ArmorStand.class, ArmorStand::setBasePlate, forceOptional);
 
-			EntityData entityData = new EntityData(dataSection, true);
-			delayedEntityData.add(new DelayedEntityData(entityData, delay, interval, iterations));
+			addEulerAngle(transformers, config, "head-angle", EulerAngle.ZERO, ArmorStand.class, ArmorStand::setHeadPose, forceOptional);
+			addEulerAngle(transformers, config, "body-angle", EulerAngle.ZERO, ArmorStand.class, ArmorStand::setBodyPose, forceOptional);
+			addEulerAngle(transformers, config, "left-arm-angle", EulerAngle.ZERO, ArmorStand.class, ArmorStand::setLeftArmPose, forceOptional);
+			addEulerAngle(transformers, config, "right-arm-angle", EulerAngle.ZERO, ArmorStand.class, ArmorStand::setRightArmPose, forceOptional);
+			addEulerAngle(transformers, config, "left-leg-angle", EulerAngle.ZERO, ArmorStand.class, ArmorStand::setLeftLegPose, forceOptional);
+			addEulerAngle(transformers, config, "right-leg-angle", EulerAngle.ZERO, ArmorStand.class, ArmorStand::setRightLegPose, forceOptional);
+
+			// Axolotl
+			fallback(
+				key -> addOptEnum(transformers, config, key, Axolotl.class, Axolotl.Variant.class, Axolotl::setVariant),
+				"axolotl-variant", "type"
+			);
+
+			// Cat
+			fallback(
+				key -> addOptRegistryEntry(transformers, config, key, Cat.class, Registry.CAT_VARIANT, Cat::setCatType),
+				"cat-variant", "type"
+			);
+
+			// CollarColorable
+			fallback(
+				key -> addOptEnum(transformers, config, key, CollarColorable.class, DyeColor.class, CollarColorable::setCollarColor),
+				"collar-color", "color"
+			);
+
+			// ChestedHorse
+			chested = addBoolean(transformers, config, "chested", false, ChestedHorse.class, ChestedHorse::setCarryingChest, forceOptional);
+
+			// Creeper
+			powered = addBoolean(transformers, config, "powered", false, Creeper.class, Creeper::setPowered, forceOptional);
+
+			// Enderman
+			carriedBlockData = fallback(
+				key -> addBlockData(transformers, config, key, null, Enderman.class, Enderman::setCarriedBlock, forceOptional),
+				"carried-block", "material"
+			);
+
+			// Falling Block
+			fallingBlockData = fallback(
+				key -> addOptBlockData(transformers, config, key, FallingBlock.class, FallingBlock::setBlockData),
+				"falling-block", "material"
+			);
+
+			// Fox
+			fallback(
+				key -> addOptEnum(transformers, config, key, Fox.class, Fox.Type.class, Fox::setFoxType),
+				"fox-type", "type"
+			);
+
+			// Frog
+			fallback(
+				key -> addOptRegistryEntry(transformers, config, key, Frog.class, Registry.FROG_VARIANT, Frog::setVariant),
+				"frog-variant", "type"
+			);
+
+			// Horse
+			horseColor = fallback(
+				key -> addOptEnum(transformers, config, key, Horse.class, Horse.Color.class, Horse::setColor),
+				"horse-color", "color"
+			);
+			horseStyle = fallback(
+				key -> addOptEnum(transformers, config, key, Horse.class, Horse.Style.class, Horse::setStyle),
+				"horse-style", "style"
+			);
+
+			// Item
+			dropItemMaterial = addOptMaterial(transformers, config, "material", Item.class, (item, material) -> item.setItemStack(new ItemStack(material)));
+			addOptBoolean(transformers, config, "will-age", Item.class, Item::setWillAge);
+			addOptInteger(transformers, config, "pickup-delay", Item.class, Item::setPickupDelay);
+			addOptBoolean(transformers, config, "can-mob-pickup", Item.class, Item::setCanMobPickup);
+			addOptBoolean(transformers, config, "can-player-pickup", Item.class, Item::setCanPlayerPickup);
+
+			// Interaction
+			addOptFloat(transformers, config, "interaction-height", Interaction.class, Interaction::setInteractionHeight);
+			addOptFloat(transformers, config, "interaction-width", Interaction.class, Interaction::setInteractionWidth);
+			addOptBoolean(transformers, config, "responsive", Interaction.class, Interaction::setResponsive);
+
+			// Llama
+			llamaColor = fallback(
+				key -> addOptEnum(transformers, config, key, Llama.class, Llama.Color.class, Llama::setColor),
+				"llama-variant", "color"
+			);
+			fallback(
+				key -> addOptMaterial(transformers, config, key, Llama.class, (llama, material) -> llama.getInventory().setDecor(new ItemStack(material))),
+				"llama-decor", "material"
+			);
+
+			// Mushroom Cow
+			fallback(
+				key -> addOptEnum(transformers, config, key, MushroomCow.class, MushroomCow.Variant.class, MushroomCow::setVariant),
+				"mooshroom-type", "type"
+			);
+
+			// Panda
+			addOptEnum(transformers, config, "main-gene", Panda.class, Panda.Gene.class, Panda::setMainGene);
+			addOptEnum(transformers, config, "hidden-gene", Panda.class, Panda.Gene.class, Panda::setHiddenGene);
+
+			// Parrot
+			parrotVariant = fallback(
+				key -> addOptEnum(transformers, config, key, Parrot.class, Parrot.Variant.class, Parrot::setVariant),
+				"parrot-variant", "type"
+			);
+
+			// Phantom
+			addInteger(transformers, config, "size", 0, Phantom.class, Phantom::setSize, forceOptional);
+			addOptBoolean(transformers, config, "should-burn-in-day", Phantom.class, Phantom::setShouldBurnInDay);
+
+			// Puffer Fish
+			size = addInteger(transformers, config, "size", 0, PufferFish.class, PufferFish::setPuffState, forceOptional);
+
+			// Rabbit
+			fallback(
+				key -> addOptEnum(transformers, config, key, Rabbit.class, Rabbit.Type.class, Rabbit::setRabbitType),
+				"rabbit-type", "type"
+			);
+
+			// Sheep
+			sheared = addBoolean(transformers, config, "sheared", false, Sheep.class, Sheep::setSheared, forceOptional);
+			color = fallback(
+				key -> addOptEnum(transformers, config, key, Sheep.class, DyeColor.class, Sheep::setColor),
+				"sheep-color", "color"
+			);
+
+			// Shulker
+			fallback(
+				key -> addOptEnum(transformers, config, key, Shulker.class, DyeColor.class, Shulker::setColor),
+				"shulker-color", "color"
+			);
+
+			// Skeleton
+			addOptBoolean(transformers, config, "should-burn-in-day", Skeleton.class, Skeleton::setShouldBurnInDay);
+
+			// Slime
+			addInteger(transformers, config, "size", 0, Slime.class, Slime::setSize, forceOptional);
+
+			// Steerable
+			addBoolean(transformers, config, "saddled", false, Steerable.class, Steerable::setSaddle, forceOptional);
+
+			// Tropical Fish
+			fallback(
+				key -> addOptEnum(transformers, config, key, TropicalFish.class, DyeColor.class, TropicalFish::setBodyColor),
+				"tropical-fish.body-color", "color"
+			);
+			tropicalFishPatternColor = fallback(
+				key -> addOptEnum(transformers, config, key, TropicalFish.class, DyeColor.class, TropicalFish::setPatternColor),
+				"tropical-fish.pattern-color", "pattern-color"
+			);
+			tropicalFishPattern = fallback(
+				key -> addOptEnum(transformers, config, key, TropicalFish.class, TropicalFish.Pattern.class, TropicalFish::setPattern),
+				"tropical-fish.pattern", "type"
+			);
+
+			// Villager
+			profession = fallback(
+				key -> addOptRegistryEntry(transformers, config, key, Villager.class, Registry.VILLAGER_PROFESSION, Villager::setProfession),
+				"villager-profession", "type"
+			);
+			addOptRegistryEntry(transformers, config, "villager-type", Villager.class, Registry.VILLAGER_TYPE, Villager::setVillagerType);
+
+			// Wolf
+			addBoolean(transformers, config, "angry", false, Wolf.class, Wolf::setAngry, forceOptional);
+			addOptRegistryEntry(transformers, config, "wolf-variant", Wolf.class, RegistryKey.WOLF_VARIANT, Wolf::setVariant);
+
+			// Zombie
+			addOptBoolean(transformers, config, "should-burn-in-day", Zombie.class, Zombie::setShouldBurnInDay);
+
+			// Display
+			ConfigData<Quaternionf> leftRotation = getQuaternion(config, "transformation.left-rotation");
+			ConfigData<Quaternionf> rightRotation = getQuaternion(config, "transformation.right-rotation");
+			ConfigData<Vector3f> translation = getVector(config, "transformation.translation");
+			ConfigData<Vector3f> scale = getVector(config, "transformation.scale");
+			ConfigData<Transformation> transformation = data -> null;
+			if (checkNull(leftRotation) && checkNull(rightRotation) && checkNull(translation) && checkNull(scale)) {
+				if (leftRotation.isConstant() && rightRotation.isConstant() && translation.isConstant() && scale.isConstant()) {
+					Quaternionf lr = leftRotation.get();
+					Quaternionf rr = rightRotation.get();
+					Vector3f t = translation.get();
+					Vector3f s = scale.get();
+
+					Transformation transform = new Transformation(t, lr, s, rr);
+					transformation = data -> transform;
+				} else {
+					transformation = data -> {
+						Quaternionf lr = leftRotation.get(data);
+						if (lr == null) return null;
+
+						Quaternionf rr = rightRotation.get(data);
+						if (rr == null) return null;
+
+						Vector3f t = translation.get(data);
+						if (t == null) return null;
+
+						Vector3f s = scale.get(data);
+						if (s == null) return null;
+
+						return new Transformation(t, lr, s, rr);
+					};
+				}
+			}
+			transformers.put(Display.class, new TransformerImpl<>(transformation, Display::setTransformation, true));
+
+			addOptInteger(transformers, config, "teleport-duration", Display.class, Display::setTeleportDuration);
+			addOptInteger(transformers, config, "interpolation-duration", Display.class, Display::setInterpolationDuration);
+			addOptFloat(transformers, config, "view-range", Display.class, Display::setViewRange);
+			addOptFloat(transformers, config, "shadow-radius", Display.class, Display::setShadowRadius);
+			addOptFloat(transformers, config, "shadow-strength", Display.class, Display::setShadowStrength);
+			addOptFloat(transformers, config, "width", Display.class, Display::setDisplayWidth);
+			addOptFloat(transformers, config, "height", Display.class, Display::setDisplayHeight);
+			addOptInteger(transformers, config, "interpolation-delay", Display.class, Display::setInterpolationDelay);
+			addOptEnum(transformers, config, "billboard", Display.class, Display.Billboard.class, Display::setBillboard);
+			addOptARGBColor(transformers, config, "glow-color-override", Display.class, Display::setGlowColorOverride);
+
+			ConfigData<Integer> blockLight = ConfigDataUtil.getInteger(config, "brightness.block");
+			ConfigData<Integer> skyLight = ConfigDataUtil.getInteger(config, "brightness.sky");
+			ConfigData<Display.Brightness> brightness = data -> null;
+			if (checkNull(blockLight) && checkNull(skyLight)) {
+				if (blockLight.isConstant() && skyLight.isConstant()) {
+					int bl = blockLight.get();
+					int sl = skyLight.get();
+
+					if (0 <= bl && bl <= 15 && 0 <= sl && sl <= 15) {
+						Display.Brightness b = new Display.Brightness(bl, sl);
+						brightness = data -> b;
+					}
+				} else {
+					brightness = data -> {
+						Integer bl = blockLight.get(data);
+						if (bl == null || bl < 0 || bl > 15) return null;
+
+						Integer sl = skyLight.get(data);
+						if (sl == null || sl < 0 || sl > 15) return null;
+
+						return new Display.Brightness(bl, sl);
+					};
+				}
+			}
+			transformers.put(Display.class, new TransformerImpl<>(brightness, Display::setBrightness, true));
+
+			// BlockDisplay
+			addOptBlockData(transformers, config, "block", BlockDisplay.class, BlockDisplay::setBlock);
+
+			// ItemDisplay
+			addOptMagicItem(transformers, config, "item", ItemDisplay.class, ItemDisplay::setItemStack);
+
+			addOptEnum(transformers, config, "item-display-transform", ItemDisplay.class, ItemDisplay.ItemDisplayTransform.class, ItemDisplay::setItemDisplayTransform);
+
+			// TextDisplay
+			addOptComponent(transformers, config, "text", TextDisplay.class, TextDisplay::text);
+			addOptInteger(transformers, config, "line-width", TextDisplay.class, TextDisplay::setLineWidth);
+			addOptARGBColor(transformers, config, "background", TextDisplay.class, TextDisplay::setBackgroundColor);
+			addOptByte(transformers, config, "text-opacity", TextDisplay.class, TextDisplay::setTextOpacity);
+			addOptBoolean(transformers, config, "shadow", TextDisplay.class, TextDisplay::setShadowed);
+			addOptBoolean(transformers, config, "see-through", TextDisplay.class, TextDisplay::setSeeThrough);
+			addOptBoolean(transformers, config, "default-background", TextDisplay.class, TextDisplay::setDefaultBackground);
+			addOptEnum(transformers, config, "alignment", TextDisplay.class, TextDisplay.TextAlignment.class, TextDisplay::setAlignment);
+
+			for (EntityType entityType : EntityType.values()) {
+				Class<? extends Entity> entityClass = entityType.getEntityClass();
+				if (entityClass == null) continue;
+
+				for (Class<?> transformerType : transformers.keys())
+					if (transformerType.isAssignableFrom(entityClass))
+						options.putAll(entityType, transformers.get(transformerType));
+			}
+
+			List<?> delayedDataEntries = config.getList("delayed-entity-data");
+			if (delayedDataEntries == null || delayedDataEntries.isEmpty()) {
+				if (delayedDataEntries == null && config.isSet("delayed-entity-data"))
+					MagicDebug.warn("Invalid 'delayed-entity-data' section %s.", MagicDebug.resolvePath());
+
+				return;
+			}
+
+			try (var ignored1 = MagicDebug.section(builder -> builder
+				.message("Initializing 'delayed-entity-data'.")
+				.path("delayed-entity-data", "of 'delayed-entity-data'")
+			)) {
+				for (int i = 0; i < delayedDataEntries.size(); i++) {
+					try (var ignored2 = MagicDebug.section("Initializing entry at index #%d.", i).path(null, "at index #" + i)) {
+						Object object = delayedDataEntries.get(i);
+
+						if (!(object instanceof Map<?, ?> map)) {
+							MagicDebug.warn("Invalid value '%s' %s.", object, MagicDebug.resolvePath());
+							continue;
+						}
+
+						ConfigurationSection section = ConfigReaderUtil.mapToSection(map);
+
+						ConfigurationSection dataSection = section.getConfigurationSection("entity-data");
+						if (dataSection == null) {
+							MagicDebug.warn("No 'entity-data' section %s.", MagicDebug.resolvePath());
+							continue;
+						}
+
+						ConfigData<Long> delay = ConfigDataUtil.getLong(section, "delay", 1);
+						ConfigData<Long> interval = ConfigDataUtil.getLong(section, "interval", 0);
+						ConfigData<Long> iterations = ConfigDataUtil.getLong(section, "iterations", 0);
+
+						EntityData entityData = new EntityData(dataSection, true);
+						delayedEntityData.add(new DelayedEntityData(entityData, delay, interval, iterations));
+					}
+				}
+			}
 		}
 	}
 
@@ -553,7 +581,7 @@ public class EntityData {
 							}
 
 						},
-						() -> {},
+						null,
 						delay,
 						interval
 					);
@@ -561,7 +589,7 @@ public class EntityData {
 					entity.getScheduler().runAtFixedRate(
 						MagicSpells.getInstance(),
 						task -> entityData.apply(entity, data),
-						() -> {},
+						null,
 						delay,
 						interval
 					);
@@ -570,7 +598,7 @@ public class EntityData {
 				entity.getScheduler().runDelayed(
 					MagicSpells.getInstance(),
 					task -> entityData.apply(entity, data),
-					() -> {},
+					null,
 					delay
 				);
 			}
