@@ -60,7 +60,7 @@ public class ConfigReaderUtil {
 		ConfigurationSection section = new MemoryConfiguration();
 		for (Map.Entry<?, ?> entry : map.entrySet()) {
 			String key = String.valueOf(entry.getKey());
-			if (entry.getValue() instanceof Map<?, ?> inner) section.set(key, mapToSection(inner));
+			if (entry.getValue() instanceof Map<?, ?> inner) section.createSection(key, inner);
 			else section.set(key, entry.getValue());
 		}
 		return section;
