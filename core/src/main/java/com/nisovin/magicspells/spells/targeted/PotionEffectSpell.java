@@ -48,7 +48,7 @@ public class PotionEffectSpell extends TargetedSpell implements TargetedEntitySp
 		spellPowerAffectsDuration = getConfigBoolean("spell-power-affects-duration", true);
 		spellPowerAffectsStrength = getConfigBoolean("spell-power-affects-strength", true);
 
-		potionEffects = Util.getPotionEffects(getConfigList("potion-effects", null), internalName, spellPowerAffectsDuration, spellPowerAffectsStrength);
+		potionEffects = Util.getPotionEffects(getConfigList("potion-effects", null), spellPowerAffectsDuration, spellPowerAffectsStrength);
 	}
 
 	@Override

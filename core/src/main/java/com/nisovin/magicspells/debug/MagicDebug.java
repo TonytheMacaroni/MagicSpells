@@ -1,14 +1,14 @@
 package com.nisovin.magicspells.debug;
 
-import org.intellij.lang.annotations.PrintFormat;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.intellij.lang.annotations.PrintFormat;
 
+import java.util.Objects;
 import java.util.Iterator;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayDeque;
-import java.util.Objects;
 import java.util.logging.Level;
 import java.util.stream.Stream;
 import java.util.logging.Logger;
@@ -19,6 +19,8 @@ import com.google.common.base.Preconditions;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.ansi.ANSIComponentSerializer;
+
+import org.bukkit.Keyed;
 
 import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.util.config.ConfigData;
@@ -256,6 +258,7 @@ public class MagicDebug {
 			if (arg instanceof ConfigData<?> data && data.isConstant()) args[i] = data.get();
 			else if (arg instanceof Supplier<?> supp) args[i] = supp.get();
 			else if (arg instanceof Component comp) args[i] = ANSIComponentSerializer.ansi().serialize(comp);
+			else if (arg instanceof Keyed keyed) args[i] = keyed.getKey().asMinimalString();
 		}
 
 		return args;
