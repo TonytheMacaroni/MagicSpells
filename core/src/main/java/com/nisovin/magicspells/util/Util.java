@@ -40,6 +40,8 @@ import com.destroystokyo.paper.profile.ProfileProperty;
 import io.papermc.paper.block.fluid.FluidData;
 
 import com.nisovin.magicspells.MagicSpells;
+import com.nisovin.magicspells.debug.MagicDebug;
+import com.nisovin.magicspells.debug.DebugCategory;
 import com.nisovin.magicspells.util.config.ConfigData;
 import com.nisovin.magicspells.util.config.ConfigDataUtil;
 import com.nisovin.magicspells.util.magicitems.MagicItems;
@@ -65,93 +67,110 @@ public class Util {
 		return Material.matchMaterial(name);
 	}
 
-	public static List<ConfigData<PotionEffect>> getPotionEffects(@Nullable List<?> potionEffectData, @NotNull String internalName, boolean spellPowerAffectsDuration, boolean spellPowerAffectsStrength) {
+	public static List<ConfigData<PotionEffect>> getPotionEffects(@Nullable List<?> potionEffectData, boolean spellPowerAffectsDuration, boolean spellPowerAffectsStrength) {
 		if (potionEffectData == null || potionEffectData.isEmpty()) return null;
 
 		List<ConfigData<PotionEffect>> potionEffects = new ArrayList<>();
 
-		for (Object potionEffectObj : potionEffectData) {
-			if (potionEffectObj instanceof String potionEffectString) {
-				String[] data = potionEffectString.split(" ");
+		try (var ignored = MagicDebug.section(builder -> builder
+			.category(DebugCategory.OPTIONS)
+			.message("Initializing 'potion-effects'.")
+			.path("potion-effects", "of 'potion-effects'")
+		)) {
+			for (int i = 0; i < potionEffectData.size(); i++) {
+				try (var ignored1 = MagicDebug.section("Initializing entry at index #%d.", i).path(null, "at index #" + i)) {
+					Object potionEffectObj = potionEffectData.get(i);
 
-				PotionEffectType type = PotionEffectHandler.getPotionEffectType(data[0]);
-				if (type == null) {
-					MagicSpells.error("Invalid potion effect string '" + potionEffectString + "' in spell '" + internalName + "'.");
-					continue;
-				}
+					if (potionEffectObj instanceof Map<?, ?> potionEffectMap) {
+						ConfigurationSection section = ConfigReaderUtil.mapToSection(potionEffectMap);
 
-				int duration = 0;
-				if (data.length >= 2) {
-					try {
-						duration = Integer.parseInt(data[1]);
-					} catch (NumberFormatException e) {
-						MagicSpells.error("Invalid duration '" + duration + "' in potion effect string '" + potionEffectString + "' in spell '" + internalName + "'.");
+						ConfigData<PotionEffectType> type = ConfigDataUtil.getPotionEffectType(section, "type", PotionEffectType.SPEED);
+						ConfigData<Integer> duration = ConfigDataUtil.getInteger(section, "duration", 0);
+						ConfigData<Integer> strength = ConfigDataUtil.getInteger(section, "strength", 0);
+						ConfigData<Boolean> ambient = ConfigDataUtil.getBoolean(section, "ambient", false);
+						ConfigData<Boolean> hidden = ConfigDataUtil.getBoolean(section, "hidden", false);
+						ConfigData<Boolean> icon = ConfigDataUtil.getBoolean(section, "icon", true);
+
+						ConfigData<PotionEffect> effect = spellData -> {
+							int d = duration.get(spellData);
+							if (spellPowerAffectsDuration) d = Math.round(d * spellData.power());
+
+							int s = strength.get(spellData);
+							if (spellPowerAffectsStrength) s = Math.round(s * spellData.power());
+
+							return new PotionEffect(
+								type.get(spellData),
+								d,
+								s,
+								ambient.get(spellData),
+								!hidden.get(spellData),
+								icon.get(spellData)
+							);
+						};
+
+						potionEffects.add(effect);
 						continue;
 					}
-				}
 
-				int strength = 0;
-				if (data.length >= 3) {
-					try {
-						strength = Integer.parseInt(data[2]);
-					} catch (NumberFormatException e) {
-						MagicSpells.error("Invalid strength '" + strength + "' in potion effect string '" + potionEffectString + "' in spell '" + internalName + "'.");
+					if (!(potionEffectObj instanceof String potionEffectString)) {
+						MagicDebug.warn("Invalid value '%s' %s.", potionEffectObj, MagicDebug.resolvePath());
 						continue;
 					}
+
+					String[] data = potionEffectString.split(" ");
+					if (data.length > 6) {
+						MagicDebug.warn("Invalid potion effect string '%s' %s - too many arguments.", potionEffectString, MagicDebug.resolvePath());
+						continue;
+					}
+
+					PotionEffectType type = PotionEffectHandler.getPotionEffectType(data[0]);
+					if (type == null) {
+						MagicDebug.warn("Invalid potion type '%s' %s.", data[0], MagicDebug.resolvePath());
+						continue;
+					}
+
+					int duration = 0;
+					if (data.length >= 2) {
+						try {
+							duration = Integer.parseInt(data[1]);
+						} catch (NumberFormatException e) {
+							MagicDebug.warn("Invalid duration '%s' %s.", data[1], MagicDebug.resolvePath());
+							continue;
+						}
+					}
+
+					int strength = 0;
+					if (data.length >= 3) {
+						try {
+							strength = Integer.parseInt(data[2]);
+						} catch (NumberFormatException e) {
+							MagicDebug.warn("Invalid strength '%s' %s.", data[2], MagicDebug.resolvePath());
+							continue;
+						}
+					}
+
+					boolean ambient = data.length >= 4 && Boolean.parseBoolean(data[4]);
+					boolean particles = data.length < 5 || !Boolean.parseBoolean(data[3]);
+					boolean icon = data.length < 6 || Boolean.parseBoolean(data[5]);
+
+					if (spellPowerAffectsDuration || spellPowerAffectsStrength) {
+						int finalDuration = duration;
+						int finalStrength = strength;
+
+						ConfigData<PotionEffect> effect;
+						if (!spellPowerAffectsStrength)
+							effect = spellData -> new PotionEffect(type, Math.round(finalDuration * spellData.power()), finalStrength, ambient, particles, icon);
+						else if (!spellPowerAffectsDuration)
+							effect = spellData -> new PotionEffect(type, finalDuration, Math.round(finalStrength * spellData.power()), ambient, particles, icon);
+						else
+							effect = spellData -> new PotionEffect(type, Math.round(finalDuration * spellData.power()), Math.round(finalStrength * spellData.power()), ambient, particles, icon);
+
+						potionEffects.add(effect);
+					} else {
+						PotionEffect effect = new PotionEffect(type, duration, strength, ambient, particles, icon);
+						potionEffects.add(spellData -> effect);
+					}
 				}
-
-				boolean ambient = data.length >= 4 && Boolean.parseBoolean(data[4]);
-				boolean particles = data.length < 5 || !Boolean.parseBoolean(data[3]);
-				boolean icon = data.length < 6 || Boolean.parseBoolean(data[5]);
-
-				if (data.length > 6)
-					MagicSpells.error("Trailing data found in potion effect string '" + potionEffectString + "' in spell '" + internalName + "'.");
-
-				if (spellPowerAffectsDuration || spellPowerAffectsStrength) {
-					int finalDuration = duration;
-					int finalStrength = strength;
-
-					ConfigData<PotionEffect> effect;
-					if (!spellPowerAffectsStrength)
-						effect = spellData -> new PotionEffect(type, Math.round(finalDuration * spellData.power()), finalStrength, ambient, particles, icon);
-					else if (!spellPowerAffectsDuration)
-						effect = spellData -> new PotionEffect(type, finalDuration, Math.round(finalStrength * spellData.power()), ambient, particles, icon);
-					else
-						effect = spellData -> new PotionEffect(type, Math.round(finalDuration * spellData.power()), Math.round(finalStrength * spellData.power()), ambient, particles, icon);
-
-					potionEffects.add(effect);
-				} else {
-					PotionEffect effect = new PotionEffect(type, duration, strength, ambient, particles, icon);
-					potionEffects.add(spellData -> effect);
-				}
-			} else if (potionEffectObj instanceof Map<?, ?> potionEffectMap) {
-				ConfigurationSection section = ConfigReaderUtil.mapToSection(potionEffectMap);
-
-				ConfigData<PotionEffectType> type = ConfigDataUtil.getPotionEffectType(section, "type", PotionEffectType.SPEED);
-				ConfigData<Integer> duration = ConfigDataUtil.getInteger(section, "duration", 0);
-				ConfigData<Integer> strength = ConfigDataUtil.getInteger(section, "strength", 0);
-				ConfigData<Boolean> ambient = ConfigDataUtil.getBoolean(section, "ambient", false);
-				ConfigData<Boolean> hidden = ConfigDataUtil.getBoolean(section, "hidden", false);
-				ConfigData<Boolean> icon = ConfigDataUtil.getBoolean(section, "icon", true);
-
-				ConfigData<PotionEffect> effect = spellData -> {
-					int d = duration.get(spellData);
-					if (spellPowerAffectsDuration) d = Math.round(d * spellData.power());
-
-					int s = strength.get(spellData);
-					if (spellPowerAffectsStrength) s = Math.round(s * spellData.power());
-
-					return new PotionEffect(
-						type.get(spellData),
-						d,
-						s,
-						ambient.get(spellData),
-						!hidden.get(spellData),
-						icon.get(spellData)
-					);
-				};
-
-				potionEffects.add(effect);
 			}
 		}
 
