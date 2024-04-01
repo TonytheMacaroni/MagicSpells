@@ -710,8 +710,11 @@ public abstract class Spell implements Comparable<Spell>, Listener {
 		registerEvents();
 
 		// Other processing
-		initSubspell(spellNameOnFail, "Invalid 'spell-on-fail' defined %s!", true, MagicDebug.resolvePath());
-		initSubspell(spellNameOnInterrupt, "Invalid 'spell-on-interrupt' defined %s!", true, MagicDebug.resolvePath());
+		initSubspell(spellNameOnFail, true, "for 'spell-on-fail'");
+		initSubspell(spellNameOnInterrupt, true, "for 'spell-on-interrupt'");
+
+		spellNameOnFail = null;
+		spellNameOnInterrupt = null;
 	}
 
 	protected boolean configKeyExists(String key) {
@@ -2024,17 +2027,17 @@ public abstract class Spell implements Comparable<Spell>, Listener {
 	/**
 	 * Attempts to initialise a subspell.
 	 */
-	protected Subspell initSubspell(String subspellName, String errorMessage, boolean ignoreEmptyName, Object... arguments) {
+	protected Subspell initSubspell(String subspellName, boolean ignoreEmptyName, String location) {
 		if (ignoreEmptyName && (subspellName == null || subspellName.isEmpty())) return null;
 
-		if (subspellName == null) {
-			MagicDebug.warn(errorMessage.formatted(arguments));
+		if (subspellName == null || subspellName.isEmpty()) {
+			MagicDebug.warn("No subspell defined %s %s.", location, MagicDebug.resolvePath());
 			return null;
 		}
 
 		Subspell subspell = new Subspell(subspellName);
 		if (!subspell.process()) {
-			MagicDebug.warn(errorMessage.formatted(arguments));
+			MagicDebug.warn("Invalid subspell '%s' defined %s %s.", subspellName, location, MagicDebug.resolvePath());
 			return null;
 		}
 

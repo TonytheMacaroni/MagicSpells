@@ -10,7 +10,7 @@ public class LocationSpell extends InstantSpell {
 
 	private Subspell spellToCast;
 
-	private final String spellToCastName;
+	private String spellToCastName;
 
 	private final ConfigData<String> location;
 
@@ -25,7 +25,8 @@ public class LocationSpell extends InstantSpell {
 	public void initialize() {
 		super.initialize();
 
-		spellToCast = initSubspell(spellToCastName, "LocationSpell '" + internalName + "' has an invalid spell defined!", false);
+		spellToCast = initSubspell(spellToCastName, false, "for 'spell'");
+		spellToCastName = null;
 	}
 
 	@Override
