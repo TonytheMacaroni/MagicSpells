@@ -27,7 +27,7 @@ public class HoldRightSpell extends TargetedSpell implements TargetedEntitySpell
 	private final ConfigData<Boolean> targetLocation;
 
 	private Subspell spellToCast;
-	private final String spellToCastName;
+	private String spellToCastName;
 
 	public HoldRightSpell(MagicConfig config, String spellName) {
 		super(config, spellName);
@@ -49,7 +49,8 @@ public class HoldRightSpell extends TargetedSpell implements TargetedEntitySpell
 	public void initialize() {
 		super.initialize();
 
-		spellToCast = initSubspell(spellToCastName, "HoldRightSpell '" + internalName + "' has an invalid spell defined!", false);
+		spellToCast = initSubspell(spellToCastName, false, "for 'spell'");
+		spellToCastName = null;
 	}
 
 	@Override

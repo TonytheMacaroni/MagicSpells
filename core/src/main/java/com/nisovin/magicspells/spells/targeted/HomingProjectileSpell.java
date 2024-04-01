@@ -63,11 +63,11 @@ public class HomingProjectileSpell extends TargetedSpell implements TargetedEnti
 
 	private final ConfigData<Color> arrowColor;
 
-	private final String hitSpellName;
-	private final String airSpellName;
-	private final String groundSpellName;
-	private final String modifierSpellName;
-	private final String durationSpellName;
+	private String hitSpellName;
+	private String airSpellName;
+	private String groundSpellName;
+	private String modifierSpellName;
+	private String durationSpellName;
 
 	private Subspell hitSpell;
 	private Subspell airSpell;
@@ -131,22 +131,17 @@ public class HomingProjectileSpell extends TargetedSpell implements TargetedEnti
 	public void initialize() {
 		super.initialize();
 
-		String error = "HomingProjectileSpell '" + internalName + "' has an invalid '%s' defined!";
-		hitSpell = initSubspell(hitSpellName,
-				error.formatted("spell"),
-				true);
-		groundSpell = initSubspell(groundSpellName,
-				error.formatted("spell-on-hit-ground"),
-				true);
-		airSpell = initSubspell(airSpellName,
-				error.formatted("spell-on-hit-air"),
-				true);
-		durationSpell = initSubspell(durationSpellName,
-				error.formatted("spell-after-duration"),
-				true);
-		modifierSpell = initSubspell(modifierSpellName,
-				error.formatted("spell-on-modifier-fail"),
-				true);
+		hitSpell = initSubspell(hitSpellName, true, "for 'spell'");
+		groundSpell = initSubspell(groundSpellName, true, "for 'spell-on-hit-ground'");
+		airSpell = initSubspell(airSpellName, true, "for 'spell-on-hit-air'");
+		durationSpell = initSubspell(durationSpellName, true, "for 'spell-after-duration'");
+		modifierSpell = initSubspell(modifierSpellName, true, "for 'spell-on-modifier-fail'");
+
+		hitSpellName = null;
+		groundSpellName = null;
+		airSpellName = null;
+		durationSpellName = null;
+		modifierSpellName = null;
 
 		zoneManager = MagicSpells.getNoMagicZoneManager();
 	}
