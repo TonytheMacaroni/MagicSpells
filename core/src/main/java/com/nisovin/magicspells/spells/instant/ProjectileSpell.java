@@ -61,12 +61,12 @@ public class ProjectileSpell extends InstantSpell implements TargetedLocationSpe
 
 	private final ConfigData<Double> maxDuration;
 
-	private final String hitSpellName;
-	private final String tickSpellName;
-	private final String groundSpellName;
-	private final String modifierSpellName;
-	private final String durationSpellName;
-	private final String entityLocationSpellName;
+	private String hitSpellName;
+	private String tickSpellName;
+	private String groundSpellName;
+	private String modifierSpellName;
+	private String durationSpellName;
+	private String entityLocationSpellName;
 
 	private final ConfigData<Component> projectileName;
 
@@ -142,25 +142,19 @@ public class ProjectileSpell extends InstantSpell implements TargetedLocationSpe
 	public void initialize() {
 		super.initialize();
 
-		String error = "ProjectileSpell '" + internalName + "' has an invalid '%s' defined!";
-		hitSpell = initSubspell(hitSpellName,
-				error.formatted("spell"),
-				true);
-		groundSpell = initSubspell(groundSpellName,
-				error.formatted("spell-on-hit-ground"),
-				true);
-		tickSpell = initSubspell(tickSpellName,
-				error.formatted("spell-on-tick"),
-				true);
-		durationSpell = initSubspell(durationSpellName,
-				error.formatted("spell-after-duration"),
-				true);
-		modifierSpell = initSubspell(modifierSpellName,
-				error.formatted("spell-on-modifier-fail"),
-				true);
-		entityLocationSpell = initSubspell(entityLocationSpellName,
-				error.formatted("spell-on-entity-location"),
-				true);
+		hitSpell = initSubspell(hitSpellName, true, "for 'spell'");
+		groundSpell = initSubspell(groundSpellName, true, "for 'spell-on-hit-ground'");
+		tickSpell = initSubspell(tickSpellName, true, "for 'spell-on-tick'");
+		durationSpell = initSubspell(durationSpellName, true, "for 'spell-after-duration'");
+		modifierSpell = initSubspell(modifierSpellName, true, "for 'spell-on-modifier-fail'");
+		entityLocationSpell = initSubspell(entityLocationSpellName, true, "for 'spell-on-entity-location'");
+
+		hitSpellName = null;
+		groundSpellName = null;
+		tickSpellName = null;
+		durationSpellName = null;
+		modifierSpellName = null;
+		entityLocationSpellName = null;
 	}
 
 	@Override

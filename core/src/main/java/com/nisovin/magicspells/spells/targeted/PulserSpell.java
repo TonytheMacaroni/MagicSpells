@@ -48,7 +48,7 @@ public class PulserSpell extends TargetedSpell implements TargetedLocationSpell 
 	private final List<String> spellNames;
 	private List<Subspell> spells;
 
-	private final String spellOnBreakName;
+	private String spellOnBreakName;
 	private Subspell spellOnBreak;
 
 	private final String strAtCap;
@@ -81,24 +81,22 @@ public class PulserSpell extends TargetedSpell implements TargetedLocationSpell 
 	public void initialize() {
 		super.initialize();
 
-		String prefix = "PulserSpell '" + internalName + "' has ";
-
 		spells = new ArrayList<>();
 		if (spellNames != null && !spellNames.isEmpty()) {
-			Subspell spell;
-			for (String spellName : spellNames) {
-				spell = initSubspell(spellName, prefix + "an invalid spell: '" + spellName + "' defined!", false);
+			for (int i = 0; i < spellNames.size(); i++) {
+				String spellName = spellNames.get(i);
+
+				Subspell spell = initSubspell(spellName, false, "at index #" + i + " of 'spells'");
 				if (spell == null) continue;
 
 				spells.add(spell);
 			}
 		}
 
-		spellOnBreak = initSubspell(spellOnBreakName,
-			prefix + "an invalid spell-on-break defined!",
-			true);
+		spellOnBreak = initSubspell(spellOnBreakName, true, "for 'spell-on-break'");
+		spellOnBreakName = null;
 
-		if (spells.isEmpty()) MagicSpells.error(prefix + "no spells defined!");
+		if (spells.isEmpty()) MagicSpells.error("PulserSpell '" + internalName + "' has no spells defined!");
 	}
 
 	@Override

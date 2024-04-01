@@ -51,14 +51,14 @@ public class PlayerMenuSpell extends TargetedSpell implements TargetedEntitySpel
 	private final ConfigData<Boolean> addOpener;
 	private final ConfigData<Boolean> castSpellsOnTarget;
 
-	private final String spellRangeName;
-	private final String spellOfflineName;
-	private final String spellOnLeftName;
-	private final String spellOnRightName;
-	private final String spellOnDropName;
-	private final String spellOnSwapName;
-	private final String spellOnSneakLeftName;
-	private final String spellOnSneakRightName;
+	private String spellRangeName;
+	private String spellOfflineName;
+	private String spellOnLeftName;
+	private String spellOnRightName;
+	private String spellOnDropName;
+	private String spellOnSwapName;
+	private String spellOnSneakLeftName;
+	private String spellOnSneakRightName;
 
 	private Subspell spellRange;
 	private Subspell spellOffline;
@@ -123,31 +123,23 @@ public class PlayerMenuSpell extends TargetedSpell implements TargetedEntitySpel
 	public void initialize() {
 		super.initialize();
 
-		String error = "PlayerMenuSpell '" + internalName + "' has an invalid '%s' defined!";
-		spellRange = initSubspell(spellRangeName,
-				error.formatted("spell-range"),
-				true);
-		spellOffline = initSubspell(spellOfflineName,
-				error.formatted("spell-offline"),
-				true);
-		spellOnLeft = initSubspell(spellOnLeftName,
-				error.formatted("spell-on-left"),
-				true);
-		spellOnRight = initSubspell(spellOnRightName,
-				error.formatted("spell-on-right"),
-				true);
-		spellOnDrop = initSubspell(spellOnDropName,
-				error.formatted("spell-on-drop"),
-				true);
-		spellOnSwap = initSubspell(spellOnSwapName,
-				error.formatted("spell-on-swap"),
-				true);
-		spellOnSneakLeft = initSubspell(spellOnSneakLeftName,
-				error.formatted("spell-on-sneak-left"),
-				true);
-		spellOnSneakRight = initSubspell(spellOnSneakRightName,
-				error.formatted("spell-on-sneak-right"),
-				true);
+		spellRange = initSubspell(spellRangeName, true, "for 'spell-range'");
+		spellOffline = initSubspell(spellOfflineName, true, "for 'spell-offline'");
+		spellOnLeft = initSubspell(spellOnLeftName, true, "for 'spell-on-left'");
+		spellOnRight = initSubspell(spellOnRightName, true, "for 'spell-on-right'");
+		spellOnDrop = initSubspell(spellOnDropName, true, "for 'spell-on-drop'");
+		spellOnSwap = initSubspell(spellOnSwapName, true, "for 'spell-on-swap'");
+		spellOnSneakLeft = initSubspell(spellOnSneakLeftName, true, "for 'spell-on-sneak-left'");
+		spellOnSneakRight = initSubspell(spellOnSneakRightName, true, "for 'spell-on-sneak-right'");
+
+		spellRangeName = null;
+		spellOfflineName = null;
+		spellOnLeftName = null;
+		spellOnRightName = null;
+		spellOnDropName = null;
+		spellOnSwapName = null;
+		spellOnSneakLeftName = null;
+		spellOnSneakRightName = null;
 	}
 
 	@Override

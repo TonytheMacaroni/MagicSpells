@@ -94,16 +94,16 @@ public class SpawnEntitySpell extends TargetedSpell implements TargetedLocationS
 	private final ConfigData<Boolean> allowSpawnInMidair;
 
 	private Subspell attackSpell;
-	private final String attackSpellName;
+	private String attackSpellName;
 
 	private Subspell spellOnSpawn;
-	private final String spellOnSpawnName;
+	private String spellOnSpawnName;
 
 	private Subspell spellOnDeath;
-	private final String spellOnDeathName;
+	private String spellOnDeathName;
 
 	private Subspell spellOnTarget;
-	private final String spellOnTargetName;
+	private String spellOnTargetName;
 
 	private List<PotionEffect> potionEffects;
 	private Multimap<Attribute, AttributeModifier> attributes;
@@ -241,18 +241,15 @@ public class SpawnEntitySpell extends TargetedSpell implements TargetedLocationS
 			entityData = null;
 		}
 
-		spellOnSpawn = initSubspell(spellOnSpawnName,
-				prefix + "spell-on-spawn: '" + spellOnSpawnName + "' defined!",
-				true);
-		spellOnDeath = initSubspell(spellOnDeathName,
-				prefix + "spell-on-death: '" + spellOnDeathName + "' defined!",
-				true);
-		spellOnTarget = initSubspell(spellOnTargetName,
-				prefix + "spell-on-target: '" + spellOnTargetName + "' defined!",
-				true);
-		attackSpell = initSubspell(attackSpellName,
-				prefix + "attack-spell: '" + spellOnSpawnName + "' defined!",
-				true);
+		spellOnSpawn = initSubspell(spellOnSpawnName, true, "for 'spell-on-spawn'");
+		spellOnDeath = initSubspell(spellOnDeathName, true, "for 'spell-on-death'");
+		spellOnTarget = initSubspell(spellOnTargetName, true, "for 'spell-on-target'");
+		attackSpell = initSubspell(attackSpellName, true, "for 'attack-spell'");
+
+		spellOnSpawnName = null;
+		spellOnDeathName = null;
+		spellOnTargetName = null;
+		attackSpellName = null;
 	}
 
 	@Override

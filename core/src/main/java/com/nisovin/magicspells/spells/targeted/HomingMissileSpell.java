@@ -49,12 +49,12 @@ public class HomingMissileSpell extends TargetedSpell implements TargetedEntityS
 	private final ConfigData<Boolean> stopOnModifierFail;
 	private final ConfigData<Boolean> hitAirAfterDuration;
 
-	private final String hitSpellName;
-	private final String airSpellName;
-	private final String groundSpellName;
-	private final String modifierSpellName;
-	private final String durationSpellName;
-	private final String entityLocationSpellName;
+	private String hitSpellName;
+	private String airSpellName;
+	private String groundSpellName;
+	private String modifierSpellName;
+	private String durationSpellName;
+	private String entityLocationSpellName;
 
 	private Subspell hitSpell;
 	private Subspell airSpell;
@@ -139,25 +139,19 @@ public class HomingMissileSpell extends TargetedSpell implements TargetedEntityS
 	public void initialize() {
 		super.initialize();
 
-		String error = "HomingMissileSpell '" + internalName + "' has an invalid '%s' defined!";
-		hitSpell = initSubspell(hitSpellName,
-				error.formatted("spell"),
-				true);
-		groundSpell = initSubspell(groundSpellName,
-				error.formatted("spell-on-hit-ground"),
-				true);
-		airSpell = initSubspell(airSpellName,
-				error.formatted("spell-on-hit-air"),
-				true);
-		durationSpell = initSubspell(durationSpellName,
-				error.formatted("spell-after-duration"),
-				true);
-		modifierSpell = initSubspell(modifierSpellName,
-				error.formatted("spell-on-modifier-fail"),
-				true);
-		entityLocationSpell = initSubspell(entityLocationSpellName,
-				error.formatted("spell-on-entity-location"),
-				true);
+		hitSpell = initSubspell(hitSpellName, true, "for 'spell'");
+		groundSpell = initSubspell(groundSpellName, true, "for 'spell-on-hit-ground'");
+		airSpell = initSubspell(airSpellName, true, "for 'spell-on-hit-air'");
+		durationSpell = initSubspell(durationSpellName, true, "for 'spell-after-duration'");
+		modifierSpell = initSubspell(modifierSpellName, true, "for 'spell-on-modifier-fail'");
+		entityLocationSpell = initSubspell(entityLocationSpellName, true, "for 'spell-on-entity-location'");
+
+		hitSpellName = null;
+		groundSpellName = null;
+		airSpellName = null;
+		durationSpellName = null;
+		modifierSpellName = null;
+		entityLocationSpellName = null;
 
 		zoneManager = MagicSpells.getNoMagicZoneManager();
 	}

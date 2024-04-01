@@ -51,7 +51,7 @@ public class DrainlifeSpell extends TargetedSpell implements TargetedEntitySpell
 	private final ConfigData<Boolean> avoidDamageModification;
 
 	private Subspell spellOnAnimation;
-	private final String spellOnAnimationName;
+	private String spellOnAnimationName;
 
 	private final ConfigData<DamageCause> damageType;
 
@@ -90,9 +90,8 @@ public class DrainlifeSpell extends TargetedSpell implements TargetedEntitySpell
 	public void initialize() {
 		super.initialize();
 
-		spellOnAnimation = initSubspell(spellOnAnimationName,
-				"DrainlifeSpell '" + internalName + "' has an invalid spell-on-animation defined!",
-				true);
+		spellOnAnimation = initSubspell(spellOnAnimationName, true, "for 'spell-on-animation'");
+		spellOnAnimationName = null;
 	}
 
 	@Override
