@@ -66,10 +66,10 @@ public class TotemSpell extends TargetedSpell implements TargetedLocationSpell {
 	private final List<String> spellNames;
 	private List<Subspell> spells;
 
-	private final String spellOnBreakName;
+	private String spellOnBreakName;
 	private Subspell spellOnBreak;
 
-	private final String spellOnSpawnName;
+	private String spellOnSpawnName;
 	private Subspell spellOnSpawn;
 
 	public TotemSpell(MagicConfig config, String spellName) {
@@ -154,22 +154,21 @@ public class TotemSpell extends TargetedSpell implements TargetedLocationSpell {
 
 		spells = new ArrayList<>();
 		if (spellNames != null && !spellNames.isEmpty()) {
-			Subspell spell;
+			for (int i = 0; i < spellNames.size(); i++) {
+				String spellName = spellNames.get(i);
 
-			for (String spellName : spellNames) {
-				spell = initSubspell(spellName, prefix + "spell: '" + spellName + "' defined!", false);
+				Subspell spell = initSubspell(spellName, false, "at index #" + i + " of 'spells'");
 				if (spell == null) continue;
 
 				spells.add(spell);
 			}
 		}
 
-		spellOnBreak = initSubspell(spellOnBreakName,
-			prefix + "spell-on-break: '" + spellOnBreakName + "' defined!",
-			true);
-		spellOnSpawn = initSubspell(spellOnSpawnName,
-			prefix + "spell-on-spawn: '" + spellOnSpawnName + "' defined!",
-			true);
+		spellOnBreak = initSubspell(spellOnBreakName, true, "for 'spell-on-break'");
+		spellOnSpawn = initSubspell(spellOnSpawnName, true, "for 'spell-on-spawn'");
+
+		spellOnBreakName = null;
+		spellOnSpawnName = null;
 
 		if (spells.isEmpty()) MagicSpells.error("TotemSpell '" + internalName + "' has no spells defined!");
 	}

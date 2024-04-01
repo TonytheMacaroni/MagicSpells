@@ -26,10 +26,10 @@ public class ItemProjectileSpell extends InstantSpell implements TargetedLocatio
 
 	private static Set<ItemProjectileTracker> trackerSet;
 
-	private final String spellOnTickName;
-	private final String spellOnDelayName;
-	private final String spellOnHitEntityName;
-	private final String spellOnHitGroundName;
+	private String spellOnTickName;
+	private String spellOnDelayName;
+	private String spellOnHitEntityName;
+	private String spellOnHitGroundName;
 
 	private ItemStack item;
 
@@ -104,19 +104,15 @@ public class ItemProjectileSpell extends InstantSpell implements TargetedLocatio
 	public void initialize() {
 		super.initialize();
 
-		String error = "ItemProjectileSpell '" + internalName + "' has an invalid '%s' defined!";
-		spellOnTick = initSubspell(spellOnTickName,
-				error.formatted("spell-on-tick"),
-				true);
-		spellOnDelay = initSubspell(spellOnDelayName,
-				error.formatted("spell-on-delay"),
-				true);
-		spellOnHitEntity = initSubspell(spellOnHitEntityName,
-				error.formatted("spell-on-hit-entity"),
-				true);
-		spellOnHitGround = initSubspell(spellOnHitGroundName,
-				error.formatted("spell-on-hit-ground"),
-				true);
+		spellOnTick = initSubspell(spellOnTickName, true, "for 'spell-on-tick'");
+		spellOnDelay = initSubspell(spellOnDelayName, true, "for 'spell-on-delay'");
+		spellOnHitEntity = initSubspell(spellOnHitEntityName, true, "for 'spell-on-hit-entity'");
+		spellOnHitGround = initSubspell(spellOnHitGroundName, true, "for 'spell-on-hit-ground'");
+
+		spellOnTickName = null;
+		spellOnDelayName = null;
+		spellOnHitEntityName = null;
+		spellOnHitGroundName = null;
 	}
 
 	@Override
