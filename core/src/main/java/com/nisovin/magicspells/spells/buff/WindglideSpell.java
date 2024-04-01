@@ -28,8 +28,8 @@ public class WindglideSpell extends BuffSpell {
 	private Subspell glideSpell;
 	private Subspell collisionSpell;
 
-	private final String glideSpellName;
-	private final String collisionSpellName;
+	private String glideSpellName;
+	private String collisionSpellName;
 
 	private final ConfigData<Boolean> constantHeight;
 	private final ConfigData<Boolean> constantVelocity;
@@ -69,13 +69,11 @@ public class WindglideSpell extends BuffSpell {
 	public void initialize() {
 		super.initialize();
 
-		String error = "WindglideSpell " + internalName + " has an invalid '%s' defined!";
-		glideSpell = initSubspell(glideSpellName,
-				error.formatted("spell"),
-				true);
-		collisionSpell = initSubspell(collisionSpellName,
-				error.formatted("collision-spell"),
-				true);
+		glideSpell = initSubspell(glideSpellName, true, "for 'spell'");
+		collisionSpell = initSubspell(collisionSpellName, true, "for 'collision-spell'");
+
+		glideSpellName = null;
+		collisionSpellName = null;
 	}
 
 	@Override

@@ -11,6 +11,7 @@ import org.bukkit.util.NumberConversions;
 import com.nisovin.magicspells.util.*;
 import com.nisovin.magicspells.Subspell;
 import com.nisovin.magicspells.MagicSpells;
+import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.spells.TargetedSpell;
 import com.nisovin.magicspells.util.config.ConfigData;
 import com.nisovin.magicspells.events.SpellTargetEvent;
@@ -75,16 +76,15 @@ public class AreaEffectSpell extends TargetedSpell implements TargetedLocationSp
 
 		spells = new ArrayList<>();
 
-		String prefix = "AreaEffectSpell '" + internalName + "' ";
-
 		if (spellNames == null || spellNames.isEmpty()) {
-			MagicSpells.error(prefix + "has no spells defined!");
+			MagicDebug.warn("AreaEffectSpell '%s' has no spells defined!", internalName);
 			return;
 		}
 
-		Subspell spell;
-		for (String spellName : spellNames) {
-			spell = initSubspell(spellName, prefix + "attempted to use invalid spell '" + spellName + '\'', false);
+		for (int i = 0; i < spellNames.size(); i++) {
+			String spellName = spellNames.get(i);
+
+			Subspell spell = initSubspell(spellName, false, "at index #" + i + " of 'spells'");
 			if (spell == null) continue;
 
 			spells.add(spell);
