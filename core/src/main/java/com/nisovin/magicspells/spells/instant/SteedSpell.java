@@ -55,7 +55,7 @@ public class SteedSpell extends InstantSpell {
 	private ItemStack armor;
 
 	private Subspell spellOnSpawn;
-	private final String spellOnSpawnName;
+	private String spellOnSpawnName;
 
 	public SteedSpell(MagicConfig config, String spellName) {
 		super(config, spellName);
@@ -88,9 +88,8 @@ public class SteedSpell extends InstantSpell {
 	protected void initialize() {
 		super.initialize();
 
-		spellOnSpawn = initSubspell(spellOnSpawnName,
-				"SteedSpell '" + internalName + "' has an invalid spell-on-spawn '" + spellOnSpawnName + "' defined!",
-				true);
+		spellOnSpawn = initSubspell(spellOnSpawnName, true, "for 'spell-on-spawn'");
+		spellOnSpawnName = null;
 	}
 
 	@Override
