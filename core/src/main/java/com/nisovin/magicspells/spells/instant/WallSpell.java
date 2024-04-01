@@ -96,9 +96,7 @@ public class WallSpell extends TargetedSpell implements TargetedLocationSpell {
 	public void initialize() {
 		super.initialize();
 
-		spellOnBreak = initSubspell(spellOnBreakName,
-				"WallSpell '" + internalName + "' has an invalid spell-on-break defined!",
-				true);
+		spellOnBreak = initSubspell(spellOnBreakName, true, "for 'spell-on-break'");
 
 		if (breakListener == null) {
 			breakListener = new BreakListener();

@@ -26,7 +26,7 @@ public class BombSpell extends TargetedSpell implements TargetedLocationSpell {
 	private final ConfigData<Integer> interval;
 
 	private Subspell targetSpell;
-	private final String targetSpellName;
+	private String targetSpellName;
 	
 	public BombSpell(MagicConfig config, String spellName) {
 		super(config, spellName);
@@ -45,9 +45,8 @@ public class BombSpell extends TargetedSpell implements TargetedLocationSpell {
 	public void initialize() {
 		super.initialize();
 
-		targetSpell = initSubspell(targetSpellName,
-				"BombSpell '" + internalName + "' has an invalid spell defined!",
-				true);
+		targetSpell = initSubspell(targetSpellName, true, "for 'spell'");
+		targetSpellName = null;
 	}
 
 	@Override

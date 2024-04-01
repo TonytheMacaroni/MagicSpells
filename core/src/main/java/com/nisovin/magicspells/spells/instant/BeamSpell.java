@@ -54,11 +54,11 @@ public class BeamSpell extends InstantSpell implements TargetedLocationSpell, Ta
 	private Subspell groundSpell;
 	private Subspell entityLocationSpell;
 
-	private final String hitSpellName;
-	private final String endSpellName;
-	private final String travelSpellName;
-	private final String groundSpellName;
-	private final String entityLocationSpellName;
+	private String hitSpellName;
+	private String endSpellName;
+	private String travelSpellName;
+	private String groundSpellName;
+	private String entityLocationSpellName;
 
 	private NoMagicZoneManager zoneManager;
 
@@ -103,22 +103,17 @@ public class BeamSpell extends InstantSpell implements TargetedLocationSpell, Ta
 	public void initialize() {
 		super.initialize();
 
-		String error = "BeamSpell '" + internalName + "' has an invalid '%s' defined!";
-		hitSpell = initSubspell(hitSpellName,
-				error.formatted("spell"),
-				true);
-		endSpell = initSubspell(endSpellName,
-				error.formatted("spell-on-end"),
-				true);
-		travelSpell = initSubspell(travelSpellName,
-				error.formatted("spell-on-travel"),
-				true);
-		groundSpell = initSubspell(groundSpellName,
-				error.formatted("spell-on-hit-ground"),
-				true);
-		entityLocationSpell = initSubspell(entityLocationSpellName,
-				error.formatted("spell-on-entity-location"),
-				true);
+		hitSpell = initSubspell(hitSpellName, true, "for 'spell'");
+		endSpell = initSubspell(endSpellName, true, "for 'spell-on-end'");
+		travelSpell = initSubspell(travelSpellName, true, "for 'spell-on-travel'");
+		groundSpell = initSubspell(groundSpellName, true, "for 'spell-on-hit-ground'");
+		entityLocationSpell = initSubspell(entityLocationSpellName, true, "for 'spell-on-entity-location");
+
+		hitSpellName = null;
+		endSpellName = null;
+		travelSpellName = null;
+		groundSpellName = null;
+		entityLocationSpellName = null;
 
 		zoneManager = MagicSpells.getNoMagicZoneManager();
 	}

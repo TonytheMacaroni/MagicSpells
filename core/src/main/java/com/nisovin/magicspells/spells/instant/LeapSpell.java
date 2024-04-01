@@ -24,7 +24,7 @@ public class LeapSpell extends InstantSpell {
 
 	private static LeapMonitor leapMonitor;
 
-	private final String landSpellName;
+	private String landSpellName;
 
 	private final ConfigData<Float> rotation;
 	private final ConfigData<Float> upwardVelocity;
@@ -56,9 +56,8 @@ public class LeapSpell extends InstantSpell {
 	public void initialize() {
 		super.initialize();
 
-		landSpell = initSubspell(landSpellName,
-				"LeapSpell '" + internalName + "' has an invalid land-spell defined!",
-				true);
+		landSpell = initSubspell(landSpellName, true, "for 'land-spell'");
+		landSpellName = null;
 
 		if (leapMonitor == null) leapMonitor = new LeapMonitor();
 	}

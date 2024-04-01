@@ -25,7 +25,7 @@ public class FlightPathSpell extends InstantSpell {
 
 	private FlightHandler flightHandler;
 
-	private final String landSpellName;
+	private String landSpellName;
 
 	private final ConfigData<Float> speed;
 	private final ConfigData<Float> targetX;
@@ -53,9 +53,8 @@ public class FlightPathSpell extends InstantSpell {
 	public void initialize() {
 		super.initialize();
 
-		landSpell = initSubspell(landSpellName,
-				"FlightPathSpell '" + internalName + "' has an invalid land-spell defined!",
-				true);
+		landSpell = initSubspell(landSpellName, true, "for 'land-spell'");
+		landSpellName = null;
 
 		flightHandler = new FlightHandler();
 	}

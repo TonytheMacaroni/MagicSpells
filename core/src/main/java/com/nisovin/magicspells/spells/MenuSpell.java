@@ -28,6 +28,7 @@ import co.aikar.commands.ACFUtil;
 import com.nisovin.magicspells.util.*;
 import com.nisovin.magicspells.Subspell;
 import com.nisovin.magicspells.MagicSpells;
+import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.variables.Variable;
 import com.nisovin.magicspells.util.config.ConfigData;
 import com.nisovin.magicspells.castmodifiers.ModifierSet;
@@ -156,25 +157,18 @@ public class MenuSpell extends TargetedSpell implements TargetedEntitySpell, Tar
 		super.initialize();
 
 		for (MenuOption option : options.values()) {
-			String error = "MenuSpell '" + internalName + "' has an invalid '%s' defined for: " + option.menuOptionName;
-			option.spell = initSubspell(option.spellName,
-					error.formatted("spell"),
-					true);
-			option.spellRight = initSubspell(option.spellRightName,
-					error.formatted("spell-right"),
-					true);
-			option.spellSneakLeft = initSubspell(option.spellSneakLeftName,
-					error.formatted("spell-sneak-left"),
-					true);
-			option.spellSneakRight = initSubspell(option.spellSneakRightName,
-					error.formatted("spell-sneak-right"),
-					true);
-			option.spellDrop = initSubspell(option.spellDropName,
-					error.formatted("spell-drop"),
-					true);
-			option.spellSwap = initSubspell(option.spellSwapName,
-					error.formatted("spell-swap"),
-					true);
+			try {
+				MagicDebug.pushPath(null, "on menu option '" + option.menuOptionName + "'");
+
+				option.spell = initSubspell(option.spellName, true, "for 'spell'");
+				option.spellRight = initSubspell(option.spellRightName, true, "for 'spell-right'");
+				option.spellSneakLeft = initSubspell(option.spellSneakLeftName, true, "for 'spell-sneak-left'");
+				option.spellSneakRight = initSubspell(option.spellSneakRightName, true, "for 'spell-sneak-right'");
+				option.spellDrop = initSubspell(option.spellDropName, true, "for 'spell-drop'");
+				option.spellSwap = initSubspell(option.spellSwapName, true, "for 'spell-swap'");
+			} finally {
+				MagicDebug.popPath(null);
+			}
 		}
 	}
 

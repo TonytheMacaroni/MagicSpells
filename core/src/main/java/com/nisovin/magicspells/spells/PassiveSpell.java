@@ -74,11 +74,14 @@ public class PassiveSpell extends Spell {
 
 		// Create spell list
 		spells = new ArrayList<>();
-		Subspell spell;
+
 		if (spellNames != null) {
-			for (String spellName : spellNames) {
-				spell = initSubspell(spellName, "PassiveSpell '" + internalName + "' has an invalid spell listed: " + spellName, false);
+			for (int i = 0; i < spellNames.size(); i++) {
+				String spellName = spellNames.get(i);
+
+				Subspell spell = initSubspell(spellName, false, "at index #" + i + " of 'spells'");
 				if (spell == null) continue;
+
 				spells.add(spell);
 			}
 		}

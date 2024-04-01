@@ -7,13 +7,14 @@ import com.nisovin.magicspells.Subspell;
 import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.util.SpellData;
 import com.nisovin.magicspells.util.CastResult;
+import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.util.MagicConfig;
 import com.nisovin.magicspells.spells.InstantSpell;
 
 public class CastAtMarkSpell extends InstantSpell {
 
-	private final String markSpellName;
-	private final String spellToCastName;
+	private String markSpellName;
+	private String spellToCastName;
 
 	private String strNoMark;
 
@@ -38,14 +39,16 @@ public class CastAtMarkSpell extends InstantSpell {
 
 		Spell spell = MagicSpells.getSpellByInternalName(markSpellName);
 		if (!(spell instanceof MarkSpell mark)) {
-			MagicSpells.error("CastAtMarkSpell '" + internalName + "' has an invalid mark-spell defined!");
+			MagicDebug.warn("Invalid spell '%s' for 'mark-spell' %s.", markSpellName, MagicDebug.resolvePath());
 			return;
 		}
-		
 		markSpell = mark;
 
-		spellToCast = initSubspell(spellToCastName, "CastAtMarkSpell '" + internalName + "' has an invalid spell defined!", false);
-		
+		spellToCast = initSubspell(spellToCastName, false, "for 'spell'");
+
+		markSpellName = null;
+		spellToCastName = null;
+
 		initialized = true;
 	}
 

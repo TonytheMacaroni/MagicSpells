@@ -73,9 +73,9 @@ public class BlockBeamSpell extends InstantSpell implements TargetedLocationSpel
 	private Subspell endSpell;
 	private Subspell groundSpell;
 
-	private final String hitSpellName;
-	private final String endSpellName;
-	private final String groundSpellName;
+	private String hitSpellName;
+	private String endSpellName;
+	private String groundSpellName;
 
 	private NoMagicZoneManager zoneManager;
 
@@ -128,17 +128,14 @@ public class BlockBeamSpell extends InstantSpell implements TargetedLocationSpel
 	public void initialize() {
 		super.initialize();
 
-		String error = "BlockBeamSpell '" + internalName + "' has an invalid '%s' defined!";
-		hitSpell = initSubspell(hitSpellName,
-				error.formatted("spell"),
-				true);
-		endSpell = initSubspell(endSpellName,
-				error.formatted("spell-on-end"),
-				true);
-		groundSpell = initSubspell(groundSpellName,
-				error.formatted("spell-on-hit-ground"),
-				true);
-		
+		hitSpell = initSubspell(hitSpellName, true, "for 'spell'");
+		endSpell = initSubspell(endSpellName, true, "for 'spell-on-end'");
+		groundSpell = initSubspell(groundSpellName, true, "for 'spell-on-hit-ground'");
+
+		hitSpellName = null;
+		endSpellName = null;
+		groundSpellName = null;
+
 		zoneManager = MagicSpells.getNoMagicZoneManager();
 	}
 

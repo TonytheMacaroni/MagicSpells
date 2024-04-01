@@ -144,19 +144,10 @@ public class BowSpell extends Spell {
 	public void initialize() {
 		super.initialize();
 
-		String error = "BowSpell '" + internalName + "' has an invalid '%s' defined!";
-		spellOnShoot = initSubspell(spellOnShootName,
-				error.formatted("spell"),
-				true);
-		spellOnHitEntity = initSubspell(spellOnHitEntityName,
-				error.formatted("spell-on-hit-entity"),
-				true);
-		spellOnHitGround = initSubspell(spellOnHitGroundName,
-				error.formatted("spell-on-hit-ground"),
-				true);
-		spellOnEntityLocation = initSubspell(spellOnEntityLocationName,
-				error.formatted("spell-on-entity-location"),
-				true);
+		spellOnShoot = initSubspell(spellOnShootName, true, "for 'spell'");
+		spellOnHitEntity = initSubspell(spellOnHitEntityName, true, "for 'spell-on-hit-entity'");
+		spellOnHitGround = initSubspell(spellOnHitGroundName, true, "for 'spell-on-hit-ground'");
+		spellOnEntityLocation = initSubspell(spellOnEntityLocationName, true, "for 'spell-on-entity-location'");
 
 		spellOnShootName = null;
 		spellOnHitEntityName = null;

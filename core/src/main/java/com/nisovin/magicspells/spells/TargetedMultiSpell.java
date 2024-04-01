@@ -54,14 +54,16 @@ public final class TargetedMultiSpell extends TargetedSpell implements TargetedE
 
 		if (spellList == null) return;
 
-		for (String s : spellList) {
+		for (int i = 0; i < spellList.size(); i++) {
+			String s = spellList.get(i);
+
 			if (DELAY_PATTERN.asMatchPredicate().test(s)) {
 				int delay = Integer.parseInt(s.split(" ")[1]);
 				actions.add(new DelayAction(delay));
 				continue;
 			}
 
-			Subspell spell = initSubspell(s, "TargetedMultiSpell '" + internalName + "' has an invalid spell '" + s + "' defined!", false);
+			Subspell spell = initSubspell(s, false, "at index #" + i + " of 'spells'");
 			if (spell != null) actions.add(new SpellAction(spell));
 		}
 

@@ -61,9 +61,9 @@ public class MinionSpell extends BuffSpell {
 
 	private String minionName;
 
-	private final String spawnSpellName;
-	private final String deathSpellName;
-	private final String attackSpellName;
+	private String spawnSpellName;
+	private String deathSpellName;
+	private String attackSpellName;
 
 	private Subspell spawnSpell;
 	private Subspell deathSpell;
@@ -216,16 +216,13 @@ public class MinionSpell extends BuffSpell {
 	public void initialize() {
 		super.initialize();
 
-		String error = "MinionSpell '" + internalName + "' has an invalid '%s' defined!";
-		spawnSpell = initSubspell(spawnSpellName,
-				error.formatted("spell-on-spawn"),
-				true);
-		attackSpell = initSubspell(attackSpellName,
-				error.formatted("spell-on-attack"),
-				true);
-		deathSpell = initSubspell(deathSpellName,
-				error.formatted("spell-on-death"),
-				true);
+		spawnSpell = initSubspell(spawnSpellName, true, "for 'spell-on-spawn'");
+		attackSpell = initSubspell(attackSpellName, true, "for 'spell-on-attack'");
+		deathSpell = initSubspell(deathSpellName, true, "for 'spell-on-death'");
+
+		spawnSpellName = null;
+		attackSpellName = null;
+		deathSpellName = null;
 	}
 
 	@Override

@@ -66,9 +66,9 @@ public class OrbitSpell extends TargetedSpell implements TargetedEntitySpell, Ta
 	private final ConfigData<Boolean> constantImmuneTicks;
 	private final ConfigData<Boolean> requireEntityTarget;
 
-	private final String orbitSpellName;
-	private final String groundSpellName;
-	private final String entitySpellName;
+	private String orbitSpellName;
+	private String groundSpellName;
+	private String entitySpellName;
 
 	private final List<?> interactionData;
 	private List<Interaction> interactions;
@@ -126,16 +126,13 @@ public class OrbitSpell extends TargetedSpell implements TargetedEntitySpell, Ta
 	public void initialize() {
 		super.initialize();
 
-		String error = "OrbitSpell '" + internalName + "' has an invalid '%s' defined!";
-		orbitSpell = initSubspell(orbitSpellName,
-				error.formatted("spell"),
-				true);
-		groundSpell = initSubspell(groundSpellName,
-				error.formatted("spell-on-hit-ground"),
-				true);
-		entitySpell = initSubspell(entitySpellName,
-				error.formatted("spell-on-hit-entity"),
-				true);
+		orbitSpell = initSubspell(orbitSpellName, true, "for 'spell'");
+		groundSpell = initSubspell(groundSpellName, true, "for 'spell-on-hit-ground'");
+		entitySpell = initSubspell(entitySpellName, true, "for 'spell-on-hit-entity'");
+
+		orbitSpellName = null;
+		groundSpellName = null;
+		entitySpellName = null;
 
 		if (interactionData == null || interactionData.isEmpty()) return;
 		interactions = Interaction.read(this, interactionData);

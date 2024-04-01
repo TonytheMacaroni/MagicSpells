@@ -57,7 +57,7 @@ public class ThrowBlockSpell extends InstantSpell implements TargetedLocationSpe
 	private final ConfigData<Boolean> projectileHasGravity;
 	private final ConfigData<Boolean> applySpellPowerToVelocity;
 
-	private final String spellOnLandName;
+	private String spellOnLandName;
 
 	private Subspell spellOnLand;
 
@@ -108,13 +108,11 @@ public class ThrowBlockSpell extends InstantSpell implements TargetedLocationSpe
 	public void initialize() {
 		super.initialize();
 
-		if (material == null && tntFuse == null) {
+		if (material == null && tntFuse == null)
 			MagicSpells.error("ThrowBlockSpell '" + internalName + "' has an invalid block-type defined!");
-		}
 
-		spellOnLand = initSubspell(spellOnLandName,
-				"ThrowBlockSpell '" + internalName + "' has an invalid spell-on-land defined!",
-				true);
+		spellOnLand = initSubspell(spellOnLandName, true, "for 'spell-on-land'");
+		spellOnLandName = null;
 
 		if (throwBlockListener == null) {
 			throwBlockListener = new ThrowBlockListener();
