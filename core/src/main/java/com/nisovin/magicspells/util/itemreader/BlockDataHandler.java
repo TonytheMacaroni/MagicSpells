@@ -7,8 +7,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.BlockDataMeta;
 import org.bukkit.configuration.ConfigurationSection;
 
-import com.nisovin.magicspells.MagicSpells;
-import com.nisovin.magicspells.handlers.DebugHandler;
+import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.util.magicitems.MagicItemData;
 import static com.nisovin.magicspells.util.magicitems.MagicItemData.MagicItemAttribute.BLOCK_DATA;
 
@@ -17,18 +16,16 @@ public class BlockDataHandler {
 	private static final String CONFIG_NAME = BLOCK_DATA.toString();
 
 	public static void process(ConfigurationSection config, ItemMeta meta, MagicItemData data, Material material) {
-		if (!(meta instanceof BlockDataMeta blockDataMeta) || !config.isString(CONFIG_NAME)) return;
+		if (!(meta instanceof BlockDataMeta blockDataMeta)) return;
 
 		String blockDataString = config.getString(CONFIG_NAME);
 		if (blockDataString == null) return;
 
 		BlockData blockData;
 		try {
-			blockData = Bukkit.createBlockData(material, blockDataString);
+			blockData = Bukkit.createBlockData(material, blockDataString.toLowerCase());
 		} catch (IllegalArgumentException e) {
-			MagicSpells.error("Invalid block data '" + blockDataString + "' when parsing magic item.");
-			DebugHandler.debugIllegalArgumentException(e);
-
+			MagicDebug.warn("Invalid block data '%s' on magic item.", blockDataString);
 			return;
 		}
 

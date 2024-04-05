@@ -13,9 +13,10 @@ public class ColorUtil {
 	public static Color getColorFromHexString(String hex, boolean debug) {
 		if (hex == null) return null;
 
-		String working = hex.replace("#", "");
+		if (hex.startsWith("#")) hex = hex.substring(1);
+
 		try {
-			int value = Integer.parseInt(working, 16);
+			int value = Integer.parseInt(hex, 16);
 			return Color.fromRGB(value);
 		} catch (IllegalArgumentException e) {
 			if (debug) DebugHandler.debugIllegalArgumentException(e);

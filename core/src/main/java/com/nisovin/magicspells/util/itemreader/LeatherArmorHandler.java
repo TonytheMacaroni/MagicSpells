@@ -5,6 +5,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
 import org.bukkit.configuration.ConfigurationSection;
 
+import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.handlers.DebugHandler;
 import com.nisovin.magicspells.util.magicitems.MagicItemData;
 import static com.nisovin.magicspells.util.magicitems.MagicItemData.MagicItemAttribute.COLOR;
@@ -17,15 +18,19 @@ public class LeatherArmorHandler {
 		if (!(meta instanceof LeatherArmorMeta armorMeta)) return;
 		if (!config.isString(CONFIG_NAME)) return;
 
-		try {
-			int color = Integer.parseInt(config.getString(CONFIG_NAME, "").replace("#", ""), 16);
-			Color c = Color.fromRGB(color);
+		String colorString = config.getString(CONFIG_NAME, "");
 
-			armorMeta.setColor(c);
-			if (data != null) data.setAttribute(COLOR, c);
-		} catch (NumberFormatException e) {
-			DebugHandler.debugNumberFormat(e);
+		Color color;
+		try {
+			int c = Integer.parseInt(colorString.replace("#", ""), 16);
+			color = Color.fromRGB(c);
+		} catch (IllegalArgumentException e) {
+			MagicDebug.warn("Invalid color on magic item: '%s'.", colorString);
+			return;
 		}
+
+		armorMeta.setColor(color);
+		data.setAttribute(COLOR, color);
 	}
 
 	public static void processItemMeta(ItemMeta meta, MagicItemData data) {

@@ -9,6 +9,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.FireworkMeta;
 import org.bukkit.configuration.ConfigurationSection;
 
+import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.util.Util;
 import com.nisovin.magicspells.handlers.DebugHandler;
 import com.nisovin.magicspells.util.magicitems.MagicItemData;
@@ -22,38 +23,37 @@ public class FireworkHandler {
 
 	public static void process(ConfigurationSection config, ItemMeta meta, MagicItemData data) {
 		if (!(meta instanceof FireworkMeta fireworkMeta)) return;
-		if (!config.isList(FIREWORK_EFFECTS_CONFIG_NAME)) return;
 
-		int power = 0;
-		if (config.isInt(POWER_CONFIG_NAME)) power = config.getInt(POWER_CONFIG_NAME);
+		int power = config.getInt(POWER_CONFIG_NAME, 0);
+		fireworkMeta.setPower(power);
+		data.setAttribute(POWER, power);
 
 		if (config.isList(FIREWORK_EFFECTS_CONFIG_NAME)) {
-			List<String> argList = config.getStringList(FIREWORK_EFFECTS_CONFIG_NAME);
+			List<String> effectStrings = config.getStringList(FIREWORK_EFFECTS_CONFIG_NAME);
 
 			List<FireworkEffect> fireworkEffects = new ArrayList<>();
 
 			// <type> <trail> <flicker> <colors>(,) <fadeColors>(,)
-			for (String str : argList) {
-				String[] args = str.split(" ");
-				if (args.length != 4 && args.length != 5) continue;
-
-				String type = args[0];
-				FireworkEffect.Type fireworkType = null;
-				try {
-					fireworkType = FireworkEffect.Type.valueOf(type.toUpperCase());
-				} catch (IllegalArgumentException e) {
-					DebugHandler.debugBadEnumValue(FireworkEffect.Type.class, type.toUpperCase());
+			for (String effectString : effectStrings) {
+				String[] values = effectString.split(" ");
+				if (values.length != 4 && values.length != 5) {
+					MagicDebug.warn("Invalid firework effect '%s' on magic item - missing or too many values.", effectString);
+					continue;
 				}
-				if (fireworkType == null) continue;
 
-				boolean trail = Boolean.parseBoolean(args[1]);
-				boolean flicker = Boolean.parseBoolean(args[2]);
+				FireworkEffect.Type fireworkType;
+				try {
+					fireworkType = FireworkEffect.Type.valueOf(values[0].toUpperCase());
+				} catch (IllegalArgumentException e) {
+					MagicDebug.warn("Invalid firework effect type '%s' on magic item.", values[0]);
+					continue;
+				}
+				boolean trail = Boolean.parseBoolean(values[1]);
+				boolean flicker = Boolean.parseBoolean(values[2]);
+				List<Color> colors = FireworkEffectHandler.getColorsFromString(values[3]);
+				List<Color> fadeColors = values.length > 4 ? FireworkEffectHandler.getColorsFromString(values[4]) : List.of();
 
-				Color[] colors = Util.getColorsFromString(args[3]);
-
-				Color[] fadeColors;
-				if (args.length == 5) fadeColors = Util.getColorsFromString(args[4]);
-				else fadeColors = new Color[0];
+				if (colors.isEmpty()) continue;
 
 				FireworkEffect effect = FireworkEffect.builder()
 						.flicker(flicker)
@@ -71,9 +71,6 @@ public class FireworkHandler {
 				data.setAttribute(FIREWORK_EFFECTS, fireworkEffects);
 			}
 		}
-
-		fireworkMeta.setPower(power);
-		data.setAttribute(POWER, power);
 	}
 
 	public static void processItemMeta(ItemMeta meta, MagicItemData data) {

@@ -87,7 +87,7 @@ public class PulserSpell extends TargetedSpell implements TargetedLocationSpell 
 		if (spellNames != null && !spellNames.isEmpty()) {
 			Subspell spell;
 			for (String spellName : spellNames) {
-				spell = initSubspell(spellName, prefix + "an invalid spell: '" + spellName + "' defined!");
+				spell = initSubspell(spellName, prefix + "an invalid spell: '" + spellName + "' defined!", false);
 				if (spell == null) continue;
 
 				spells.add(spell);

@@ -132,8 +132,7 @@ public class AreaScanSpell extends TargetedSpell implements TargetedLocationSpel
 	public void initialize() {
 		super.initialize();
 
-		spellToCast = initSubspell(spellToCastName,
-				"AreaScanSpell '" + internalName + "' has an invalid spell: '" + spellToCastName + "' defined!");
+		spellToCast = initSubspell(spellToCastName, "AreaScanSpell '" + internalName + "' has an invalid spell: '" + spellToCastName + "' defined!", false);
 	}
 
 	@Override

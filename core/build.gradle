@@ -20,6 +20,7 @@ dependencies {
     implementation(group: "net.milkbowl.vault", name: "VaultAPI", version: "1.7") { transitive = false }
     implementation(group: "me.clip", name: "placeholderapi", version: "2.11.6") { transitive = false }
     implementation(group: "com.github.GriefPrevention", name: "GriefPrevention", version: "17.0.0") { transitive = false }
+    implementation(group: "net.kyori", name: "adventure-text-serializer-ansi", version: "4.16.0")
     implementation(group: "com.github.Xezard", name: "XGlow", version: "1.1.0") {
         exclude(module: "XGlowPlugin")
         exclude(module: "XGlowExample")

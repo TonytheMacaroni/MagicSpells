@@ -58,9 +58,12 @@ import com.nisovin.magicspells.handlers.*;
 import com.nisovin.magicspells.listeners.*;
 import com.nisovin.magicspells.util.managers.*;
 import com.nisovin.magicspells.mana.ManaSystem;
+import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.mana.ManaHandler;
 import com.nisovin.magicspells.spells.BuffSpell;
+import com.nisovin.magicspells.debug.DebugConfig;
 import com.nisovin.magicspells.variables.Variable;
+import com.nisovin.magicspells.debug.DebugCategory;
 import com.nisovin.magicspells.spells.PassiveSpell;
 import com.nisovin.magicspells.commands.MagicCommand;
 import com.nisovin.magicspells.util.compat.EventUtil;
@@ -142,6 +145,7 @@ public class MagicSpells extends JavaPlugin {
 	private ExperienceBarManager expBarManager;
 
 	private MagicConfig config;
+	private DebugConfig debugConfig;
 	private MagicLogger magicLogger;
 	private LifeLengthTracker lifeLengthTracker;
 
@@ -233,45 +237,7 @@ public class MagicSpells extends JavaPlugin {
 	@Override
 	public void onEnable() {
 		load();
-
-		Metrics metrics = new Metrics(this, 892);
-
-		metrics.addCustomChart(new DrilldownPie("spells", () -> {
-			Map<String, Map<String, Integer>> map = new HashMap<>();
-			if (spells == null) return map;
-
-			for (Spell spell : spells.values()) {
-				String name = spell.getClass().getName();
-				if (!name.startsWith("com.nisovin.magicspells.spells")) continue;
-				name = name.replace("com.nisovin.magicspells.spells.", "");
-
-				String[] typeSplit = name.split("\\.", 2);
-				String formalPackage = typeSplit[0].substring(0, 1).toUpperCase() + typeSplit[0].substring(1);
-
-				String spellPackage = (typeSplit.length == 1 ? "General" : formalPackage) + " Spells";
-				String spellClass = typeSplit.length == 1 ? typeSplit[0] : typeSplit[1];
-
-				map.computeIfAbsent(spellPackage, key -> new HashMap<>());
-				map.get(spellPackage).compute(spellClass, (k, v) -> (v == null ? 0 : v) + 1);
-			}
-			return map;
-		}));
-		metrics.addCustomChart(new AdvancedPie("passive_listeners", () -> {
-			IntMap<String> map = new IntMap<>();
-			if (spells == null) return map;
-
-			for (Spell spell : spells.values()) {
-				if (!spell.getClass().getName().startsWith("com.nisovin.magicspells.spells")) continue;
-				if (!(spell instanceof PassiveSpell passiveSpell)) continue;
-
-				for (PassiveListener listener : passiveSpell.getPassiveListeners()) {
-					String name = listener.getClass().getSimpleName();
-					map.increment(name.substring(0, name.lastIndexOf("Listener")));
-				}
-			}
-			return map;
-		}));
-		metrics.addCustomChart(new SimplePie("reload_time", () -> "<" + (lastReloadTime - lastReloadTime % 500 + 500) + " ms"));
+		initMetrics();
 	}
 
 	public void load() {
@@ -300,28 +266,195 @@ public class MagicSpells extends JavaPlugin {
 		if (!new File(getDataFolder(), "general.yml").exists()) {
 			saveResource("general.yml", false);
 			if (!new File(getDataFolder(), "mana.yml").exists()) saveResource("mana.yml", false);
-			if (!new File(getDataFolder(), "spells-command.yml").exists()) saveResource("spells-command.yml", false);
-			if (!new File(getDataFolder(), "spells-regular.yml").exists()) saveResource("spells-regular.yml", false);
+			if (!new File(getDataFolder(), "spells-command.yml").exists())
+				saveResource("spells-command.yml", false);
+			if (!new File(getDataFolder(), "spells-regular.yml").exists())
+				saveResource("spells-regular.yml", false);
 			if (!new File(getDataFolder(), "zones.yml").exists()) saveResource("zones.yml", false);
 			if (!new File(getDataFolder(), "defaults.yml").exists()) saveResource("defaults.yml", false);
 		}
+
 		config = new MagicConfig();
 		if (!config.isLoaded()) {
-			MagicSpells.log(Level.SEVERE, "Error in config file, stopping config load");
+			MagicDebug.error("Config did not load properly. Stopping load.");
 			return;
 		}
 
-		// Construct volatile handler
-		volatileCodeHandle = ManagerVolatile.constructVolatileCodeHandler();
+		initOptions();
+		initHandlers();
 
+		// Call loading event
+		Bukkit.getPluginManager().callEvent(new MagicSpellsLoadingEvent(this));
+
+		loadMagicItems();
+		loadRecipes();
+
+		loadSpells();
+		if (spells.isEmpty()) {
+			MagicDebug.error("No spells loaded!");
+			return;
+		}
+
+		initPermissions();
+
+		if (config.getBoolean("general.enable-magic-xp", false)) {
+			try (var xpContext = MagicDebug.section(DebugCategory.XP_SYSTEM, "Loading xp system...")) {
+				magicXpHandler = new MagicXpHandler(this, config);
+			}
+
+			MagicDebug.info("...xp system loaded.");
+		}
+
+		// Load player data using a storage handler
+		try (var storage = MagicDebug.section(DebugCategory.STORAGE, "Initializing storage handler...")) {
+			storageHandler = new TXTFileStorage(plugin);
+			//storageHandler = new DatabaseStorage(plugin, new SQLiteDatabase(plugin, "spellbooks.db"));
+			storageHandler.initialize();
+		}
+		MagicDebug.info(DebugCategory.STORAGE, "...storage handler initialized.");
+
+		// Load online player spellbooks
+		try (var spellbook = MagicDebug.section(DebugCategory.SPELLBOOK, "Loading online player spellbooks...")) {
+			Util.forEachPlayerOnline(pl -> spellbooks.put(pl.getName(), new Spellbook(pl)));
+		}
+		MagicDebug.info(DebugCategory.SPELLBOOK, "...spellbooks loaded.");
+
+		// Load saved cooldowns
+		// TODO: Persist using YAML or JSON instead.
+		if (cooldownsPersistThroughReload) {
+			File file = new File(getDataFolder(), "cooldowns.txt");
+			Scanner scanner = null;
+			if (file.exists()) {
+				try {
+					scanner = new Scanner(file);
+					String line;
+					String[] data;
+					long cooldown;
+					Spell spell;
+					while (scanner.hasNext()) {
+						line = scanner.nextLine();
+						if (line.isEmpty()) continue;
+						data = line.split(":");
+						cooldown = Long.parseLong(data[2]);
+						if (cooldown > System.currentTimeMillis()) {
+							spell = getSpellByInternalName(data[0]);
+							if (spell != null) spell.setCooldownManually(UUID.fromString(data[1]), cooldown);
+						}
+					}
+				} catch (Exception e) {
+					e.printStackTrace();
+				} finally {
+					if (scanner != null) scanner.close();
+					file.delete();
+				}
+			}
+			MagicDebug.info("Restored cooldowns.");
+		}
+
+		// Setup mana
+		if (enableManaSystem) {
+			try (var mana = MagicDebug.section(DebugCategory.MANA, "Enabling mana system.")) {
+				manaHandler = new ManaSystem(config);
+			}
+
+		}
+		MagicDebug.info("...mana system enabled.");
+
+		// Load listeners
+		try (var castListeners = MagicDebug.section(DebugCategory.CAST_LISTENERS, "Registering cast listeners...")) {
+			registerEvents(new MagicPlayerListener());
+			registerEvents(new MagicSpellListener());
+			registerEvents(new CastListener());
+
+			LeftClickListener leftClickListener = new LeftClickListener();
+			if (leftClickListener.hasLeftClickCastItems()) registerEvents(leftClickListener);
+
+			RightClickListener rightClickListener = new RightClickListener();
+			if (rightClickListener.hasRightClickCastItems()) registerEvents(rightClickListener);
+
+			ConsumeListener consumeListener = new ConsumeListener();
+			if (consumeListener.hasConsumeCastItems()) registerEvents(consumeListener);
+			if (config.getBoolean("general.enable-dance-casting", true)) new DanceCastListener(this, config);
+		}
+		MagicDebug.info("...cast listeners registered.");
+
+		// Initialize logger
+		if (config.getBoolean("general.enable-logging", false)) {
+			magicLogger = new MagicLogger(this);
+		}
+
+		// Register commands
+		commandManager.enableUnstableAPI("help");
+		commandManager.registerCommand(new MagicCommand());
+		CommandHelpFilter.mapPerms();
+
+		// Setup profiling
+		if (enableProfiling) {
+			profilingTotalTime = new HashMap<>();
+			profilingRuns = new HashMap<>();
+		}
+
+		CompatBasics.setupExemptionAssistant();
+
+		Bukkit.getScheduler().runTaskLater(this, this::loadExternalData, 1);
+	}
+
+	private void initMetrics() {
+		Metrics metrics = new Metrics(this, 892);
+
+		metrics.addCustomChart(new DrilldownPie("spells", () -> {
+			Map<String, Map<String, Integer>> map = new HashMap<>();
+			if (spells == null) return map;
+
+			for (Spell spell : spells.values()) {
+				String name = spell.getClass().getName();
+				if (!name.startsWith("com.nisovin.magicspells.spells")) continue;
+				name = name.replace("com.nisovin.magicspells.spells.", "");
+
+				String[] typeSplit = name.split("\\.", 2);
+				String formalPackage = typeSplit[0].substring(0, 1).toUpperCase() + typeSplit[0].substring(1);
+
+				String spellPackage = (typeSplit.length == 1 ? "General" : formalPackage) + " Spells";
+				String spellClass = typeSplit.length == 1 ? typeSplit[0] : typeSplit[1];
+
+				map.computeIfAbsent(spellPackage, key -> new HashMap<>());
+				map.get(spellPackage).compute(spellClass, (k, v) -> (v == null ? 0 : v) + 1);
+			}
+			return map;
+		}));
+
+		metrics.addCustomChart(new AdvancedPie("passive_listeners", () -> {
+			IntMap<String> map = new IntMap<>();
+			if (spells == null) return map;
+
+			for (Spell spell : spells.values()) {
+				if (!spell.getClass().getName().startsWith("com.nisovin.magicspells.spells")) continue;
+				if (!(spell instanceof PassiveSpell passiveSpell)) continue;
+
+				for (PassiveListener listener : passiveSpell.getPassiveListeners()) {
+					String name = listener.getClass().getSimpleName();
+					map.increment(name.substring(0, name.lastIndexOf("Listener")));
+				}
+			}
+			return map;
+		}));
+
+		metrics.addCustomChart(new SimplePie("reload_time", () -> "<" + (lastReloadTime - lastReloadTime % 500 + 500) + " ms"));
+	}
+
+	private void initOptions() {
+		// General
 		String path = "general.";
-		String manaPath = "mana.";
 
 		debug = config.getBoolean(path + "debug", false);
 		debugNull = config.getBoolean(path + "debug-null", true);
 		debugNumberFormat = config.getBoolean(path + "debug-number-format", true);
 		debugLevelOriginal = config.getInt(path + "debug-level", 3);
 		debugLevel = debugLevelOriginal;
+
+		MagicDebug.pushPath("general", "in 'general.yml'");
+		debugConfig = new DebugConfig(config.getSection("general"));
+		MagicDebug.popPath("general");
 
 		tabCompleteInternalNames = config.getBoolean(path + "tab-complete-internal-names", false);
 		terminateEffectlibInstances = config.getBoolean(path + "terminate-effectlib-instances", true);
@@ -416,291 +549,312 @@ public class MagicSpells extends JavaPlugin {
 
 		allowAnticheatIntegrations = config.getBoolean(path + "allow-anticheat-integrations", false);
 
-		enableManaSystem = config.getBoolean(manaPath + "enable-mana-system", false);
+		// Magic Items
+		hideMagicItemTooltips = config.getBoolean(path + "hide-magic-items-tooltips", false);
 
-		// Create handling objects
+		// Mana
+		enableManaSystem = config.getBoolean("mana.enable-mana-system", false);
+	}
+
+	private void initHandlers() {
+		volatileCodeHandle = ManagerVolatile.constructVolatileCodeHandler();
 		zoneManager = new NoMagicZoneManager();
 		cleanserManager = new CleanserManager();
 		customGoalsManager = new CustomGoalsManager();
-		buffManager = new BuffManager(config.getInt(path + "buff-check-interval", 1));
+		buffManager = new BuffManager(config.getInt("general.buff-check-interval", 1));
 		expBarManager = new ExperienceBarManager();
 		bossBarManager = new BossBarManager();
 		if (CompatBasics.pluginEnabled("Vault")) moneyHandler = new MoneyHandler();
 		lifeLengthTracker = new LifeLengthTracker();
-
-		// Call loading event
-		Bukkit.getPluginManager().callEvent(new MagicSpellsLoadingEvent(this));
-
-		// Init permissions
-		log("Initializing permissions");
-		boolean opsIgnoreReagents = config.getBoolean(path + "ops-ignore-reagents", true);
-		boolean opsIgnoreCooldowns = config.getBoolean(path + "ops-ignore-cooldowns", true);
-		boolean opsIgnoreCastTimes = config.getBoolean(path + "ops-ignore-cast-times", true);
-
-		Map<String, Boolean> permGrantChildren = new HashMap<>();
-		Map<String, Boolean> permLearnChildren = new HashMap<>();
-		Map<String, Boolean> permCastChildren = new HashMap<>();
-		Map<String, Boolean> permTeachChildren = new HashMap<>();
-
-		// Load magic items
-		log("Loading magic items...");
-		hideMagicItemTooltips = config.getBoolean(path + "hide-magic-items-tooltips", false);
-		if (hideMagicItemTooltips) log("... hiding tooltips!");
-
-		MagicItems.getMagicItems().clear();
-		String itemStr = "magic-items";
-		if (config.contains(path + itemStr)) {
-			Set<String> magicItems = config.getKeys(path + itemStr);
-			String str;
-			MagicItem magicItem;
-			ConfigurationSection section;
-			if (magicItems != null) {
-				for (String key : magicItems) {
-					if (config.isString(path + itemStr + "." + key)) {
-						str = config.getString(path + itemStr + "." + key, null);
-						if (str == null) continue;
-
-						magicItem = MagicItems.getMagicItemFromString(str);
-						if (magicItem != null) MagicItems.getMagicItems().put(key, magicItem);
-						else MagicSpells.error("Invalid magic item: " + key + ": " + str);
-
-					} else if (config.isSection(path + itemStr + "." + key)) {
-						section = config.getSection(path + itemStr + "." + key);
-						if (section == null) continue;
-
-						magicItem = MagicItems.getMagicItemFromSection(section);
-						if (magicItem != null) MagicItems.getMagicItems().put(key, magicItem);
-						else MagicSpells.error("Invalid magic item: " + key + ": (section)");
-
-					} else MagicSpells.error("Invalid magic item: " + key);
-				}
-			}
-		}
-		log("..." + MagicItems.getMagicItems().size() + " magic items loaded");
-
-		// Load crafting recipes.
-		log("Loading recipes...");
-		if (config.contains(path + "recipes") && config.isSection(path + "recipes")) {
-			ConfigurationSection recipeSec = config.getSection(path + "recipes");
-			ConfigurationSection recipe;
-			for (String recipeKey : recipeSec.getKeys(false)) {
-				recipe = recipeSec.getConfigurationSection(recipeKey);
-				if (recipe == null) continue;
-				CustomRecipes.create(recipe);
-			}
-			Bukkit.updateRecipes();
-		}
-		log("..." + CustomRecipes.getRecipes().size() + " recipes loaded");
-
-		// Load spells
-		log("Loading spells...");
-		loadSpells(permGrantChildren, permLearnChildren, permCastChildren, permTeachChildren);
-		log("...spells loaded: " + spells.size());
-		if (spells.isEmpty()) {
-			MagicSpells.error("No spells loaded!");
-			return;
-		}
-
-		log("Finalizing perms...");
-		// Finalize spell permissions
-		addPermission("grant.*", PermissionDefault.FALSE, permGrantChildren);
-		addPermission("learn.*", defaultAllPermsFalse ? PermissionDefault.FALSE : PermissionDefault.TRUE, permLearnChildren);
-		addPermission("cast.*", defaultAllPermsFalse ? PermissionDefault.FALSE : PermissionDefault.TRUE, permCastChildren);
-		addPermission("teach.*", defaultAllPermsFalse ? PermissionDefault.FALSE : PermissionDefault.TRUE, permTeachChildren);
-
-		// Op permissions
-		addPermission("noreagents", opsIgnoreReagents? PermissionDefault.OP : PermissionDefault.FALSE, "Allows casting without needing reagents");
-		addPermission("nocooldown", opsIgnoreCooldowns? PermissionDefault.OP : PermissionDefault.FALSE, "Allows casting without being affected by cooldowns");
-		addPermission("nocasttime", opsIgnoreCastTimes? PermissionDefault.OP : PermissionDefault.FALSE, "Allows casting without being affected by cast times");
-		addPermission("notarget", PermissionDefault.FALSE, "Prevents being targeted by any targeted spells");
-		addPermission("silent", PermissionDefault.FALSE, "Prevents cast messages from being broadcast to players");
-
-		// Advanced permissions
-		addPermission("advanced.list", PermissionDefault.FALSE);
-		addPermission("advanced.forget", PermissionDefault.FALSE);
-		addPermission("advanced.scroll", PermissionDefault.FALSE);
-		Map<String, Boolean> advancedPermChildren = new HashMap<>();
-		advancedPermChildren.put(Perm.ADVANCED_LIST.getNode(), true);
-		advancedPermChildren.put(Perm.ADVANCED_FORGET.getNode(), true);
-		advancedPermChildren.put(Perm.ADVANCED_SCROLL.getNode(), true);
-		addPermission("advanced.*", defaultAllPermsFalse ? PermissionDefault.FALSE : PermissionDefault.OP, advancedPermChildren);
-
-		// Command permissions
-		addPermission("command.help", PermissionDefault.OP);
-		addPermission("command.reload", PermissionDefault.OP);
-		addPermission("command.reload.spellbook", PermissionDefault.OP);
-		addPermission("command.reload.effectlib", PermissionDefault.OP);
-		addPermission("command.resetcd", PermissionDefault.OP);
-		addPermission("command.mana.show", PermissionDefault.OP);
-		addPermission("command.mana.reset", PermissionDefault.OP);
-		addPermission("command.mana.setmax", PermissionDefault.OP);
-		addPermission("command.mana.add", PermissionDefault.OP);
-		addPermission("command.mana.set", PermissionDefault.OP);
-		addPermission("command.mana.updaterank", PermissionDefault.OP);
-		addPermission("command.variable.show", PermissionDefault.OP);
-		addPermission("command.variable.modify", PermissionDefault.OP);
-		addPermission("command.magicitem", PermissionDefault.OP);
-		addPermission("command.util.download", PermissionDefault.OP);
-		addPermission("command.util.update", PermissionDefault.OP);
-		addPermission("command.util.saveskin", PermissionDefault.OP);
-		addPermission("command.profilereport", PermissionDefault.OP);
-		addPermission("command.debug", PermissionDefault.OP);
-		addPermission("command.taskinfo", PermissionDefault.OP);
-		addPermission("command.magicxp", PermissionDefault.OP);
-		addPermission("command.cast.power", PermissionDefault.OP);
-		addPermission("command.cast.self", PermissionDefault.TRUE);
-		addPermission("command.cast.as", PermissionDefault.OP);
-		addPermission("command.cast.on", PermissionDefault.OP);
-		addPermission("command.cast.at", PermissionDefault.OP);
-
-		log("...done");
-
-		// Load xp system
-		if (config.getBoolean(path + "enable-magic-xp", false)) {
-			log("Loading xp system...");
-			magicXpHandler = new MagicXpHandler(this, config);
-			log("...xp system loaded");
-		}
-
-		// Load player data using a storage handler
-		log("Initializing storage handler...");
-		storageHandler = new TXTFileStorage(plugin);
-		//storageHandler = new DatabaseStorage(plugin, new SQLiteDatabase(plugin, "spellbooks.db"));
-		storageHandler.initialize();
-		log("...done");
-
-		// Load online player spellbooks
-		log("Loading online player spellbooks...");
-		Util.forEachPlayerOnline(pl -> spellbooks.put(pl.getName(), new Spellbook(pl)));
-		log("...done");
-
-		// Load saved cooldowns
-		if (cooldownsPersistThroughReload) {
-			File file = new File(getDataFolder(), "cooldowns.txt");
-			Scanner scanner = null;
-			if (file.exists()) {
-				try {
-					scanner = new Scanner(file);
-					String line;
-					String[] data;
-					long cooldown;
-					Spell spell;
-					while (scanner.hasNext()) {
-						line = scanner.nextLine();
-						if (line.isEmpty()) continue;
-						data = line.split(":");
-						cooldown = Long.parseLong(data[2]);
-						if (cooldown > System.currentTimeMillis()) {
-							spell = getSpellByInternalName(data[0]);
-							if (spell != null) spell.setCooldownManually(UUID.fromString(data[1]), cooldown);
-						}
-					}
-				} catch (Exception e) {
-					e.printStackTrace();
-				} finally {
-					if (scanner != null) scanner.close();
-					file.delete();
-				}
-			}
-			log("Restored cooldowns");
-		}
-
-		// Setup mana
-		if (enableManaSystem) {
-			log("Enabling mana system...");
-
-			manaHandler = new ManaSystem(config);
-
-			log("...done");
-		}
-
-		// Load listeners
-		log("Loading cast listeners...");
-		registerEvents(new MagicPlayerListener());
-		registerEvents(new MagicSpellListener());
-		registerEvents(new CastListener());
-
-		LeftClickListener leftClickListener = new LeftClickListener();
-		if (leftClickListener.hasLeftClickCastItems()) registerEvents(leftClickListener);
-
-		RightClickListener rightClickListener = new RightClickListener();
-		if (rightClickListener.hasRightClickCastItems()) registerEvents(rightClickListener);
-
-		ConsumeListener consumeListener = new ConsumeListener();
-		if (consumeListener.hasConsumeCastItems()) registerEvents(consumeListener);
-		if (config.getBoolean(path + "enable-dance-casting", true)) new DanceCastListener(this, config);
-
-		log("...done");
-
-		// Initialize logger
-		if (config.getBoolean(path + "enable-logging", false)) {
-			magicLogger = new MagicLogger(this);
-		}
-
-		// Register commands
-		commandManager.enableUnstableAPI("help");
-		commandManager.registerCommand(new MagicCommand());
-		commandManager.setValidNamePredicate(string -> true);
-		CommandHelpFilter.mapPerms();
-
-		// Setup profiling
-		if (enableProfiling) {
-			profilingTotalTime = new HashMap<>();
-			profilingRuns = new HashMap<>();
-		}
-
-		CompatBasics.setupExemptionAssistant();
-
-		// Load external data
-		Bukkit.getScheduler().runTaskLater(this, this::loadExternalData, 1);
 	}
 
-	private void initializeSpells() {
-		log("Initializing spells...");
+	private void loadMagicItems() {
+		magic_items:
+		try (var context = MagicDebug.section(DebugCategory.MAGIC_ITEMS, "Loading magic items...")) {
+			if (hideMagicItemTooltips) MagicDebug.info("Hiding magic item tooltips!");
 
-		Iterator<Map.Entry<String, Spell>> it = spells.entrySet().iterator();
-		while (it.hasNext()) {
-			Spell spell = it.next().getValue();
+			MagicItems.getMagicItems().clear();
 
-			DependsOn dependsOn = spell.getClass().getAnnotation(DependsOn.class);
-			if (dependsOn != null && !Util.checkPluginsEnabled(dependsOn.value())) {
-				spellsOrdered.remove(spell);
-				it.remove();
+			ConfigurationSection magicItems = config.getSection("general.magic-items");
+			if (magicItems == null) break magic_items;
 
-				MagicSpells.error(spell.getClass().getSimpleName() + " '" + spell.internalName + "' could not be loaded.");
-				continue;
-			}
+			for (String internalName : magicItems.getKeys(false)) {
+				String fileName = config.getFile(MagicConfig.Category.MAGIC_ITEMS, internalName);
 
-			spellNames.put(Util.getPlainString(Util.getMiniMessage(spell.getName().toLowerCase())), spell);
+				try (var itemContext = MagicDebug.section(builder -> builder
+					.category(DebugCategory.MAGIC_ITEMS)
+					.message("Loading magic item '%s'...", internalName)
+					.path("general.magic-items", "on magic item '" + internalName + "'")
+				)) {
+					if (magicItems.isString(internalName)) {
+						String data = magicItems.getString(internalName, null);
+						if (data == null) {
+							MagicDebug.error("Invalid magic item '%s' in '%s'.", internalName, fileName);
+							continue;
+						}
 
-			for (String tag : spell.getTags())
-				spellsByTag.put(tag, spell);
+						MagicItem item = MagicItems.getMagicItemFromString(data);
+						if (item == null) {
+							MagicDebug.error("Failed to load magic item '%s' in '%s'.", internalName, fileName);
+							continue;
+						}
 
-			String[] aliases = spell.getAliases();
-			if (aliases != null) {
-				for (String alias : aliases) {
-					if (!spellNames.containsKey(alias.toLowerCase())) spellNames.put(alias.toLowerCase(), spell);
-				}
-			}
+						MagicItems.getMagicItems().put(internalName, item);
+						MagicDebug.info("Loaded magic item: '%s'.", item);
 
-			List<String> incs = spell.getIncantations();
-			if (incs != null && !incs.isEmpty()) {
-				for (String s : incs) {
-					incantations.put(s.toLowerCase(), spell);
+						continue;
+					}
+
+					if (magicItems.isConfigurationSection(internalName)) {
+						ConfigurationSection section = magicItems.getConfigurationSection(internalName);
+						if (section == null) {
+							MagicDebug.error("Invalid magic item '%s' in '%s'.", internalName, fileName);
+							continue;
+						}
+
+						MagicItem item = MagicItems.getMagicItemFromSection(section);
+						if (item == null) {
+							MagicDebug.error("Failed to load magic item '%s' in '%s'.", internalName, fileName);
+							continue;
+						}
+
+						MagicItems.getMagicItems().put(internalName, item);
+						MagicDebug.info("Loaded magic item: '%s'.", item);
+
+						continue;
+					}
+
+					MagicDebug.error("Invalid magic item '%s' in '%s'.", internalName, fileName);
 				}
 			}
 		}
 
-		spells.values().forEach(Spell::initialize);
+		MagicDebug.info(DebugCategory.MAGIC_ITEMS, "...magic items loaded: %d", MagicItems.getMagicItems().size());
+	}
 
-		zoneManager.load(config);
-		if (!incantations.isEmpty()) registerEvents(new MagicChatListener());
+	private void loadRecipes() {
+		recipes:
+		try (var context = MagicDebug.section(DebugCategory.RECIPES, "Loading recipes...")) {
+			ConfigurationSection section = config.getSection("general.recipes");
+			if (section == null) break recipes;
 
-		log("...done");
+			for (String recipeKey : section.getKeys(false)) {
+				ConfigurationSection recipe = section.getConfigurationSection(recipeKey);
+				if (recipe == null) {
+					MagicDebug.error("Invalid recipe '%s' .", recipeKey);
+					continue;
+				}
+
+				CustomRecipes.create(recipe);
+			}
+
+			Bukkit.updateRecipes();
+		}
+
+		MagicDebug.info(DebugCategory.RECIPES, "...recipes loaded: %d", CustomRecipes.getRecipes().size());
+	}
+
+	private void loadSpells() {
+		spells:
+		try (var context = MagicDebug.section(DebugCategory.SPELLS, "Loading spells...")) {
+			long startTimePre = System.currentTimeMillis();
+
+			File[] directories = getDataFolder().listFiles(CLASS_DIRECTORY_FILTER);
+			if (directories != null) {
+				for (File directory : directories) {
+					if (!directory.isDirectory()) continue;
+					classLoaders.add(createSpellClassLoader(directory));
+				}
+			}
+
+			classLoaders.add(createSpellClassLoader(getDataFolder()));
+
+			Set<String> spellKeys = config.getSpellKeys();
+			if (spellKeys == null) break spells;
+
+			Map<String, Constructor<? extends Spell>> constructors = new HashMap<>();
+
+			for (String internalName : spellKeys) {
+				MagicDebug.pushPath("spells", "in '" + config.getFile(MagicConfig.Category.SPELLS, internalName) + "'");
+				MagicDebug.pushPath(internalName, "on spell '" + internalName + "'");
+
+				DebugConfig debugConfig = DebugConfig.fromConfig(config.getSection("spells." + internalName));
+
+				try (var spellContext = MagicDebug.section(builder -> builder
+					.message("Loading spell '%s'.", internalName)
+					.config(debugConfig)
+				)) {
+					if (!config.getBoolean("spells." + internalName + ".enabled", true)) {
+						MagicDebug.info("Spell disabled, skipping.");
+						continue;
+					}
+
+					long startTime = System.currentTimeMillis();
+
+					String className = config.getString("spells." + internalName + ".spell-class", null);
+					if (className == null || className.isEmpty()) {
+						MagicDebug.warn("Spell '%s' does not have a 'spell-class' property.", internalName);
+						continue;
+					}
+					if (className.startsWith(".")) className = "com.nisovin.magicspells.spells" + className;
+
+					Constructor<? extends Spell> constructor = constructors.get(className);
+					if (constructor == null) {
+						for (ClassLoader cl : classLoaders) {
+							Class<? extends Spell> spellClass;
+							try {
+								spellClass = cl.loadClass(className).asSubclass(Spell.class);
+							} catch (ClassNotFoundException e) {
+								continue;
+							}
+
+							try {
+								constructor = spellClass.getConstructor(MagicConfig.class, String.class);
+							} catch (NoSuchMethodException e) {
+								continue;
+							}
+
+							constructor.setAccessible(true);
+							constructors.put(className, constructor);
+
+							break;
+						}
+
+						if (constructor == null) {
+							MagicDebug.error("Unable to load spell '%s' with missing/invalid spell class '%s'.", internalName, className);
+							continue;
+						}
+					}
+
+					Spell spell;
+					try {
+						spell = constructor.newInstance(config, internalName);
+					} catch (Exception e) {
+						MagicDebug.error(e, "Unable to load spell '%s'.", internalName);
+						continue;
+					}
+
+					spell.setDebugConfig(debugConfig);
+
+					spells.put(internalName.toLowerCase(), spell);
+					spellsOrdered.add(spell);
+
+					long elapsed = System.currentTimeMillis() - startTime;
+					if (elapsed > 50) MagicDebug.warn("Spell '%s' took a long time to load (%dms).", internalName, elapsed);
+				} finally {
+					MagicDebug.popPath(internalName);
+					MagicDebug.popPath("spells");
+				}
+			}
+
+			long finalElapsed = System.currentTimeMillis() - startTimePre;
+			if (lastReloadTime != 0) MagicDebug.info("Loaded all spells in %dms (previously %dms).", finalElapsed, lastReloadTime);
+			else MagicDebug.info("Loaded all spells in %dms.", finalElapsed);
+
+			lastReloadTime = finalElapsed;
+		}
+
+		MagicDebug.info(DebugCategory.SPELLS, "...spells loaded: %d", spells.size());
+	}
+
+	private void initPermissions() {
+		try (var permissions = MagicDebug.section(DebugCategory.PERMISSIONS, "Initializing permissions...")) {
+			PermissionDefault defaultValue = defaultAllPermsFalse ? PermissionDefault.FALSE : PermissionDefault.TRUE;
+
+			Map<String, Boolean> grantChildren = new HashMap<>();
+			Map<String, Boolean> learnChildren = new HashMap<>();
+			Map<String, Boolean> castChildren = new HashMap<>();
+			Map<String, Boolean> teachChildren = new HashMap<>();
+
+			// Spell permissions
+			for (Spell spell : spellsOrdered) {
+				if (spell.isHelperSpell()) continue;
+
+				try (var spellPermission = MagicDebug.section("Initializing permissions for spell '%s'.", spell.getInternalName())) {
+					if (!spell.isAlwaysGranted()) {
+						String grant = Perm.GRANT.getNode(spell);
+						addPermission(grant, PermissionDefault.FALSE);
+						grantChildren.put(grant, true);
+					}
+
+					if (areTempGrantPermsEnabled())
+						addPermission(Perm.TEMPGRANT.getNode(spell), PermissionDefault.FALSE);
+
+					String learn = Perm.LEARN.getNode(spell);
+					addPermission(learn, defaultValue);
+					learnChildren.put(learn, true);
+
+					String cast = Perm.CAST.getNode(spell);
+					addPermission(cast, defaultValue);
+					castChildren.put(cast, true);
+
+					String teach = Perm.TEACH.getNode(spell);
+					addPermission(teach, defaultValue);
+					teachChildren.put(teach, true);
+				}
+			}
+
+			boolean opsIgnoreReagents = config.getBoolean("general.ops-ignore-reagents", true);
+			boolean opsIgnoreCooldowns = config.getBoolean("general.ops-ignore-cooldowns", true);
+			boolean opsIgnoreCastTimes = config.getBoolean("general.ops-ignore-cast-times", true);
+
+			// Op permissions
+			addPermission(Perm.NO_REAGENTS, opsIgnoreReagents ? PermissionDefault.OP : PermissionDefault.FALSE, "Allows casting without needing reagents");
+			addPermission(Perm.NO_COOLDOWN, opsIgnoreCooldowns ? PermissionDefault.OP : PermissionDefault.FALSE, "Allows casting without being affected by cooldowns");
+			addPermission(Perm.NO_CAST_TIME, opsIgnoreCastTimes ? PermissionDefault.OP : PermissionDefault.FALSE, "Allows casting without being affected by cast times");
+			addPermission(Perm.NO_TARGET, PermissionDefault.FALSE, "Prevents being targeted by any targeted spells");
+			addPermission(Perm.SILENT, PermissionDefault.FALSE, "Prevents cast messages from being broadcast to players");
+
+			// Advanced permissions
+			addPermission(Perm.ADVANCED_LIST, PermissionDefault.FALSE);
+			addPermission(Perm.ADVANCED_FORGET, PermissionDefault.FALSE);
+			addPermission(Perm.ADVANCED_SCROLL, PermissionDefault.FALSE);
+
+			Map<String, Boolean> advancedChildren = new HashMap<>();
+			advancedChildren.put(Perm.ADVANCED_LIST.getNode(), true);
+			advancedChildren.put(Perm.ADVANCED_FORGET.getNode(), true);
+			advancedChildren.put(Perm.ADVANCED_SCROLL.getNode(), true);
+			addPermission(Perm.ADVANCED.getNode(), defaultAllPermsFalse ? PermissionDefault.FALSE : PermissionDefault.OP, advancedChildren);
+
+			// Command permissions
+			addPermission(Perm.COMMAND_HELP, PermissionDefault.OP);
+			addPermission(Perm.COMMAND_RELOAD, PermissionDefault.OP);
+			addPermission(Perm.COMMAND_RELOAD_SPELLBOOK, PermissionDefault.OP);
+			addPermission(Perm.COMMAND_RELOAD_EFFECTLIB, PermissionDefault.OP);
+			addPermission(Perm.COMMAND_RESET_COOLDOWN, PermissionDefault.OP);
+			addPermission(Perm.COMMAND_MANA_SHOW, PermissionDefault.OP);
+			addPermission(Perm.COMMAND_MANA_RESET, PermissionDefault.OP);
+			addPermission(Perm.COMMAND_MANA_SET_MAX, PermissionDefault.OP);
+			addPermission(Perm.COMMAND_MANA_ADD, PermissionDefault.OP);
+			addPermission(Perm.COMMAND_MANA_SET, PermissionDefault.OP);
+			addPermission(Perm.COMMAND_MANA_UPDATE_RANK, PermissionDefault.OP);
+			addPermission(Perm.COMMAND_VARIABLE_SHOW, PermissionDefault.OP);
+			addPermission(Perm.COMMAND_VARIABLE_MODIFY, PermissionDefault.OP);
+			addPermission(Perm.COMMAND_MAGIC_ITEM, PermissionDefault.OP);
+			addPermission(Perm.COMMAND_UTIL_DOWNLOAD, PermissionDefault.OP);
+			addPermission(Perm.COMMAND_UTIL_UPDATE, PermissionDefault.OP);
+			addPermission(Perm.COMMAND_UTIL_SAVE_SKIN, PermissionDefault.OP);
+			addPermission(Perm.COMMAND_PROFILE_REPORT, PermissionDefault.OP);
+			addPermission(Perm.COMMAND_DEBUG, PermissionDefault.OP);
+			addPermission(Perm.COMMAND_TASKINFO, PermissionDefault.OP);
+			addPermission(Perm.COMMAND_MAGICXP, PermissionDefault.OP);
+			addPermission(Perm.COMMAND_CAST_POWER, PermissionDefault.OP);
+			addPermission(Perm.COMMAND_CAST_SELF, PermissionDefault.TRUE);
+			addPermission(Perm.COMMAND_CAST_AS, PermissionDefault.OP);
+			addPermission(Perm.COMMAND_CAST_ON, PermissionDefault.OP);
+			addPermission(Perm.COMMAND_CAST_AT, PermissionDefault.OP);
+
+			addPermission("magicspells.grant.*", PermissionDefault.FALSE, grantChildren);
+			addPermission("magicspells.learn.*", defaultValue, learnChildren);
+			addPermission("magicspells.cast.*", defaultValue, castChildren);
+			addPermission("magicspells.teach.*", defaultValue, teachChildren);
+		}
+
+		MagicDebug.info(DebugCategory.PERMISSIONS, "...permissions initialized.");
 	}
 
 	private void loadExternalData() {
-		log("Loading external data...");
+		MagicDebug.info("Loading external data...");
 
 		initializeSpells();
 		loadVariables();
@@ -708,206 +862,162 @@ public class MagicSpells extends JavaPlugin {
 		loadConditions();
 		loadPassiveListeners();
 
-		log("...done");
-
-		// Call loaded event
 		Bukkit.getPluginManager().callEvent(new MagicSpellsLoadedEvent(this));
 		loaded = true;
 
 		deprecationHandler.printDeprecationNotices();
 
-		log("MagicSpells loading complete!");
+		MagicDebug.info("MagicSpells loading complete!");
+		MagicDebug.info("Need help? Check out our discord: discord.gg/6bYqnNy");
+	}
+
+	private void initializeSpells() {
+		try (var context = MagicDebug.section(DebugCategory.SPELLS, "Initializing spells...")) {
+			Iterator<Spell> it = spells.values().iterator();
+
+			while (it.hasNext()) {
+				Spell spell = it.next();
+
+				try (var spellContext = MagicDebug.section(builder -> builder
+					.message("Initializing '%s'...", spell.getInternalName())
+					.config(spell.getDebugConfig())
+					.path("spells", "in '" + config.getSpellFile(spell) + "'")
+					.path(spell.getInternalName(), "on spell '" + spell.getInternalName() + "'")
+				)) {
+					DependsOn dependsOn = spell.getClass().getAnnotation(DependsOn.class);
+					if (dependsOn != null) {
+						boolean missing = false;
+						for (String plugin : dependsOn.value()) {
+							if (Bukkit.getPluginManager().isPluginEnabled(plugin)) continue;
+
+							MagicDebug.error("Unable to initialize spell '%s' due to missing plugin dependency '%s'.", spell.getInternalName(), plugin);
+							missing = true;
+
+							break;
+						}
+
+						if (missing) {
+							spellsOrdered.remove(spell);
+							it.remove();
+							continue;
+						}
+					}
+
+					spellNames.put(Util.getPlainString(Util.getMiniMessage(spell.getName().toLowerCase())), spell);
+
+					for (String tag : spell.getTags())
+						spellsByTag.put(tag, spell);
+
+					String[] aliases = spell.getAliases();
+					if (aliases != null) {
+						for (String alias : aliases) {
+							alias = alias.toLowerCase();
+
+							if (spellNames.containsKey(alias)) {
+								MagicDebug.warn("Duplicate spell name - alias '%s' for spell '%s' is already in use by spell '%s'.", alias, spell.getInternalName(), spellNames.get(alias).getInternalName());
+								continue;
+							}
+
+							spellNames.put(alias, spell);
+						}
+					}
+
+					List<String> incs = spell.getIncantations();
+					if (incs != null && !incs.isEmpty()) {
+						for (String s : incs) {
+							s = s.toLowerCase();
+
+							if (incantations.containsKey(s)) {
+								MagicDebug.warn("Duplicate incantation - incantation '%s' for spell '%s' is already in use by spell '%s'.", s, spell.getInternalName(), incantations.get(s).getInternalName());
+								continue;
+							}
+
+							incantations.put(s.toLowerCase(), spell);
+						}
+					}
+				}
+			}
+
+			spells.values().forEach(Spell::initialize);
+
+			zoneManager.load(config);
+			if (!incantations.isEmpty()) registerEvents(new MagicChatListener());
+		}
+
+		MagicDebug.info(DebugCategory.SPELLS, "...spells initialized.");
 	}
 
 	private void loadVariables() {
-		// Load variables
-		log("Loading variables...");
-		String path = "general.";
-		ConfigurationSection varSec = null;
-		if (config.contains(path + "variables") && config.isSection(path + "variables")) {
-			varSec = config.getSection(path + "variables");
+		try (var context = MagicDebug.section(DebugCategory.VARIABLES, "Loading variables...")) {
+			variableManager = new VariableManager();
+			Bukkit.getPluginManager().callEvent(new VariablesLoadingEvent(plugin, variableManager));
+
+			ConfigurationSection variablesSection = config.getSection("general.variables");
+			variableManager.loadVariables(variablesSection);
+
+			spells.values().forEach(Spell::initializeVariables);
+
+			if (!variableManager.getVariables().isEmpty()) registerEvents(new VariableListener());
 		}
-		variableManager = new VariableManager();
 
-		// Call variable event
-		Bukkit.getPluginManager().callEvent(new VariablesLoadingEvent(plugin, variableManager));
-
-		variableManager.loadVariables(varSec);
-
-		spells.values().forEach(Spell::initializeVariables);
-
-		if (!variableManager.getVariables().isEmpty()) registerEvents(new VariableListener());
-
-		log("...variable meta types loaded: " + variableManager.getMetaVariables().size());
-		log("...variable types loaded: " + variableManager.getVariableTypes().size());
-		log("...variables loaded: " + (variableManager.getVariables().size() - variableManager.getMetaVariables().size()));
+		MagicDebug.info(DebugCategory.VARIABLES, "...variable meta types loaded: %d", variableManager.getMetaVariables().size());
+		MagicDebug.info(DebugCategory.VARIABLES, "...variable types loaded: %d", variableManager.getVariableTypes().size());
+		MagicDebug.info(DebugCategory.VARIABLES, "...variables loaded: %d", (variableManager.getVariables().size() - variableManager.getMetaVariables().size()));
 	}
 
 	private void loadSpellEffects() {
-		// Load spell effects
-		log("Loading spell effect types...");
-		spellEffectManager = new SpellEffectManager();
+		try (var context = MagicDebug.section(DebugCategory.SPELL_EFFECTS, "Loading spell effect types...")) {
+			spellEffectManager = new SpellEffectManager();
+			Bukkit.getPluginManager().callEvent(new SpellEffectsLoadingEvent(plugin, spellEffectManager));
 
-		// Call spell effect event
-		Bukkit.getPluginManager().callEvent(new SpellEffectsLoadingEvent(plugin, spellEffectManager));
+			for (Spell spell : spellsOrdered) {
+				try (var spellContext = MagicDebug.section(builder -> builder
+					.message("Initializing spell effects for '%s'...", spell.getInternalName())
+					.config(spell.getDebugConfig())
+					.path("spells", "in '" + config.getSpellFile(spell) + "'")
+					.path(spell.getInternalName(), "of spell '" + spell.getInternalName() + "'")
+					.path("effects", null)
+				)) {
+					spell.initializeSpellEffects();
+				}
+			}
+		}
 
-		spells.values().forEach(Spell::initializeSpellEffects);
-
-		log("...spell effect types loaded: " + spellEffectManager.getSpellEffects().size());
+		MagicDebug.info(DebugCategory.SPELL_EFFECTS, "...spell effect types loaded: %d", spellEffectManager.getSpellEffects().size());
 	}
 
 	private void loadConditions() {
-		// Load conditions
-		log("Loading conditions...");
-		conditionManager = new ConditionManager();
+		try (var context = MagicDebug.section(DebugCategory.CONDITIONS, "Loading conditions...")) {
+			conditionManager = new ConditionManager();
+			Bukkit.getPluginManager().callEvent(new ConditionsLoadingEvent(plugin, conditionManager));
 
-		// Call condition event
-		Bukkit.getPluginManager().callEvent(new ConditionsLoadingEvent(plugin, conditionManager));
+			for (Spell spell : spells.values()) {
+				spell.initializeModifiers();
+			}
 
-		for (Spell spell : spells.values()) {
-			spell.initializeModifiers();
+			if (enableManaSystem) {
+				manaHandler.initialize();
+				Util.forEachPlayerOnline(p -> manaHandler.createManaBar(p));
+			}
+
+			ModifierSet.initializeModifierListeners();
 		}
 
-		if (enableManaSystem) {
-			// setup mana bar conditions
-			manaHandler.initialize();
-
-			// Setup online player mana bars
-			Util.forEachPlayerOnline(p -> manaHandler.createManaBar(p));
-		}
-
-		ModifierSet.initializeModifierListeners();
-		log("...conditions loaded: " + conditionManager.getConditions().size());
+		MagicDebug.info(DebugCategory.CONDITIONS, "...conditions loaded: %d", conditionManager.getConditions().size());
 	}
 
 	private void loadPassiveListeners() {
-		// Load passive listeners
-		log("Loading passive listeners...");
-		passiveManager = new PassiveManager();
+		try (var context = MagicDebug.section(DebugCategory.PASSIVE, "Loading passive listeners...")) {
+			passiveManager = new PassiveManager();
+			Bukkit.getPluginManager().callEvent(new PassiveListenersLoadingEvent(plugin, passiveManager));
 
-		// Call passive event
-		Bukkit.getPluginManager().callEvent(new PassiveListenersLoadingEvent(plugin, passiveManager));
-
-		for (Spell spell : spells.values()) {
-			if (!(spell instanceof PassiveSpell)) continue;
-			((PassiveSpell) spell).initializeListeners();
+			for (Spell spell : spells.values()) {
+				if (!(spell instanceof PassiveSpell)) continue;
+				((PassiveSpell) spell).initializeListeners();
+			}
 		}
 
-		log("...passive listeners loaded: " + passiveManager.getListeners().size());
-	}
-
-	private static final int LONG_LOAD_THRESHOLD = 50;
-	// DEBUG INFO: level 2, loaded spell spellName
-	private void loadSpells(Map<String, Boolean> permGrantChildren, Map<String, Boolean> permLearnChildren, Map<String, Boolean> permCastChildren, Map<String, Boolean> permTeachChildren) {
-		long startTimePre = System.currentTimeMillis();
-
-		// Load classes from folders inside the plugin
-		for (File directoryFile : getDataFolder().listFiles(CLASS_DIRECTORY_FILTER)) {
-			if (!directoryFile.isDirectory()) continue;
-
-			classLoaders.add(createSpellClassLoader(directoryFile));
-		}
-
-		// Load classes from the plugin folder
-		classLoaders.add(createSpellClassLoader(getDataFolder()));
-
-		// Get spells from config
-		Set<String> spellKeys = config.getSpellKeys();
-		if (spellKeys == null) return;
-
-		Map<String, Constructor<? extends Spell>> constructors = new HashMap<>();
-
-		long startTime;
-		long elapsed;
-		long finalElapsed;
-
-		String className;
-		String permName;
-
-		Constructor<? extends Spell> constructor;
-		Class<? extends Spell> spellClass;
-		Spell spell;
-
-		for (String spellName : spellKeys) {
-			if (!config.getBoolean("spells." + spellName + ".enabled", true)) continue;
-			startTime = System.currentTimeMillis();
-			className = "";
-			if (config.contains("spells." + spellName + ".spell-class")) className = config.getString("spells." + spellName + ".spell-class", "");
-
-			if (className == null || className.isEmpty()) {
-				error("Spell '" + spellName + "' does not have a spell-class property");
-				continue;
-			}
-
-			if (className.startsWith(".")) className = "com.nisovin.magicspells.spells" + className;
-
-			constructor = constructors.get(className);
-
-			// Load spell class
-			if (constructor == null) {
-				for (ClassLoader cl : classLoaders) {
-					try {
-						spellClass = cl.loadClass(className).asSubclass(Spell.class);
-					} catch (ClassNotFoundException e) {
-						continue;
-					}
-
-					try {
-						constructor = spellClass.getConstructor(MagicConfig.class, String.class);
-					} catch (NoSuchMethodException e) {
-						continue;
-					}
-
-					constructor.setAccessible(true);
-					constructors.put(className, constructor);
-				}
-			}
-
-			constructor = constructors.get(className);
-			if (constructor == null) {
-				error("Unable to load spell " + spellName + " (missing/malformed class " + className + ')');
-				continue;
-			}
-
-			try {
-				spell = constructor.newInstance(config, spellName);
-			} catch (Exception e) {
-				error("Unable to load spell " + spellName + " (general error)");
-				e.printStackTrace();
-				continue;
-			}
-
-			spells.put(spellName.toLowerCase(), spell);
-			spellsOrdered.add(spell);
-
-			// Add permissions
-			if (!spell.isHelperSpell()) {
-				permName = spell.getPermissionName();
-				if (!spell.isAlwaysGranted()) {
-					addPermission("grant." + permName, PermissionDefault.FALSE);
-					permGrantChildren.put(Perm.GRANT.getNode() + permName, true);
-				}
-				addPermission("learn." + permName, defaultAllPermsFalse ? PermissionDefault.FALSE : PermissionDefault.TRUE);
-				addPermission("cast." + permName, defaultAllPermsFalse ? PermissionDefault.FALSE : PermissionDefault.TRUE);
-				addPermission("teach." + permName, defaultAllPermsFalse ? PermissionDefault.FALSE : PermissionDefault.TRUE);
-				if (areTempGrantPermsEnabled()) addPermission("tempgrant." + permName, PermissionDefault.FALSE);
-
-				permLearnChildren.put(Perm.LEARN.getNode() + permName, true);
-				permCastChildren.put(Perm.CAST.getNode() + permName, true);
-				permTeachChildren.put(Perm.TEACH.getNode() + permName, true);
-			}
-
-			// Done
-			debug(2, "Loaded spell: " + spellName);
-
-			elapsed = System.currentTimeMillis() - startTime;
-			if (elapsed > LONG_LOAD_THRESHOLD) getLogger().warning("LONG SPELL LOAD TIME: " + spellName + ": " + elapsed + "ms");
-		}
-
-		finalElapsed = System.currentTimeMillis() - startTimePre;
-		if (lastReloadTime != 0) getLogger().warning("Loaded in " + finalElapsed + "ms (previously " + lastReloadTime + " ms)");
-		getLogger().warning("Need help? Check out our discord: https://discord.magicspells.dev/");
-		lastReloadTime = finalElapsed;
+		MagicDebug.info(DebugCategory.PASSIVE, "...passive listeners loaded: %d", passiveManager.getListeners().size());
 	}
 
 	public static List<ClassLoader> getClassLoaders() {
@@ -944,31 +1054,24 @@ public class MagicSpells extends JavaPlugin {
 		addPermission(perm, permDefault, null, null);
 	}
 
-	private void addPermission(String perm, PermissionDefault permDefault, String description) {
-		addPermission(perm, permDefault, null, description);
+	private void addPermission(Perm perm, PermissionDefault permDefault) {
+		addPermission(perm.getNode(), permDefault, null, null);
 	}
 
-	private void addPermission(String perm, PermissionDefault permDefault, Map<String,Boolean> children) {
+	private void addPermission(Perm perm, PermissionDefault permDefault, String description) {
+		addPermission(perm.getNode(), permDefault, null, description);
+	}
+
+	private void addPermission(String perm, PermissionDefault permDefault, Map<String, Boolean> children) {
 		addPermission(perm, permDefault, children, null);
 	}
 
-	private void addPermission(String perm, PermissionDefault permDefault, Map<String,Boolean> children, String description) {
+	private void addPermission(String perm, PermissionDefault permDefault, Map<String, Boolean> children, String description) {
+		MagicDebug.info("Adding permision '%s' with a default value of '%s'.", perm, permDefault);
+
 		PluginManager pm = Bukkit.getPluginManager();
-		if (pm.getPermission("magicspells." + perm) != null) return;
-		pm.addPermission(new Permission("magicspells." + perm, description, permDefault, children));
-	}
-
-	public static void setupEffectlib() {
-		if (plugin.effectManager != null) return;
-		plugin.effectManager = new EffectManager(plugin);
-		plugin.effectManager.enableDebug(plugin.debug);
-	}
-
-	public static void disposeEffectlib() {
-		if (plugin.effectManager == null) return;
-		plugin.effectManager.cancel(true);
-		plugin.effectManager.dispose();
-		plugin.effectManager = null;
+		pm.removePermission(perm);
+		pm.addPermission(new Permission(perm, description, permDefault, children));
 	}
 
 	public static void resetEffectlib() {
@@ -993,6 +1096,7 @@ public class MagicSpells extends JavaPlugin {
 
 	/**
 	 * Gets the instance of the MagicSpells plugin
+	 *
 	 * @return the MagicSpells plugin
 	 */
 	public static MagicSpells getInstance() {
@@ -1001,6 +1105,7 @@ public class MagicSpells extends JavaPlugin {
 
 	/**
 	 * Gets all the spells currently loaded
+	 *
 	 * @return a Collection of Spell objects
 	 */
 	public static Collection<Spell> spells() {
@@ -1009,6 +1114,7 @@ public class MagicSpells extends JavaPlugin {
 
 	/**
 	 * Gets a spell by its internal name (the key name in the config file)
+	 *
 	 * @param spellName the internal name of the spell to find
 	 * @return {@link Spell} found, or null if no spell with that name was found
 	 */
@@ -1019,6 +1125,7 @@ public class MagicSpells extends JavaPlugin {
 	/**
 	 * Gets a spell by its in-game name (<code>aliases</code>, the name specified with the <code>name</code>
 	 * config option, or the internal spell name if <code>name</code> was not specified).
+	 *
 	 * @param spellName the in-game name of the spell to find
 	 * @return {@link Spell} found, or null if no spell with that name was found
 	 */
@@ -1028,6 +1135,7 @@ public class MagicSpells extends JavaPlugin {
 
 	/**
 	 * Gets a spell by its internal name, <code>aliases</code> or <code>name</code>).
+	 *
 	 * @param spellName the name of the spell to find
 	 * @return {@link Spell} found, or null
 	 */
@@ -1039,6 +1147,7 @@ public class MagicSpells extends JavaPlugin {
 	/**
 	 * Gets a player's spellbook, which contains known spells and handles spell permissions.
 	 * If a player does not have a spellbook, one will be created.
+	 *
 	 * @param player the player to get a spellbook for
 	 * @return the player's spellbook
 	 */
@@ -1052,6 +1161,7 @@ public class MagicSpells extends JavaPlugin {
 
 	/**
 	 * Gets a list of blocks that are considered transparent
+	 *
 	 * @return set of block types
 	 */
 	public static Set<Material> getTransparentBlocks() {
@@ -1072,6 +1182,7 @@ public class MagicSpells extends JavaPlugin {
 
 	/**
 	 * Gets a map of entity types and their configured names, to be used when sending messages to players
+	 *
 	 * @return the map
 	 */
 	public static Map<EntityType, String> getEntityNames() {
@@ -1080,6 +1191,7 @@ public class MagicSpells extends JavaPlugin {
 
 	/**
 	 * Checks whether to ignore the durability on the given type when using it as a cast item.
+	 *
 	 * @param type the type to check
 	 * @return whether to ignore durability
 	 */
@@ -1141,6 +1253,10 @@ public class MagicSpells extends JavaPlugin {
 
 	public static boolean isManaSystemEnabled() {
 		return plugin.enableManaSystem;
+	}
+
+	public static DebugConfig getDebugConfig() {
+		return plugin.debugConfig;
 	}
 
 	public static boolean isDebug() {
@@ -1357,6 +1473,7 @@ public class MagicSpells extends JavaPlugin {
 
 	/**
 	 * Gets the handler for no-magic zones.
+	 *
 	 * @return the no-magic zone handler
 	 */
 	public static NoMagicZoneManager getNoMagicZoneManager() {
@@ -1385,6 +1502,7 @@ public class MagicSpells extends JavaPlugin {
 
 	/**
 	 * Gets the mana handler, which handles all mana transactions.
+	 *
 	 * @return the mana handler
 	 */
 	public static ManaHandler getManaHandler() {
@@ -1451,12 +1569,12 @@ public class MagicSpells extends JavaPlugin {
 		return plugin.spellsOrdered;
 	}
 
-	public static SetMultimap<String, Spell> getSpellsByTag() {
-		return plugin.spellsByTag;
-	}
-
 	public static Map<String, Spell> getSpellNames() {
 		return plugin.spellNames;
+	}
+
+	public static SetMultimap<String, Spell> getSpellsByTag() {
+		return plugin.spellsByTag;
 	}
 
 	public static Map<String, Spell> getIncantations() {
@@ -1481,6 +1599,7 @@ public class MagicSpells extends JavaPlugin {
 
 	/**
 	 * Sets the mana handler, which handles all mana transactions.
+	 *
 	 * @param handler the mana handler
 	 */
 	public static void setManaHandler(ManaHandler handler) {
@@ -1490,6 +1609,7 @@ public class MagicSpells extends JavaPlugin {
 
 	/**
 	 * Sets the storage handler, which handles data storage.
+	 *
 	 * @param handler the storage handler
 	 */
 	public static void setStorageHandler(StorageHandler handler) {
@@ -1553,6 +1673,7 @@ public class MagicSpells extends JavaPlugin {
 	}
 
 	private static final Pattern chatVarMatchPattern = Pattern.compile("%var:(\\w+)(?::(\\d+))?%", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
+
 	public static String doSubjectVariableReplacements(Player player, String string) {
 		if (string == null || string.isEmpty() || plugin.variableManager == null) return string;
 
@@ -1586,6 +1707,7 @@ public class MagicSpells extends JavaPlugin {
 	}
 
 	private static final Pattern chatPlayerVarMatchPattern = Pattern.compile("%playervar:([^:]+):(\\w+)(?::(\\d+))?%", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
+
 	public static String doVariableReplacements(Player player, String string) {
 		string = doSubjectVariableReplacements(player, string);
 		if (string == null || string.isEmpty() || plugin.variableManager == null) return string;
@@ -1620,6 +1742,7 @@ public class MagicSpells extends JavaPlugin {
 	}
 
 	private static final Pattern chatTargetedVarMatchPattern = Pattern.compile("%(castervar|targetvar):(\\w+)(?::(\\d+))?%", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
+
 	public static String doTargetedVariableReplacements(Player caster, Player target, String string) {
 		if (string == null || string.isEmpty() || plugin.variableManager == null) return string;
 
@@ -1692,6 +1815,7 @@ public class MagicSpells extends JavaPlugin {
 	}
 
 	private static final Pattern ARGUMENT_PATTERN = Pattern.compile("%arg:(\\d+):([^%]+)%", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
+
 	public static String doArgumentSubstitution(String string, String[] args) {
 		if (string == null || string.isEmpty()) return string;
 
@@ -1711,6 +1835,7 @@ public class MagicSpells extends JavaPlugin {
 	}
 
 	private static final Pattern VARIABLE_PATTERN = Pattern.compile("%(var|castervar|targetvar|playervar:([^:]+)):(\\w+)(?::(\\d+))?%", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
+
 	public static String doVariableReplacements(String message, LivingEntity recipient, LivingEntity caster, LivingEntity target) {
 		if (message == null || message.isEmpty()) return message;
 
@@ -1760,6 +1885,7 @@ public class MagicSpells extends JavaPlugin {
 	}
 
 	private static final Pattern PLACEHOLDER_PATTERN = Pattern.compile("%(papi|casterpapi|targetpapi|playerpapi:([^:]+)):([^%]+)%", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
+
 	public static String doPlaceholderReplacements(String message, LivingEntity recipient, LivingEntity caster, LivingEntity target) {
 		if (message == null || message.isEmpty() || !Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI"))
 			return message;
@@ -1788,7 +1914,8 @@ public class MagicSpells extends JavaPlugin {
 
 	/**
 	 * Formats a string by performing the specified replacements.
-	 * @param message the string to format
+	 *
+	 * @param message      the string to format
 	 * @param replacements the replacements to make, in pairs.
 	 * @return the formatted string
 	 */
@@ -1916,7 +2043,7 @@ public class MagicSpells extends JavaPlugin {
 					}
 				}
 			};
-			Bukkit.getPluginManager().registerEvent(eventClass, listener, priority, executor, plugin, eh.ignoreCancelled());
+			plugin.getServer().getPluginManager().registerEvent(eventClass, listener, priority, executor, plugin, eh.ignoreCancelled());
 		}
 	}
 
@@ -1968,7 +2095,7 @@ public class MagicSpells extends JavaPlugin {
 			}
 
 			plugin.getLogger().severe("This error has been saved in the errors folder.");
-			writer.println("Server version: " + Bukkit.getVersion());
+			writer.println("Server version: " + Bukkit.getServer().getVersion());
 			writer.println("MagicSpells version: " + plugin.getDescription().getVersion());
 			writer.println("Error log date: " + new Date());
 		} catch (Exception e) {
@@ -2023,6 +2150,7 @@ public class MagicSpells extends JavaPlugin {
 	/**
 	 * Writes a debug message to the console if the debug option is enabled.
 	 * Uses debug level 2.
+	 *
 	 * @param message the message to write to the console
 	 */
 	public static void debug(String message) {
@@ -2031,7 +2159,8 @@ public class MagicSpells extends JavaPlugin {
 
 	/**
 	 * Writes a debug message to the console if the debug option is enabled.
-	 * @param level the debug level to log with
+	 *
+	 * @param level   the debug level to log with
 	 * @param message the message to write to the console
 	 */
 	public static void debug(int level, String message) {
@@ -2048,7 +2177,8 @@ public class MagicSpells extends JavaPlugin {
 
 	/**
 	 * Writes an error message to the console.
-	 * @param level the error level
+	 *
+	 * @param level   the error level
 	 * @param message the error message
 	 */
 	public static void log(Level level, String message) {
@@ -2070,7 +2200,8 @@ public class MagicSpells extends JavaPlugin {
 
 	/**
 	 * Teaches a player a spell (adds it to their spellbook)
-	 * @param player the player to teach
+	 *
+	 * @param player    the player to teach
 	 * @param spellName the spell name, either the in-game name or the internal name
 	 * @return whether the spell was taught to the player
 	 */
@@ -2135,12 +2266,11 @@ public class MagicSpells extends JavaPlugin {
 		}
 
 		// Clear spell animations.
-		for (SpellAnimation animation : SpellAnimation.getAnimations()) {
-			animation.stop(false);
-		}
+		for (SpellAnimation animation : SpellAnimation.getAnimations()) animation.stop(false);
 		SpellAnimation.getAnimations().clear();
 
 		// Save cooldowns
+		// TODO: Persist using YAML or JSON instead.
 		if (cooldownsPersistThroughReload) {
 			File file = new File(getDataFolder(), "cooldowns.txt");
 			if (file.exists()) file.delete();
@@ -2154,11 +2284,11 @@ public class MagicSpells extends JavaPlugin {
 						cooldown = cooldowns.get(id);
 						if (cooldown <= System.currentTimeMillis()) continue;
 						writer.append(spell.getInternalName())
-								.append(String.valueOf(':'))
-								.append(id.toString())
-								.append(String.valueOf(':'))
-								.append(String.valueOf(cooldown))
-								.append(String.valueOf('\n'));
+							.append(String.valueOf(':'))
+							.append(id.toString())
+							.append(String.valueOf(':'))
+							.append(String.valueOf(cooldown))
+							.append(String.valueOf('\n'));
 					}
 				}
 				writer.close();
@@ -2259,7 +2389,7 @@ public class MagicSpells extends JavaPlugin {
 		soundFailMissingReagents = null;
 
 		// Remove star permissions (to allow new spells to be added to them)
-		PluginManager pm = Bukkit.getPluginManager();
+		PluginManager pm = getServer().getPluginManager();
 		pm.removePermission("magicspells.grant.*");
 		pm.removePermission("magicspells.cast.*");
 		pm.removePermission("magicspells.learn.*");

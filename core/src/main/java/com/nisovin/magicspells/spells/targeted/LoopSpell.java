@@ -137,8 +137,7 @@ public class LoopSpell extends TargetedSpell implements TargetedEntitySpell, Tar
 
 			Subspell spell;
 			for (String spellName : spellNames) {
-				spell = initSubspell(spellName,
-						"LoopSpell '" + internalName + "' has an invalid spell '" + spellName + "' defined!");
+				spell = initSubspell(spellName, "LoopSpell '" + internalName + "' has an invalid spell '" + spellName + "' defined!", false);
 				if (spell == null) continue;
 
 				spells.add(spell);

@@ -4,6 +4,8 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 
+import com.nisovin.magicspells.debug.MagicDebug;
+
 public class SpigotReader implements ItemConfigTransformer {
 	
 	private static final String READER_KEY = "external::spigot";
@@ -12,7 +14,14 @@ public class SpigotReader implements ItemConfigTransformer {
 	@Override
 	public ItemStack deserialize(ConfigurationSection section) {
 		if (section == null) return null;
-		return section.getItemStack(DATA_KEY);
+
+		ItemStack item = section.getItemStack(DATA_KEY);
+		if (item == null) {
+			MagicDebug.warn("Invalid 'data' for type serializer 'external::spigot': '%s'");
+			return null;
+		}
+
+		return item;
 	}
 	
 	@Override

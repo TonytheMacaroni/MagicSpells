@@ -44,7 +44,7 @@ public class CastAtMarkSpell extends InstantSpell {
 		
 		markSpell = mark;
 
-		spellToCast = initSubspell(spellToCastName, "CastAtMarkSpell '" + internalName + "' has an invalid spell defined!");
+		spellToCast = initSubspell(spellToCastName, "CastAtMarkSpell '" + internalName + "' has an invalid spell defined!", false);
 		
 		initialized = true;
 	}

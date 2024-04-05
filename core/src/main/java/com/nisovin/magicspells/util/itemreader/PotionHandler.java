@@ -4,15 +4,18 @@ import java.util.List;
 import java.util.ArrayList;
 
 import org.bukkit.Color;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.configuration.ConfigurationSection;
 
-import com.nisovin.magicspells.util.Util;
-import com.nisovin.magicspells.MagicSpells;
-import com.nisovin.magicspells.handlers.DebugHandler;
+import com.nisovin.magicspells.debug.MagicDebug;
+import com.nisovin.magicspells.handlers.PotionEffectHandler;
+import com.nisovin.magicspells.util.BooleanUtils;
 import com.nisovin.magicspells.util.magicitems.MagicItemData;
 import static com.nisovin.magicspells.util.magicitems.MagicItemData.MagicItemAttribute.*;
 
@@ -31,8 +34,11 @@ public class PotionHandler {
 			List<PotionEffect> potionEffects = new ArrayList<>();
 
 			for (String potionEffect : potionEffectStrings) {
-				PotionEffect eff = Util.buildPotionEffect(potionEffect);
-				if (eff == null) continue;
+				PotionEffect eff = buildPotionEffect(potionEffect);
+				if (eff == null) {
+					MagicDebug.warn("Invalid potion effect string on magic item: '%s'.", potionEffect);
+					continue;
+				}
 
 				potionMeta.addCustomEffect(eff, true);
 				potionEffects.add(eff);
@@ -41,16 +47,21 @@ public class PotionHandler {
 			if (!potionEffects.isEmpty()) data.setAttribute(POTION_EFFECTS, potionEffects);
 		}
 
+		color:
 		if (config.isString(COLOR_CONFIG_NAME) || config.isString("potion-color")) {
-			try {
-				int color = Integer.parseInt(config.getString(COLOR_CONFIG_NAME, config.getString("potion-color", "")).replace("#", ""), 16);
-				Color c = Color.fromRGB(color);
+			String colorString = config.getString(COLOR_CONFIG_NAME, config.getString("potion-color", ""));
 
-				potionMeta.setColor(c);
-				data.setAttribute(COLOR, c);
-			} catch (NumberFormatException e) {
-				DebugHandler.debugNumberFormat(e);
+			Color color;
+			try {
+				int c = Integer.parseInt(colorString.replace("#", ""), 16);
+				color = Color.fromRGB(c);
+			} catch (IllegalArgumentException e) {
+				MagicDebug.warn("Invalid potion color on magic item: '%s'.", colorString);
+				break color;
 			}
+
+			potionMeta.setColor(color);
+			data.setAttribute(COLOR, color);
 		}
 
 		if (config.isString(POTION_TYPE_CONFIG_NAME) || config.isString("potion-data")) {
@@ -58,7 +69,7 @@ public class PotionHandler {
 
 			PotionType potionType = getPotionType(potionTypeString);
 			if (potionType == null) {
-				MagicSpells.error("Invalid potion type '" + potionTypeString + "' found while parsing magic item.");
+				MagicDebug.warn("Invalid potion type on magic item: '%s'.", potionTypeString);
 				return;
 			}
 
@@ -99,9 +110,11 @@ public class PotionHandler {
 		} catch (IllegalArgumentException ignored) {
 		}
 
-		for (PotionType type : PotionType.values())
-			if (type.getKey().getKey().equalsIgnoreCase(potionTypeString))
-				return type;
+		NamespacedKey key = NamespacedKey.fromString(potionTypeString.toLowerCase());
+		if (key != null) {
+			PotionType type = Registry.POTION.get(key);
+			if (type != null) return type;
+		}
 
 		// Legacy support for potion data format
 
@@ -118,6 +131,45 @@ public class PotionHandler {
 		} catch (IllegalArgumentException e) {
 			return null;
 		}
+	}
+
+	// - <potionEffectType> (level) (duration) (ambient)
+	public static PotionEffect buildPotionEffect(String effectString) {
+		String[] data = effectString.split(" ");
+
+		PotionEffectType t = PotionEffectHandler.getPotionEffectType(data[0]);
+		if (t == null) {
+			MagicDebug.warn("Invalid potion effect type '%s' for potion effect '%s'.", data[0], effectString);
+			return null;
+		}
+
+		int level = 0;
+		if (data.length > 1) {
+			try {
+				level = Integer.parseInt(data[1]);
+			} catch (NumberFormatException ex) {
+				MagicDebug.warn("Invalid level '%s' for potion effect '%s'.", data[1], effectString);
+				return null;
+			}
+		}
+
+		int duration = 600;
+		if (data.length > 2) {
+			try {
+				duration = Integer.parseInt(data[2]);
+			} catch (NumberFormatException ex) {
+				MagicDebug.warn("Invalid duration '%s' for potion effect '%s'.", data[2], effectString);
+				return null;
+			}
+		}
+
+		boolean ambient = data.length > 3 && (BooleanUtils.isYes(data[3]) || data[3].equalsIgnoreCase("ambient"));
+
+		boolean particles = data.length > 4 && (BooleanUtils.isYes(data[4]) || data[4].equalsIgnoreCase("particles"));
+
+		boolean icon = data.length > 5 && (BooleanUtils.isYes(data[5]) || data[5].equalsIgnoreCase("icon"));
+
+		return new PotionEffect(t, duration, level, ambient, particles, icon);
 	}
 
 }

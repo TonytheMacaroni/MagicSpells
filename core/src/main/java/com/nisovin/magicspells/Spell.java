@@ -52,8 +52,10 @@ import com.nisovin.magicspells.util.*;
 import com.nisovin.magicspells.events.*;
 import com.nisovin.magicspells.util.config.*;
 import com.nisovin.magicspells.spelleffects.*;
+import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.mana.ManaHandler;
 import com.nisovin.magicspells.spells.BuffSpell;
+import com.nisovin.magicspells.debug.DebugConfig;
 import com.nisovin.magicspells.spells.PassiveSpell;
 import com.nisovin.magicspells.util.magicitems.MagicItem;
 import com.nisovin.magicspells.castmodifiers.ModifierSet;
@@ -203,6 +205,8 @@ public abstract class Spell implements Comparable<Spell>, Listener {
 	protected float serverCooldown;
 
 	protected final String internalKey;
+
+	protected DebugConfig debugConfig;
 
 	public Spell(MagicConfig config, String spellName) {
 		this.config = config;
@@ -582,46 +586,56 @@ public abstract class Spell implements Comparable<Spell>, Listener {
 		// Graphical effects
 		effectTrackerSet = new HashSet<>();
 		asyncEffectTrackerSet = new HashSet<>();
-		if (!config.contains(internalKey + "effects")) return;
+
+		if (!config.contains(internalKey + "effects")) {
+			MagicDebug.info("No effects section. Skipping!");
+			return;
+		}
+
+		if (!config.isSection(internalKey + "effects")) {
+			MagicDebug.warn("Invalid 'effects' section %s.", MagicDebug.resolvePath());
+			return;
+		}
 
 		effects = new EnumMap<>(EffectPosition.class);
 
-		if (!config.isSection(internalKey + "effects")) return;
 		for (String key : config.getKeys(internalKey + "effects")) {
-			ConfigurationSection section = config.getSection(internalKey + "effects." + key);
-			if (section == null) {
-				MagicSpells.error("Spell effect '" + key + "' on spell '" + internalName + "' does not contain a configuration section.");
-				continue;
+			try (var context = MagicDebug.section("Initializing spell effect '%s'.", key).path(key, "on spell effect '" + key + "'")) {
+				ConfigurationSection section = config.getSection(internalKey + "effects." + key);
+				if (section == null) {
+					MagicDebug.warn("Missing configuration section %s.", MagicDebug.resolvePath());
+					continue;
+				}
+
+				String positionName = section.getString("position");
+				if (positionName == null) {
+					MagicDebug.warn("No 'position' set %s.", MagicDebug.resolvePath());
+					continue;
+				}
+
+				EffectPosition position = EffectPosition.getPositionFromString(positionName);
+				if (position == null) {
+					MagicDebug.warn("Invalid 'position' value '%s' %s.", positionName, MagicDebug.resolvePath());
+					continue;
+				}
+
+				String effectType = section.getString("effect");
+				if (effectType == null) {
+					MagicDebug.warn("No 'effect' set %s.", MagicDebug.resolvePath());
+					continue;
+				}
+
+				SpellEffect effect = MagicSpells.getSpellEffectManager().getSpellEffectByName(effectType);
+				if (effect == null) {
+					MagicDebug.warn("Invalid 'effect' value '%s' %s.", effectType, MagicDebug.resolvePath());
+					continue;
+				}
+
+				effect.loadFromConfiguration(section);
+
+				List<SpellEffect> effectList = effects.computeIfAbsent(position, p -> new ArrayList<>());
+				effectList.add(effect);
 			}
-
-			String positionName = section.getString("position", "");
-			if (positionName.isEmpty()) {
-				MagicSpells.error("Spell effect '" + key + "' on spell '" + internalName + "' does not contain a 'position' value.");
-				continue;
-			}
-
-			EffectPosition position = EffectPosition.getPositionFromString(positionName);
-			if (position == null) {
-				MagicSpells.error("Spell effect '" + key + "' on spell '" + internalName + "' does not have a valid 'position' defined: " + positionName);
-				continue;
-			}
-
-			String effectType = section.getString("effect", "");
-			if (effectType.isEmpty()) {
-				MagicSpells.error("Spell effect '" + key + "' on spell '" + internalName + "' does not contain an 'effect' value.");
-				continue;
-			}
-
-			SpellEffect effect = MagicSpells.getSpellEffectManager().getSpellEffectByName(effectType);
-			if (effect == null) {
-				MagicSpells.error("Spell effect '" + key + "' on spell '" + internalName + "' does not have a valid 'effect' defined: " + effectType);
-				continue;
-			}
-
-			effect.loadFromConfiguration(section);
-
-			List<SpellEffect> effectList = effects.computeIfAbsent(position, p -> new ArrayList<>());
-			effectList.add(effect);
 		}
 	}
 
@@ -669,13 +683,13 @@ public abstract class Spell implements Comparable<Spell>, Listener {
 				if (object instanceof String s) {
 					String[] data = s.split(" ");
 					if (data.length != 2) {
-						MagicSpells.error("Invalid shared cooldown '" + s + "' on spell '" + internalName + "'.");
+						MagicDebug.warn("Invalid shared cooldown '%s' %s - too many/few arguments.", s, MagicDebug.resolvePath());
 						continue;
 					}
 
 					Spell spell = MagicSpells.getSpellByInternalName(data[0]);
 					if (spell == null) {
-						MagicSpells.error("Invalid spell '" + data[0] + "' in shared cooldown '" + s + "' on spell '" + internalName + "'.");
+						MagicDebug.warn("Invalid spell '%s' in shared cooldown '%s' %s.", data[0], s, MagicDebug.resolvePath());
 						continue;
 					}
 
@@ -683,7 +697,7 @@ public abstract class Spell implements Comparable<Spell>, Listener {
 					try {
 						cooldown = Float.parseFloat(data[1]);
 					} catch (NumberFormatException e) {
-						MagicSpells.error("Invalid cooldown '" + data[1] + "' in shared cooldown '" + s + "' on spell '" + internalName + "'.");
+						MagicDebug.warn("Invalid cooldown '%s' in shared cooldown '%s' %s.", data[1], s, MagicDebug.resolvePath());
 						continue;
 					}
 
@@ -695,7 +709,7 @@ public abstract class Spell implements Comparable<Spell>, Listener {
 					ConfigurationSection section = ConfigReaderUtil.mapToSection(map);
 
 					if (!section.isString("filter") && !section.isConfigurationSection("filter")) {
-						MagicSpells.error("No 'filter' specified in shared cooldown on spell '" + internalName + "'.");
+						MagicDebug.warn("No 'filter' specified in shared cooldown %s.", MagicDebug.resolvePath());
 						continue;
 					}
 
@@ -703,7 +717,7 @@ public abstract class Spell implements Comparable<Spell>, Listener {
 
 					ConfigData<Float> cooldown = ConfigDataUtil.getFloat(section, "cooldown");
 					if (cooldown.isNull()) {
-						MagicSpells.error("Invalid or no 'cooldown' specified in shared cooldown on spell '" + internalName + "'.");
+						MagicDebug.warn("Invalid or no 'cooldown' specified in shared cooldown %s.", MagicDebug.resolvePath());
 						continue;
 					}
 
@@ -711,7 +725,7 @@ public abstract class Spell implements Comparable<Spell>, Listener {
 					continue;
 				}
 
-				MagicSpells.error("Invalid shared cooldown '" + object + "' on spell '" + internalName + "'.");
+				MagicDebug.warn("Invalid shared cooldown %s on %s.", object, MagicDebug.resolvePath());
 			}
 		}
 
@@ -719,13 +733,8 @@ public abstract class Spell implements Comparable<Spell>, Listener {
 		registerEvents();
 
 		// Other processing
-		String error = "Spell '" + internalName + "' has an invalid '%s' defined!";
-		spellOnFail = initSubspell(spellNameOnFail,
-				error.formatted("spell-on-fail"),
-				true);
-		spellOnInterrupt = initSubspell(spellNameOnInterrupt,
-				error.formatted("spell-on-interrupt"),
-				true);
+		initSubspell(spellNameOnFail, "Invalid 'spell-on-fail' defined %s!", true, MagicDebug.resolvePath());
+		initSubspell(spellNameOnInterrupt, "Invalid 'spell-on-interrupt' defined %s!", true, MagicDebug.resolvePath());
 
 		interruptFilter = getConfigSpellFilter("interrupt-filter");
 	}
@@ -2133,27 +2142,19 @@ public abstract class Spell implements Comparable<Spell>, Listener {
 	}
 
 	/**
-	 * Attempts to initialise a subspell. This method never ignores empty names.
-	 * @see Spell#initSubspell(String, String, boolean)
-	 */
-	protected Subspell initSubspell(String subspellName, String errorMessage) {
-		return initSubspell(subspellName, errorMessage, false);
-	}
-
-	/**
 	 * Attempts to initialise a subspell.
-	 * @see Spell#initSubspell(String, String)
 	 */
-	protected Subspell initSubspell(String subspellName, String errorMessage, boolean ignoreEmptyName) {
+	protected Subspell initSubspell(String subspellName, String errorMessage, boolean ignoreEmptyName, Object... arguments) {
 		if (ignoreEmptyName && (subspellName == null || subspellName.isEmpty())) return null;
 
 		if (subspellName == null) {
-			MagicSpells.error(errorMessage);
+			MagicDebug.warn(errorMessage.formatted(arguments));
 			return null;
 		}
+
 		Subspell subspell = new Subspell(subspellName);
 		if (!subspell.process()) {
-			MagicSpells.error(errorMessage);
+			MagicDebug.warn(errorMessage.formatted(arguments));
 			return null;
 		}
 
@@ -2539,6 +2540,14 @@ public abstract class Spell implements Comparable<Spell>, Listener {
 
 	public void setValidTargetList(ValidTargetList validTargetList) {
 		this.validTargetList = validTargetList;
+	}
+
+	public DebugConfig getDebugConfig() {
+		return debugConfig;
+	}
+
+	public void setDebugConfig(DebugConfig debugConfig) {
+		this.debugConfig = debugConfig;
 	}
 
 	void setCooldownManually(UUID uuid, long nextCast) {

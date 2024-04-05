@@ -36,8 +36,7 @@ public class OffsetLocationSpell extends TargetedSpell implements TargetedLocati
 	public void initialize() {
 		super.initialize();
 
-		spellToCast = initSubspell(spellToCastName,
-				"OffsetLocationSpell '" + internalName + "' has an invalid spell defined!");
+		spellToCast = initSubspell(spellToCastName, "OffsetLocationSpell '" + internalName + "' has an invalid spell defined!", false);
 	}
 
 	@Override
