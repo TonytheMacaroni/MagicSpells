@@ -40,7 +40,6 @@ import com.destroystokyo.paper.profile.ProfileProperty;
 import io.papermc.paper.block.fluid.FluidData;
 
 import com.nisovin.magicspells.MagicSpells;
-import com.nisovin.magicspells.handlers.DebugHandler;
 import com.nisovin.magicspells.util.config.ConfigData;
 import com.nisovin.magicspells.util.config.ConfigDataUtil;
 import com.nisovin.magicspells.util.magicitems.MagicItems;
@@ -64,85 +63,6 @@ public class Util {
 
 	public static Material getMaterial(String name) {
 		return Material.matchMaterial(name);
-	}
-
-	// - <potionEffectType> (level) (duration) (ambient)
-	public static PotionEffect buildPotionEffect(String effectString) {
-		String[] data = effectString.split(" ");
-		PotionEffectType t = PotionEffectHandler.getPotionEffectType(data[0]);
-
-		if (t == null) {
-			MagicSpells.error('\'' + data[0] + "' could not be connected to a potion effect type");
-			return null;
-		}
-
-		int level = 0;
-		if (data.length > 1) {
-			try {
-				level = Integer.parseInt(data[1]);
-			} catch (NumberFormatException ex) {
-				DebugHandler.debugNumberFormat(ex);
-			}
-		}
-
-		int duration = 600;
-		if (data.length > 2) {
-			try {
-				duration = Integer.parseInt(data[2]);
-			} catch (NumberFormatException ex) {
-				DebugHandler.debugNumberFormat(ex);
-			}
-		}
-
-		boolean ambient = data.length > 3 && (BooleanUtils.isYes(data[3]) || data[3].equalsIgnoreCase("ambient"));
-
-		boolean particles = data.length > 4 && (BooleanUtils.isYes(data[4]) || data[4].equalsIgnoreCase("particles"));
-
-		boolean icon = data.length > 5 && (BooleanUtils.isYes(data[5]) || data[5].equalsIgnoreCase("icon"));
-
-		return new PotionEffect(t, duration, level, ambient, particles, icon);
-	}
-
-	// - <potionEffectType> (duration)
-	public static PotionEffect buildSuspiciousStewPotionEffect(String effectString) {
-		String[] data = effectString.split(" ");
-		PotionEffectType t = PotionEffectHandler.getPotionEffectType(data[0]);
-
-		if (t == null) {
-			MagicSpells.error('\'' + data[0] + "' could not be connected to a potion effect type");
-			return null;
-		}
-
-		int duration = 600;
-		if (data.length > 1) {
-			try {
-				duration = Integer.parseInt(data[1]);
-			} catch (NumberFormatException ex) {
-				DebugHandler.debugNumberFormat(ex);
-			}
-		}
-		return new PotionEffect(t, duration, 0, true);
-	}
-
-	public static Color[] getColorsFromString(String str) {
-		int[] colors = new int[] { 0xFF0000 };
-		String[] args = str.replace(" ", "").split(",");
-		if (args.length > 0) {
-			colors = new int[args.length];
-			for (int i = 0; i < colors.length; i++) {
-				try {
-					colors[i] = Integer.parseInt(args[i], 16);
-				} catch (NumberFormatException e) {
-					colors[i] = 0;
-				}
-			}
-		}
-
-		Color[] c = new Color[colors.length];
-		for (int i = 0; i < colors.length; i++) {
-			c[i] = Color.fromRGB(colors[i]);
-		}
-		return c;
 	}
 
 	public static List<ConfigData<PotionEffect>> getPotionEffects(@Nullable List<?> potionEffectData, @NotNull String internalName, boolean spellPowerAffectsDuration, boolean spellPowerAffectsStrength) {
@@ -673,13 +593,11 @@ public class Util {
 	}
 
 	public static boolean checkPluginsEnabled(String[] plugins) {
-		boolean all = true;
-		for (String plugin : plugins) {
-			if (Bukkit.getPluginManager().isPluginEnabled(plugin)) continue;
-			MagicSpells.error("Plugin '" + plugin + "' is not enabled.");
-			all = false;
-		}
-		return all;
+		for (String plugin : plugins)
+			if (!Bukkit.getPluginManager().isPluginEnabled(plugin))
+				return false;
+
+		return true;
 	}
 
 	public static Component getLegacyFromString(String input) {

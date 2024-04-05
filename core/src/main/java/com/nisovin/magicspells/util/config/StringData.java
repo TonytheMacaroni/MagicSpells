@@ -33,17 +33,17 @@ public class StringData implements ConfigData<String> {
 		)%|\
 		(?<entityName>%[art])""", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
 
-	private final List<ConfigData<String>> values;
+	private final List<PlaceholderData> values;
 	private final List<String> fragments;
 
 	public StringData(String value) {
-		List<ConfigData<String>> values = new ArrayList<>();
+		List<PlaceholderData> values = new ArrayList<>();
 		List<String> fragments = new ArrayList<>();
 
 		Matcher matcher = PLACEHOLDER_PATTERN.matcher(value);
 		int end = 0;
 		while (matcher.find()) {
-			ConfigData<String> data = createData(matcher);
+			PlaceholderData data = createData(matcher);
 			if (data == null) continue;
 
 			fragments.add(value.substring(end, matcher.start()));
@@ -58,7 +58,7 @@ public class StringData implements ConfigData<String> {
 		this.values = Collections.unmodifiableList(values);
 	}
 
-	private static ConfigData<String> createData(Matcher matcher) {
+	private static PlaceholderData createData(Matcher matcher) {
 		if (matcher.group("var") != null) {
 			String owner = matcher.group("varOwner");
 			String variable = matcher.group("varName");
@@ -108,7 +108,7 @@ public class StringData implements ConfigData<String> {
 			}
 			if (index == 0) return null;
 
-			return new ArgumentData(index - 1, def);
+			return new ArgumentData(matcher.group(), index - 1, def);
 		}
 
 		if (matcher.group("papi") != null) {
@@ -156,12 +156,26 @@ public class StringData implements ConfigData<String> {
 		return values.isEmpty();
 	}
 
-	public List<ConfigData<String>> getValues() {
+	public List<PlaceholderData> getValues() {
 		return values;
 	}
 
 	public List<String> getFragments() {
 		return fragments;
+	}
+
+	@Override
+	public String toString() {
+		if (values.isEmpty()) return fragments.get(0);
+
+		StringBuilder builder = new StringBuilder();
+		for (int i = 0; i < fragments.size() - 1; i++) {
+			builder.append(fragments.get(i));
+			builder.append(values.get(i));
+		}
+		builder.append(fragments.get(fragments.size() - 1));
+
+		return builder.toString();
 	}
 
 	public static abstract class PlaceholderData implements ConfigData<String> {
@@ -177,14 +191,21 @@ public class StringData implements ConfigData<String> {
 			return false;
 		}
 
+		@Override
+		public String toString() {
+			return placeholder;
+		}
+
 	}
 
-	public static class ArgumentData implements ConfigData<String> {
+	public static class ArgumentData extends PlaceholderData {
 
 		private final String def;
 		private final int index;
 
-		public ArgumentData(int index, String def) {
+		public ArgumentData(String placeholder, int index, String def) {
+			super(placeholder);
+
 			this.index = index;
 			this.def = def;
 		}
@@ -193,11 +214,6 @@ public class StringData implements ConfigData<String> {
 		public String get(@NotNull SpellData data) {
 			if (data.args() != null && data.args().length > index) return data.args()[index];
 			else return def;
-		}
-
-		@Override
-		public boolean isConstant() {
-			return false;
 		}
 
 	}

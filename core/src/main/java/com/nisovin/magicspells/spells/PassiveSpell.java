@@ -77,7 +77,7 @@ public class PassiveSpell extends Spell {
 		Subspell spell;
 		if (spellNames != null) {
 			for (String spellName : spellNames) {
-				spell = initSubspell(spellName, "PassiveSpell '" + internalName + "' has an invalid spell listed: " + spellName);
+				spell = initSubspell(spellName, "PassiveSpell '" + internalName + "' has an invalid spell listed: " + spellName, false);
 				if (spell == null) continue;
 				spells.add(spell);
 			}

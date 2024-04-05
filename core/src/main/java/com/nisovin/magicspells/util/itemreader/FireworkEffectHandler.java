@@ -1,11 +1,16 @@
 package com.nisovin.magicspells.util.itemreader;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 import org.bukkit.Color;
 import org.bukkit.FireworkEffect;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.FireworkEffectMeta;
 import org.bukkit.configuration.ConfigurationSection;
 
+import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.util.Util;
 import com.nisovin.magicspells.handlers.DebugHandler;
 import com.nisovin.magicspells.util.magicitems.MagicItemData;
@@ -22,43 +27,26 @@ public class FireworkEffectHandler {
 	public static void process(ConfigurationSection config, ItemMeta meta, MagicItemData data) {
 		if (!(meta instanceof FireworkEffectMeta fireworkMeta)) return;
 
-		String type = "BALL";
+		String type = config.getString(TYPE_CONFIG_NAME, "BALL").trim().toUpperCase();
+		boolean trail = config.getBoolean(TRAIL_CONFIG_NAME, false);
+		boolean flicker = config.getBoolean(FLICKER_CONFIG_NAME, false);
 
-		boolean trail = false;
-		boolean flicker = false;
+		String colorString = config.getString(COLORS_CONFIG_NAME);
+		List<Color> colors = getColorsFromString(colorString);
+		List<Color> fadeColors = getColorsFromString(config.getString(FADE_COLORS_CONFIG_NAME));
 
-		Color[] colors = null;
-		Color[] fadeColors = null;
+		if (colors.isEmpty()) {
+			if (colorString != null)
+				MagicDebug.warn("No valid firework effect colors specified on magic item.", colorString);
 
-		if (config.isString(TYPE_CONFIG_NAME)) {
-			type = config.getString(TYPE_CONFIG_NAME, "").trim().toUpperCase();
+			return;
 		}
-
-		if (config.isBoolean(TRAIL_CONFIG_NAME)) {
-			trail = config.getBoolean(TRAIL_CONFIG_NAME);
-		}
-
-		if (config.isBoolean(FLICKER_CONFIG_NAME)) {
-			flicker = config.getBoolean(FLICKER_CONFIG_NAME);
-		}
-
-		if (config.isString(COLORS_CONFIG_NAME)) {
-			colors = Util.getColorsFromString(config.getString(COLORS_CONFIG_NAME, "FF0000"));
-		}
-
-		if (config.isString(FADE_COLORS_CONFIG_NAME)) {
-			fadeColors = Util.getColorsFromString(config.getString(FADE_COLORS_CONFIG_NAME, "FF0000"));
-		}
-
-		// colors cant be null
-		if (colors == null) return;
-		if (fadeColors == null) fadeColors = new Color[0];
 
 		FireworkEffect.Type fireworkType;
 		try {
 			fireworkType = FireworkEffect.Type.valueOf(type);
 		} catch (IllegalArgumentException e) {
-			DebugHandler.debugBadEnumValue(FireworkEffect.Type.class, type);
+			MagicDebug.warn("Invalid firework type '%s' on magic item.", type);
 			return;
 		}
 
@@ -84,6 +72,24 @@ public class FireworkEffectHandler {
 		if (!(meta instanceof FireworkEffectMeta effectMeta)) return;
 		if (!effectMeta.hasEffect()) return;
 		data.setAttribute(FIREWORK_EFFECT, effectMeta.getEffect());
+	}
+
+	public static List<Color> getColorsFromString(String input) {
+		if (input == null || input.isEmpty()) return List.of();
+
+		List<Color> colors = new ArrayList<>();
+
+		String[] colorStrings = input.split(",");
+		for (String colorString : colorStrings) {
+			try {
+				int c = Integer.parseInt(colorString.trim(), 16);
+				colors.add(Color.fromRGB(c));
+			} catch (IllegalArgumentException e) {
+				MagicDebug.warn("Invalid firework effect color '%s' on magic item.", colorString);
+			}
+		}
+
+		return colors;
 	}
 
 }
