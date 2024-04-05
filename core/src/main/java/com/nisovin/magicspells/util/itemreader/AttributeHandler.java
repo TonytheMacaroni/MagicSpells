@@ -19,6 +19,7 @@ import org.bukkit.inventory.EquipmentSlotGroup;
 import org.bukkit.configuration.ConfigurationSection;
 
 import com.nisovin.magicspells.MagicSpells;
+import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.util.AttributeUtil;
 import com.nisovin.magicspells.util.ConfigReaderUtil;
 import com.nisovin.magicspells.util.magicitems.MagicItemData;
@@ -65,13 +66,13 @@ public class AttributeHandler {
 				case String string -> {
 					String[] args = string.split(" ");
 					if (args.length < 2 || args.length > 5) {
-						MagicSpells.error("Invalid attribute modifier '" + string + "' - too many or too few arguments.");
+						MagicDebug.warn("Invalid attribute modifier '%s' on magic item - too many or too few arguments.", string);
 						continue;
 					}
 
 					Attribute attribute = AttributeUtil.getAttribute(args[0]);
 					if (attribute == null) {
-						MagicSpells.error("Invalid attribute '" + args[0] + "' on attribute modifier '" + string + "'.");
+						MagicDebug.warn("Invalid attribute '%s' on attribute modifier '%s' on magic item.", args[0], string);
 						continue;
 					}
 
@@ -79,7 +80,7 @@ public class AttributeHandler {
 					try {
 						value = Double.parseDouble(args[1]);
 					} catch (NumberFormatException e) {
-						MagicSpells.error("Invalid value '" + args[1] + "' on attribute modifier '" + string + "'.");
+						MagicDebug.warn("Invalid value '%s' on attribute modifier '%s' on magic item.", args[1], string);
 						continue;
 					}
 
@@ -88,7 +89,7 @@ public class AttributeHandler {
 						operation = AttributeUtil.getOperation(args[2]);
 
 						if (operation == null) {
-							MagicSpells.error("Invalid operation '" + args[2] + "' on attribute modifier '" + string + "'.");
+							MagicDebug.warn("Invalid operation '%s' on attribute modifier '%s' on magic item.", args[2], string);
 							continue;
 						}
 					}
@@ -103,7 +104,7 @@ public class AttributeHandler {
 						};
 
 						if (group == null) {
-							MagicSpells.error("Invalid equipment slot group '" + args[3] + "' on attribute modifier '" + string + "'.");
+							MagicDebug.warn("Invalid equipment slot group '%s' on attribute modifier '%s' on magic item.", args[3], string);
 							continue;
 						}
 					}
@@ -113,7 +114,7 @@ public class AttributeHandler {
 						key = NamespacedKey.fromString(args[4], MagicSpells.getInstance());
 
 						if (key == null) {
-							MagicSpells.error("Invalid namespaced key '" + args[4] + "' on attribute modifier '" + string + "'.");
+							MagicDebug.warn("Invalid namespaced key '%s' on attribute modifier '%s' on magic item.", args[4], string);
 							continue;
 						}
 					} else {
@@ -136,39 +137,39 @@ public class AttributeHandler {
 
 					String attributeString = config.getString("type");
 					if (attributeString == null) {
-						MagicSpells.error("No 'type' specified on attribute modifier.");
+						MagicDebug.warn("No 'type' specified on attribute modifier on magic item.");
 						continue;
 					}
 
 					Attribute attribute = AttributeUtil.getAttribute(attributeString);
 					if (attribute == null) {
-						MagicSpells.error("Invalid attribute '" + attributeString + "' specified for 'type' on attribute modifier.");
+						MagicDebug.warn("Invalid attribute '%s' specified for 'type' on attribute modifier on magic item.", attributeString);
 						continue;
 					}
 
 					Object amountObj = config.get("amount");
 					if (!(amountObj instanceof Number amount)) {
-						if (amountObj == null) MagicSpells.error("No 'amount' specified on attribute modifier.");
-						else MagicSpells.error("Invalid value '" + amountObj + "' specified for 'amount' on attribute modifier.");
+						if (amountObj == null) MagicDebug.warn("No 'amount' specified on attribute modifier.");
+						else MagicDebug.warn("Invalid value '%s' specified for 'amount' on attribute modifier on magic item.", amountObj);
 
 						continue;
 					}
 
 					String operationString = config.getString("operation");
 					if (operationString == null) {
-						MagicSpells.error("No 'operation' specified on attribute modifier.");
+						MagicDebug.warn("No 'operation' specified on attribute modifier on magic item.");
 						continue;
 					}
 
 					AttributeModifier.Operation operation = AttributeUtil.getOperation(operationString);
 					if (operation == null) {
-						MagicSpells.error("Invalid operation '" + operationString + "' specified for 'operation' on attribute modifier.");
+						MagicDebug.warn("Invalid operation '%s' specified for 'operation' on attribute modifier on magic item.", operationString);
 						continue;
 					}
 
 					String slotString = config.getString("slot");
 					if (slotString == null) {
-						MagicSpells.error("No 'slot' specified on attribute modifier.");
+						MagicDebug.warn("No 'slot' specified on attribute modifier.");
 						continue;
 					}
 
@@ -180,25 +181,25 @@ public class AttributeHandler {
 					};
 
 					if (group == null) {
-						MagicSpells.error("Invalid equipment slot group '" + slotString + "' specified for 'slot' on attribute modifier.");
+						MagicDebug.warn("Invalid equipment slot group '%s' specified for 'slot' on attribute modifier on magic item.", slotString);
 						continue;
 					}
 
 					String idString = config.getString("id");
 					if (idString == null) {
-						MagicSpells.error("No 'id' specified on attribute modifier.");
+						MagicDebug.warn("No 'id' specified on attribute modifier on magic item.");
 						continue;
 					}
 
 					NamespacedKey id = NamespacedKey.fromString(idString, MagicSpells.getInstance());
 					if (id == null) {
-						MagicSpells.error("Invalid value '" + idString + "' specified for 'id' on attribute modifier.");
+						MagicDebug.warn("Invalid namespaced key '%s' specified for 'id' on attribute modifier on magic item.", idString);
 						continue;
 					}
 
 					modifiers.put(attribute, new AttributeModifier(id, amount.doubleValue(), operation, group));
 				}
-				default -> MagicSpells.error("Invalid attribute modifier '" + object + "'.");
+				default -> MagicDebug.warn("Invalid attribute modifier '%s' on magic item.", object);
 			}
 		}
 

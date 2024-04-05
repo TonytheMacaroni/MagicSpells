@@ -3,6 +3,7 @@ package com.nisovin.magicspells.volatilecode
 import org.bukkit.Bukkit
 
 import com.nisovin.magicspells.MagicSpells
+import com.nisovin.magicspells.debug.MagicDebug
 
 object ManagerVolatile {
 
@@ -22,10 +23,10 @@ object ManagerVolatile {
             val version = "v" + mcVersion.replace(".", "_")
             val volatileCode = Class.forName("com.nisovin.magicspells.volatilecode.$version.VolatileCode_$version")
 
-            MagicSpells.log("Found volatile code handler for $mcVersion.")
+            MagicDebug.info("Found volatile code handler for $mcVersion.")
             volatileCode.getConstructor(VolatileCodeHelper::class.java).newInstance(helper) as VolatileCodeHandle
         } catch (ex: Exception) {
-            MagicSpells.error("Volatile code handler for $mcVersion not found, using fallback.")
+            MagicDebug.error("Volatile code handler for $mcVersion not found, using fallback.")
             VolatileCodeDisabled()
         }
     }

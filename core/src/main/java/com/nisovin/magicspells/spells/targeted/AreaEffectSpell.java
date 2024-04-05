@@ -84,7 +84,7 @@ public class AreaEffectSpell extends TargetedSpell implements TargetedLocationSp
 
 		Subspell spell;
 		for (String spellName : spellNames) {
-			spell = initSubspell(spellName, prefix + "attempted to use invalid spell '" + spellName + '\'');
+			spell = initSubspell(spellName, prefix + "attempted to use invalid spell '" + spellName + '\'', false);
 			if (spell == null) continue;
 
 			spells.add(spell);
