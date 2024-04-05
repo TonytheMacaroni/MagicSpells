@@ -1,0 +1,22 @@
+package com.nisovin.magicspells.debug;
+
+public enum DebugCategory {
+
+	DEFAULT,
+	CAST_LISTENERS,
+	CONDITIONS,
+	MAGIC_ITEMS,
+	PASSIVE,
+	PERMISSIONS,
+	OPTIONS,
+	RECIPES,
+	SPELLBOOK,
+	SPELLS,
+	SPELL_EFFECTS,
+	STORAGE,
+	VARIABLES,
+	MANA,
+	XP_SYSTEM;
+
+
+}

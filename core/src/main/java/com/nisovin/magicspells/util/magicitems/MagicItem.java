@@ -33,4 +33,9 @@ public class MagicItem {
 		return new MagicItem(itemStack.clone(), magicItemData.clone());
 	}
 
+	@Override
+	public String toString() {
+		return magicItemData.toString();
+	}
+
 }

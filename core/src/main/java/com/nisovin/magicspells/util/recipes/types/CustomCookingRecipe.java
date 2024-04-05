@@ -20,7 +20,7 @@ public abstract class CustomCookingRecipe extends CustomRecipe {
 		ingredient = resolveRecipeChoice("ingredient");
 		experience = (float) config.getDouble("experience", 0);
 		cookingTime = config.getInt("cooking-time", 0);
-		category = resolveEnum(CookingBookCategory.class, "category", CookingBookCategory.MISC);
+		category = resolveEnum(CookingBookCategory.class, "category", CookingBookCategory.MISC, "cook book category");
 	}
 
 	@Override
