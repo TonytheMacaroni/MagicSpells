@@ -32,7 +32,7 @@ public class AttributeManager {
 	}
 
 	public ItemMeta addMetaAttribute(ItemMeta meta, AttributeInfo attributeInfo) {
-		return addMetaAttribute(meta, attributeInfo.getAttribute(), attributeInfo.getAttributeModifier());
+		return addMetaAttribute(meta, attributeInfo.attribute(), attributeInfo.attributeModifier());
 	}
 
 	// add attributes to item stack
@@ -65,7 +65,7 @@ public class AttributeManager {
 	}
 
 	public void addEntityAttribute(LivingEntity livingEntity, AttributeInfo attributeInfo) {
-		addEntityAttribute(livingEntity, attributeInfo.getAttribute(), attributeInfo.getAttributeModifier());
+		addEntityAttribute(livingEntity, attributeInfo.attribute(), attributeInfo.attributeModifier());
 	}
 
 	public void addEntityAttributes(LivingEntity livingEntity, Set<AttributeInfo> attributes) {
@@ -78,7 +78,7 @@ public class AttributeManager {
 	}
 
 	public boolean hasEntityAttribute(LivingEntity entity, AttributeInfo attributeInfo) {
-		return entity.getAttribute(attributeInfo.getAttribute()).getModifiers().contains(attributeInfo.getAttributeModifier());
+		return entity.getAttribute(attributeInfo.attribute()).getModifiers().contains(attributeInfo.attributeModifier());
 	}
 
 	// get attribute and attribute modifier from string
@@ -148,7 +148,7 @@ public class AttributeManager {
 
 	public ItemMeta clearMetaAttributeModifiers(ItemMeta meta, Set<AttributeInfo> attributeInfos) {
 		for (AttributeInfo attributeInfo : attributeInfos) {
-			meta = removeMetaAttributeModifier(meta, attributeInfo.getAttribute(), attributeInfo.getAttributeModifier());
+			meta = removeMetaAttributeModifier(meta, attributeInfo.attribute(), attributeInfo.attributeModifier());
 		}
 		return meta;
 	}
@@ -182,34 +182,10 @@ public class AttributeManager {
 	}
 
 	public void clearEntityAttributeModifiers(LivingEntity livingEntity, Set<AttributeInfo> attributeInfos) {
-		attributeInfos.forEach(attributeInfo -> removeEntityAttributeModifier(livingEntity, attributeInfo.getAttribute(), attributeInfo.getAttributeModifier()));
+		attributeInfos.forEach(attributeInfo -> removeEntityAttributeModifier(livingEntity, attributeInfo.attribute(), attributeInfo.attributeModifier()));
 	}
 
-	public static class AttributeInfo {
-
-		private Attribute attribute;
-		private AttributeModifier attributeModifier;
-
-		public AttributeInfo(Attribute attribute, AttributeModifier attributeModifier) {
-			this.attribute = attribute;
-			this.attributeModifier = attributeModifier;
-		}
-
-		public Attribute getAttribute() {
-			return attribute;
-		}
-
-		public void setAttribute(Attribute attribute) {
-			this.attribute = attribute;
-		}
-
-		public AttributeModifier getAttributeModifier() {
-			return attributeModifier;
-		}
-
-		public void setAttributeModifier(AttributeModifier attributeModifier) {
-			this.attributeModifier = attributeModifier;
-		}
+	public record AttributeInfo(Attribute attribute, AttributeModifier attributeModifier) {
 
 	}
 

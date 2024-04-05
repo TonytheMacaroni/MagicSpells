@@ -22,6 +22,10 @@ public class AttributeUtil {
 
 		operationNameMap.put("multiply_scalar", Operation.MULTIPLY_SCALAR_1);
 		operationNameMap.put("multiplyscalar", Operation.MULTIPLY_SCALAR_1);
+		operationNameMap.put("add", Operation.ADD_NUMBER);
+		operationNameMap.put("multiply_base", Operation.ADD_SCALAR);
+		operationNameMap.put("multiply", Operation.MULTIPLY_SCALAR_1);
+		operationNameMap.put("multiply_total", Operation.MULTIPLY_SCALAR_1);
 
 		for (Attribute attribute : Attribute.values()) {
 			String key = attribute.getKey().getKey();
@@ -35,7 +39,6 @@ public class AttributeUtil {
 			attributeNameMap.put(rep, attribute);
 			attributeNameMap.put(rep.substring(key.indexOf('.') + 1), attribute);
 		}
-
 	}
 
 	public static Attribute getAttribute(String attribute) {

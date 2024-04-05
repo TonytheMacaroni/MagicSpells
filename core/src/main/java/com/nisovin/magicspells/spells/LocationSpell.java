@@ -25,7 +25,7 @@ public class LocationSpell extends InstantSpell {
 	public void initialize() {
 		super.initialize();
 
-		spellToCast = initSubspell(spellToCastName, "LocationSpell '" + internalName + "' has an invalid spell defined!");
+		spellToCast = initSubspell(spellToCastName, "LocationSpell '" + internalName + "' has an invalid spell defined!", false);
 	}
 
 	@Override

@@ -18,7 +18,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.configuration.ConfigurationSection;
 
 import com.nisovin.magicspells.MagicSpells;
-import com.nisovin.magicspells.handlers.DebugHandler;
+import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.util.ConfigReaderUtil;
 import com.nisovin.magicspells.util.magicitems.MagicItem;
 import com.nisovin.magicspells.util.magicitems.MagicItems;
@@ -36,12 +36,7 @@ public abstract class CustomRecipe {
 		}
 	}
 
-	protected void error(String path, String message) {
-		MagicSpells.error("Error on recipe '" + config.getName() + "', option '" + path + "': " + message);
-		hadError = true;
-	}
-
-	private boolean hadError = false;
+	protected boolean error = false;
 
 	protected ConfigurationSection config;
 
@@ -60,9 +55,11 @@ public abstract class CustomRecipe {
 		// Result item
 		MagicItem magicItem = getMagicItem(config.get("result"));
 		if (magicItem == null) {
-			error("result", "Invalid magic item defined.");
+			MagicDebug.error("Invalid magic item defined for 'result' on custom recipe '%s'.", config.getName());
+			error = true;
 			return;
 		}
+
 		result = magicItem.getItemStack().clone();
 
 		// Result quantity
@@ -74,13 +71,13 @@ public abstract class CustomRecipe {
 		try {
 			namespaceKey = new NamespacedKey(MagicSpells.getInstance(), namespaceKeyString);
 		} catch (IllegalArgumentException e) {
-			error("namespace-key", "Invalid namespace key: " + namespaceKeyString);
-			MagicSpells.handleException(e);
+			MagicDebug.error(e, "Invalid 'namespace-key' on custom recipe '%s': %s", config.getName(), namespaceKeyString);
+			error = true;
 		}
 	}
 
 	public boolean hadError() {
-		return hadError;
+		return error;
 	}
 
 	public abstract Recipe build();
@@ -95,9 +92,11 @@ public abstract class CustomRecipe {
 
 			MagicItem magicItem = getMagicItem(object);
 			if (magicItem == null) {
-				error(path, "Invalid magic item.");
+				MagicDebug.error("Invalid magic item defined for '%s' on custom recipe '%s'.", path, config.getName());
+				error = true;
 				return null;
 			}
+
 			return new RecipeChoice.ExactChoice(getLoreVariants(magicItem));
 		}
 
@@ -117,15 +116,18 @@ public abstract class CustomRecipe {
 			}
 
 			if (isExpectingTags) {
-				error(path, "You cannot mix material tags and item-based recipe choices together.");
+				MagicDebug.error("Invalid entry on custom recipe '%s' at index %d of '%s' - you cannot mix material tags and item-based recipe choices together.", config.getName(), i, path);
+				error = true;
 				return null;
 			}
 
 			MagicItem magicItem = getMagicItem(object);
 			if (magicItem == null) {
-				error(path, "Invalid magic item listed at index " + i);
+				MagicDebug.error("Invalid magic item listed on custom recipe '%s' at index %d of '%s'.", config.getName(), i, path);
+				error = true;
 				return null;
 			}
+
 			items.addAll(getLoreVariants(magicItem));
 		}
 		return isExpectingTags ?
@@ -154,8 +156,13 @@ public abstract class CustomRecipe {
 
 	protected MaterialSetTag resolveMaterialTag(String path, String tagName) {
 		tagName = tagName.replaceFirst("tag:", "");
+
 		MaterialSetTag tag = MATERIAL_TAGS.get(tagName.toUpperCase());
-		if (tag == null) error(path, "Invalid material tag '" + tagName + "'. Must be one of: " + String.join(", " + MATERIAL_TAGS.keySet()));
+		if (tag == null) {
+			MagicDebug.error("Invalid material tag '%s' on option '%s' of custom recipe '%s'.", tagName, path, config.getName());
+			error = true;
+		}
+
 		return tag;
 	}
 
@@ -168,17 +175,17 @@ public abstract class CustomRecipe {
 		return null;
 	}
 
-	protected <T extends Enum<T>> T resolveEnum(Class<T> enumClass, String path, T def) {
+	protected <T extends Enum<T>> T resolveEnum(Class<T> enumClass, String path, T def, String type) {
 		String received = config.getString(path);
 		if (received == null) return def;
+
 		try {
 			return Enum.valueOf(enumClass, received.toUpperCase());
+		} catch (IllegalArgumentException e) {
+			MagicDebug.error("Invalid %s '%s' for option '%s' on custom recipe '%s'.", type, received, path, config.getName());
+			error = true;
 		}
-		catch (IllegalArgumentException e) {
-			// DebugHandler sends a sufficient error message.
-			error(path, "");
-			DebugHandler.debugBadEnumValue(enumClass, received);
-		}
+
 		return null;
 	}
 

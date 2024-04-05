@@ -1,7 +1,10 @@
 package com.nisovin.magicspells.util.magicitems;
 
+import java.io.ByteArrayOutputStream;
 import java.util.*;
 
+import com.google.common.io.ByteArrayDataOutput;
+import com.google.common.io.ByteStreams;
 import net.kyori.adventure.text.Component;
 
 import com.google.common.collect.Multimap;
@@ -18,6 +21,8 @@ import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.inventory.meta.EnchantmentStorageMeta;
 
+import com.nisovin.magicspells.debug.DebugCategory;
+import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.util.Util;
 import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.util.ItemUtil;
@@ -28,6 +33,7 @@ import com.nisovin.magicspells.handlers.EnchantmentHandler;
 import com.nisovin.magicspells.util.managers.AttributeManager;
 import com.nisovin.magicspells.util.magicitems.MagicItemData.MagicItemAttribute;
 import com.nisovin.magicspells.util.itemreader.alternative.AlternativeReaderManager;
+
 import static com.nisovin.magicspells.util.magicitems.MagicItemData.MagicItemAttribute.*;
 
 public class MagicItems {
@@ -145,10 +151,7 @@ public class MagicItems {
 		if (!enchants.isEmpty()) data.setAttribute(ENCHANTS, enchants);
 
 		// attributes
-		if (meta.hasAttributeModifiers()) {
-			Multimap<Attribute, AttributeModifier> modifiers = meta.getAttributeModifiers();
-			if (modifiers != null && !modifiers.isEmpty()) data.setAttribute(ATTRIBUTES, meta.getAttributeModifiers());
-		}
+		AttributeHandler.processMagicItemData(meta, data);
 
 		// lore
 		if (meta.hasLore()) {
@@ -218,7 +221,8 @@ public class MagicItems {
 			for (Enchantment enchant : enchantments.keySet()) {
 				int level = enchantments.get(enchant);
 
-				if (meta instanceof EnchantmentStorageMeta) ((EnchantmentStorageMeta) meta).addStoredEnchant(enchant, level, true);
+				if (meta instanceof EnchantmentStorageMeta)
+					((EnchantmentStorageMeta) meta).addStoredEnchant(enchant, level, true);
 				else meta.addEnchant(enchant, level, true);
 			}
 		}
@@ -264,6 +268,9 @@ public class MagicItems {
 		// Block Data
 		BlockDataHandler.processItemMeta(meta, data);
 
+		// Attributes
+		AttributeHandler.processItemMeta(meta, data);
+
 		// Unbreakable
 		if (data.hasAttribute(UNBREAKABLE))
 			meta.setUnbreakable((boolean) data.getAttribute(UNBREAKABLE));
@@ -275,33 +282,23 @@ public class MagicItems {
 		// Set meta
 		item.setItemMeta(meta);
 
-		// Attributes
-		AttributeManager attributeManager = MagicSpells.getAttributeManager();
-		Multimap<Attribute, AttributeModifier> attributes = (Multimap<Attribute, AttributeModifier>) data.getAttribute(ATTRIBUTES);
-		if (attributes != null) {
-			for (Attribute attribute : attributes.keySet()) {
-				Collection<AttributeModifier> attributeModifiers = attributes.get(attribute);
-				for (AttributeModifier modifier : attributeModifiers) {
-					attributeManager.addItemAttribute(item, attribute, modifier);
-				}
-			}
-		}
-
 		return new MagicItem(item, data);
 	}
 
 	public static MagicItem getMagicItemFromSection(ConfigurationSection section) {
-		try {
-			// It MUST have a type option
-			if (!section.contains("type")) return null;
+		try (var context = MagicDebug.section(DebugCategory.MAGIC_ITEMS, "Parsing section-based magic item.")) {
+			if (!section.contains("type")) {
+				MagicDebug.warn("Invalid magic item - no 'type' key present.");
+				return null;
+			}
 
-			// See if this is managed by an alternative reader
 			ItemStack item = AlternativeReaderManager.deserialize(section);
 			if (item != null) {
-				MagicItem magicItem = new MagicItem(item, getMagicItemDataFromItemStack(item));
+				MagicItemData data = getMagicItemDataFromItemStack(item);
+				MagicItem magicItem = new MagicItem(item, data);
 
 				if (section.isList("ignored-attributes")) {
-					Set<MagicItemAttribute> ignoredAttributes = magicItem.getMagicItemData().getIgnoredAttributes();
+					Set<MagicItemAttribute> ignoredAttributes = data.getIgnoredAttributes();
 					List<String> ignoredAttributeStrings = section.getStringList("ignored-attributes");
 
 					for (String attr : ignoredAttributeStrings) {
@@ -313,14 +310,14 @@ public class MagicItems {
 							switch (attrValue) {
 								case "ENCHANTMENTS" -> ignoredAttributes.add(ENCHANTS);
 								case "POTION_DATA" -> ignoredAttributes.add(POTION_TYPE);
-								default -> DebugHandler.debugBadEnumValue(MagicItemAttribute.class, attr);
+								default -> MagicDebug.warn("Invalid ignored attribute '%s'.", attr);
 							}
 						}
 					}
 				}
 
 				if (section.isList("blacklisted-attributes")) {
-					Set<MagicItemAttribute> blacklistedAttributes = magicItem.getMagicItemData().getBlacklistedAttributes();
+					Set<MagicItemAttribute> blacklistedAttributes = data.getBlacklistedAttributes();
 					List<String> blacklistedAttributeStrings = section.getStringList("blacklisted-attributes");
 
 					for (String attr : blacklistedAttributeStrings) {
@@ -332,97 +329,105 @@ public class MagicItems {
 							switch (attrValue) {
 								case "ENCHANTMENTS" -> blacklistedAttributes.add(ENCHANTS);
 								case "POTION_DATA" -> blacklistedAttributes.add(POTION_TYPE);
-								default -> DebugHandler.debugBadEnumValue(MagicItemAttribute.class, attr);
+								default -> MagicDebug.warn("Invalid blacklisted attribute '%s'.", attr);
 							}
 						}
 					}
 				}
 
 				if (section.isBoolean("strict-enchants"))
-					magicItem.getMagicItemData().setStrictEnchants(section.getBoolean("strict-enchants"));
+					data.setStrictEnchants(section.getBoolean("strict-enchants"));
 
 				if (section.isBoolean("strict-block-data"))
-					magicItem.getMagicItemData().setStrictBlockData(section.getBoolean("strict-block-data"));
+					data.setStrictBlockData(section.getBoolean("strict-block-data"));
 
 				if (section.isBoolean("strict-durability"))
-					magicItem.getMagicItemData().setStrictDurability(section.getBoolean("strict-durability"));
+					data.setStrictDurability(section.getBoolean("strict-durability"));
 
 				if (section.isBoolean("strict-enchant-level"))
-					magicItem.getMagicItemData().setStrictEnchantLevel(section.getBoolean("strict-enchant-level"));
+					data.setStrictEnchantLevel(section.getBoolean("strict-enchant-level"));
 
 				return magicItem;
 			}
 
-			MagicItemData itemData = new MagicItemData();
+			MagicItemData data;
 
 			String typeString = section.getString("type");
 			Material type = Util.getMaterial(typeString);
-			if (type == null) {
-				DebugHandler.debugBadEnumValue(Material.class, typeString);
-				return null;
-			}
-
-			item = new ItemStack(type);
-			itemData.setAttribute(TYPE, type);
-
-			if (type.isAir()) return new MagicItem(item, itemData);
-
-			if (section.isInt("amount")) {
-				int amount = section.getInt("amount");
-
-				if (amount >= 1) {
-					item.setAmount(amount);
-					itemData.setAttribute(AMOUNT, amount);
+			if (type != null) {
+				if (!type.isItem()) {
+					MagicDebug.warn("Invalid type for magic item - '%s' is not an item type.", typeString);
+					return null;
 				}
+
+				item = new ItemStack(type);
+				data = new MagicItemData();
+				data.setAttribute(TYPE, type);
+			} else {
+				MagicItem magicItem = MagicItems.getMagicItems().get(typeString);
+				if (magicItem == null) {
+					MagicDebug.warn("Invalid magic item 'type' - '%s' is not a valid item type, magic item or serializer key.", typeString);
+					return null;
+				}
+
+				item = magicItem.getItemStack().clone();
+				type = item.getType();
+
+				data = magicItem.getMagicItemData().clone();
 			}
 
 			ItemMeta meta = item.getItemMeta();
-			if (meta == null) return new MagicItem(item, itemData);
+			if (meta == null) return new MagicItem(item, data);
 
-			// Name
-			NameHandler.process(section, meta, itemData);
+			NameHandler.process(section, meta, data);
 
 			// Lore
-			LoreHandler.process(section, meta, itemData);
+			LoreHandler.process(section, meta, data);
 
 			// CustomModelData
-			CustomModelDataHandler.process(section, meta, itemData);
+			CustomModelDataHandler.process(section, meta, data);
 
 			// Enchants
 			// <enchantmentName> <level>
 			if (section.isList("enchants")) {
-				List<String> enchants = section.getStringList("enchants");
-				for (String enchant : enchants) {
+				List<String> enchantStrings = section.getStringList("enchants");
+				for (String enchantString : enchantStrings) {
+					String[] enchantData = enchantString.split(" ");
+					if (enchantData.length > 2) {
+						MagicDebug.warn("Invalid enchantment string '%s' - too many arguments.", enchantString);
+						return null;
+					}
 
-					String[] data = enchant.split(" ");
-					Enchantment e = EnchantmentHandler.getEnchantment(data[0]);
-					if (e == null) {
-						MagicSpells.error('\'' + data[0] + "' could not be connected to an enchantment");
-						continue;
+					Enchantment enchant = EnchantmentHandler.getEnchantment(enchantData[0]);
+					if (enchant == null) {
+						MagicDebug.warn("Invalid enchantment '%s'.", enchantData[0]);
+						return null;
 					}
 
 					int level = 0;
-					if (data.length > 1) {
+					if (enchantData.length > 1) {
 						try {
-							level = Integer.parseInt(data[1]);
-						} catch (NumberFormatException ex) {
-							DebugHandler.debugNumberFormat(ex);
+							level = Integer.parseInt(enchantData[1]);
+						} catch (IllegalArgumentException e) {
+							MagicDebug.warn("Invalid enchantment level '%s'.", enchantData[1]);
+							return null;
 						}
 					}
 
-					if (meta instanceof EnchantmentStorageMeta) ((EnchantmentStorageMeta) meta).addStoredEnchant(e, level, true);
-					else meta.addEnchant(e, level, true);
+					if (meta instanceof EnchantmentStorageMeta storageMeta)
+						storageMeta.addStoredEnchant(enchant, level, true);
+					else
+						meta.addEnchant(enchant, level, true);
 				}
 
 				if (meta instanceof EnchantmentStorageMeta storageMeta) {
-
 					if (storageMeta.hasStoredEnchants()) {
 						Map<Enchantment, Integer> enchantments = storageMeta.getStoredEnchants();
-						if (!enchantments.isEmpty()) itemData.setAttribute(ENCHANTS, enchantments);
+						if (!enchantments.isEmpty()) data.setAttribute(ENCHANTS, enchantments);
 					}
 				} else if (meta.hasEnchants()) {
 					Map<Enchantment, Integer> enchantments = meta.getEnchants();
-					if (!enchantments.isEmpty()) itemData.setAttribute(ENCHANTS, enchantments);
+					if (!enchantments.isEmpty()) data.setAttribute(ENCHANTS, enchantments);
 				}
 			}
 
@@ -431,98 +436,70 @@ public class MagicItems {
 
 				if (fakeGlint && !meta.hasEnchants()) {
 					ItemUtil.addFakeEnchantment(meta);
-					itemData.setAttribute(FAKE_GLINT, true);
+					data.setAttribute(FAKE_GLINT, true);
 				}
 			}
 
 			// Armor color
-			LeatherArmorHandler.process(section, meta, itemData);
+			LeatherArmorHandler.process(section, meta, data);
 
 			// Potion effects, color, type
-			PotionHandler.process(section, meta, itemData);
+			PotionHandler.process(section, meta, data);
 
 			// Skull owner
-			SkullHandler.process(section, meta, itemData);
+			SkullHandler.process(section, meta, data);
 
 			// Durability
-			if (type.getMaxDurability() > 0) DurabilityHandler.process(section, meta, itemData);
+			if (type.getMaxDurability() > 0) DurabilityHandler.process(section, meta, data);
 
 			// Repair cost
-			RepairableHandler.process(section, meta, itemData);
+			RepairableHandler.process(section, meta, data);
 
 			// Written book
-			WrittenBookHandler.process(section, meta, itemData);
+			WrittenBookHandler.process(section, meta, data);
 
 			// Banner
-			BannerHandler.process(section, meta, itemData);
+			BannerHandler.process(section, meta, data);
 
 			// Firework Star
-			FireworkEffectHandler.process(section, meta, itemData);
+			FireworkEffectHandler.process(section, meta, data);
 
 			// Firework
-			FireworkHandler.process(section, meta, itemData);
+			FireworkHandler.process(section, meta, data);
 
 			// Suspicious Stew
-			SuspiciousStewHandler.process(section, meta, itemData);
+			SuspiciousStewHandler.process(section, meta, data);
 
 			// Block Data
-			BlockDataHandler.process(section, meta, itemData, type);
+			BlockDataHandler.process(section, meta, data, type);
+
+			// Attributes
+			AttributeHandler.process(section, meta, data, type);
 
 			// Unbreakable
 			if (section.isBoolean("unbreakable")) {
 				boolean unbreakable = section.getBoolean("unbreakable");
 
 				meta.setUnbreakable(unbreakable);
-				itemData.setAttribute(UNBREAKABLE, unbreakable);
+				data.setAttribute(UNBREAKABLE, unbreakable);
 			}
 
 			if (MagicSpells.hideMagicItemTooltips()) {
 				meta.addItemFlags(ItemFlag.values());
-				itemData.setAttribute(HIDE_TOOLTIP, true);
+				data.setAttribute(HIDE_TOOLTIP, true);
 			} else if (section.isBoolean("hide-tooltip")) {
 				boolean hideTooltip = section.getBoolean("hide-tooltip");
 
 				if (hideTooltip) meta.addItemFlags(ItemFlag.values());
-				itemData.setAttribute(HIDE_TOOLTIP, hideTooltip);
+				data.setAttribute(HIDE_TOOLTIP, hideTooltip);
 			}
 
 			// Set meta
 			item.setItemMeta(meta);
 
-			// Attributes
-			//<attribute name> <value> (operation) (slot)
-			AttributeManager attributeManager = MagicSpells.getAttributeManager();
-			if (section.isList("attributes")) {
-				List<String> attributes = section.getStringList("attributes");
-				Multimap<Attribute, AttributeModifier> itemAttributes = HashMultimap.create();
-				for (String str : attributes) {
-					String[] args = str.split(" ");
-					if (args.length < 2) continue;
-
-					Attribute attribute = AttributeUtil.getAttribute(args[0]);
-					double value = Double.parseDouble(args[1]);
-
-					AttributeModifier.Operation operation = AttributeModifier.Operation.ADD_NUMBER;
-					if (args.length >= 3) operation = AttributeUtil.getOperation(args[2]);
-
-					EquipmentSlot slot = null;
-					if (args.length >= 4) {
-						try {
-							slot = EquipmentSlot.valueOf(args[3].toUpperCase());
-						} catch (Exception ignored) {}
-					}
-
-					AttributeModifier modifier = new AttributeModifier(java.util.UUID.randomUUID(), args[0], value, operation, slot);
-					attributeManager.addItemAttribute(item, attribute, modifier);
-					itemAttributes.put(attribute, modifier);
-				}
-
-				if (!itemAttributes.isEmpty()) itemData.setAttribute(ATTRIBUTES, itemAttributes);
-			}
-
 			if (section.isList("ignored-attributes")) {
 				List<String> ignoredAttributeStrings = section.getStringList("ignored-attributes");
-				Set<MagicItemAttribute> ignoredAttributes = itemData.getIgnoredAttributes();
+				Set<MagicItemAttribute> ignoredAttributes = data.getIgnoredAttributes();
 
 				for (String attr : ignoredAttributeStrings) {
 					String attrValue = attr.toUpperCase().replace("-", "_");
@@ -541,7 +518,7 @@ public class MagicItems {
 
 			if (section.isList("blacklisted-attributes")) {
 				List<String> blacklistedAttributeStrings = section.getStringList("blacklisted-attributes");
-				Set<MagicItemAttribute> blacklistedAttributes = itemData.getBlacklistedAttributes();
+				Set<MagicItemAttribute> blacklistedAttributes = data.getBlacklistedAttributes();
 
 				for (String attr : blacklistedAttributeStrings) {
 					String attrValue = attr.toUpperCase().replace("-", "_");
@@ -559,21 +536,18 @@ public class MagicItems {
 			}
 
 			if (section.isBoolean("strict-enchants"))
-				itemData.setStrictEnchants(section.getBoolean("strict-enchants"));
+				data.setStrictEnchants(section.getBoolean("strict-enchants"));
 
 			if (section.isBoolean("strict-block-data"))
-				itemData.setStrictBlockData(section.getBoolean("strict-block-data"));
+				data.setStrictBlockData(section.getBoolean("strict-block-data"));
 
 			if (section.isBoolean("strict-durability"))
-				itemData.setStrictDurability(section.getBoolean("strict-durability"));
+				data.setStrictDurability(section.getBoolean("strict-durability"));
 
 			if (section.isBoolean("strict-enchant-level"))
-				itemData.setStrictEnchantLevel(section.getBoolean("strict-enchant-level"));
+				data.setStrictEnchantLevel(section.getBoolean("strict-enchant-level"));
 
-			return new MagicItem(item, itemData);
-		} catch (Exception e) {
-			e.printStackTrace();
-			return null;
+			return new MagicItem(item, data);
 		}
 	}
 

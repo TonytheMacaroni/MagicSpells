@@ -4,12 +4,14 @@ import java.util.List;
 import java.util.ArrayList;
 
 import org.bukkit.DyeColor;
+import org.bukkit.Registry;
 import org.bukkit.block.banner.Pattern;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.block.banner.PatternType;
 import org.bukkit.inventory.meta.BannerMeta;
 import org.bukkit.configuration.ConfigurationSection;
 
+import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.handlers.DebugHandler;
 import com.nisovin.magicspells.util.magicitems.MagicItemData;
 import static com.nisovin.magicspells.util.magicitems.MagicItemData.MagicItemAttribute.PATTERNS;
@@ -22,26 +24,31 @@ public class BannerHandler {
 		if (!(meta instanceof BannerMeta bannerMeta)) return;
 		if (!config.isList(CONFIG_NAME)) return;
 
-		// patternType dyeColor
-		List<String> strPatterns = config.getStringList(CONFIG_NAME);
 		List<Pattern> patterns = new ArrayList<>();
-		for (String str : strPatterns) {
-			String[] args = str.split(" ");
-			if (args.length < 2) continue;
 
-			PatternType patternType = PatternType.getByIdentifier(args[0].toLowerCase());
-			try {
-				if (patternType == null) patternType = PatternType.valueOf(args[0].toUpperCase());
-			} catch (IllegalArgumentException e) {
-				DebugHandler.debugBadEnumValue(PatternType.class, args[0].toUpperCase());
+		List<String> patternStrings = config.getStringList(CONFIG_NAME);
+		for (String patternString : patternStrings) {
+			String[] patternData = patternString.split(" ");
+			if (patternData.length != 2) {
+				MagicDebug.warn("Invalid banner pattern '%s' on magic item.", patternString);
 				continue;
+			}
+
+			PatternType patternType = PatternType.getByIdentifier(patternData[0].toLowerCase());
+			if (patternType == null) {
+				try {
+					patternType = PatternType.valueOf(patternData[0].toUpperCase());
+				} catch (IllegalArgumentException e) {
+					MagicDebug.warn("Invalid pattern type '%s' on magic item.", patternData[0]);
+					continue;
+				}
 			}
 
 			DyeColor dyeColor;
 			try {
-				dyeColor = DyeColor.valueOf(args[1].toUpperCase());
+				dyeColor = DyeColor.valueOf(patternData[1].toUpperCase());
 			} catch (IllegalArgumentException e) {
-				DebugHandler.debugBadEnumValue(DyeColor.class, args[1].toUpperCase());
+				MagicDebug.warn("Invalid banner color '%s' on magic item.", patternData[1]);
 				continue;
 			}
 

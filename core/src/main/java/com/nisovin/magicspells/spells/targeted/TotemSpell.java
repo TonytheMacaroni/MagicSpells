@@ -157,7 +157,7 @@ public class TotemSpell extends TargetedSpell implements TargetedLocationSpell {
 			Subspell spell;
 
 			for (String spellName : spellNames) {
-				spell = initSubspell(spellName, prefix + "spell: '" + spellName + "' defined!");
+				spell = initSubspell(spellName, prefix + "spell: '" + spellName + "' defined!", false);
 				if (spell == null) continue;
 
 				spells.add(spell);

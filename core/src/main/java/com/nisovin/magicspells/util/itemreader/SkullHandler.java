@@ -10,6 +10,7 @@ import org.bukkit.configuration.ConfigurationSection;
 import com.destroystokyo.paper.profile.PlayerProfile;
 import com.destroystokyo.paper.profile.ProfileProperty;
 
+import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.handlers.DebugHandler;
 import com.nisovin.magicspells.util.magicitems.MagicItemData;
 import com.nisovin.magicspells.util.magicitems.MagicItemData.MagicItemAttribute;
@@ -30,13 +31,15 @@ public class SkullHandler {
 		String signature = null, skullOwner = null, texture = null;
 		UUID uuid = null;
 
+		uuid:
 		if (config.isString(UUID_CONFIG_NAME)) {
 			String uuidString = config.getString(UUID_CONFIG_NAME, "");
 
 			try {
 				uuid = UUID.fromString(uuidString);
 			} catch (IllegalArgumentException e) {
-				DebugHandler.debugIllegalArgumentException(e);
+				MagicDebug.warn("Invalid uuid on magic item: '%s'.", uuidString);
+				break uuid;
 			}
 
 			data.setAttribute(MagicItemAttribute.UUID, uuid);
@@ -57,12 +60,15 @@ public class SkullHandler {
 			data.setAttribute(SKULL_OWNER, skullOwner);
 		}
 
-		if ((uuid != null || skullOwner != null) && texture != null) {
-			PlayerProfile profile = Bukkit.createProfile(uuid, skullOwner);
-
-			profile.setProperty(new ProfileProperty("textures", texture, signature));
-			skullMeta.setPlayerProfile(profile);
+		if (uuid == null && skullOwner == null) {
+			if (texture != null) MagicDebug.warn("Head magic item missing 'uuid' and/or 'skull-owner' attributes.");
+			return;
 		}
+
+		PlayerProfile profile = Bukkit.createProfile(uuid, skullOwner);
+		if (texture != null) profile.setProperty(new ProfileProperty("textures", texture, signature));
+
+		skullMeta.setPlayerProfile(profile);
 	}
 
 	public static void processItemMeta(ItemMeta meta, MagicItemData data) {

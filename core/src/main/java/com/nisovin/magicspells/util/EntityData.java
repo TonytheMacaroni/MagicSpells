@@ -41,6 +41,7 @@ import com.nisovin.magicspells.util.config.FunctionData;
 import com.nisovin.magicspells.util.magicitems.MagicItem;
 import com.nisovin.magicspells.util.config.ConfigDataUtil;
 import com.nisovin.magicspells.util.magicitems.MagicItems;
+import com.nisovin.magicspells.util.config.VariableConfigData;
 
 public class EntityData {
 
@@ -689,27 +690,17 @@ public class EntityData {
 			return data -> vector;
 		}
 
-		return new ConfigData<>() {
+		return (VariableConfigData<Vector3f>) data -> {
+			Float vx = x.get(data);
+			if (vx == null) return null;
 
-			@Override
-			public Vector3f get(@NotNull SpellData data) {
-				Float vx = x.get(data);
-				if (vx == null) return null;
+			Float vy = y.get(data);
+			if (vy == null) return null;
 
-				Float vy = y.get(data);
-				if (vy == null) return null;
+			Float vz = z.get(data);
+			if (vz == null) return null;
 
-				Float vz = z.get(data);
-				if (vz == null) return null;
-
-				return new Vector3f(vx, vy, vz);
-			}
-
-			@Override
-			public boolean isConstant() {
-				return false;
-			}
-
+			return new Vector3f(vx, vy, vz);
 		};
 
 	}
@@ -743,24 +734,14 @@ public class EntityData {
 				return data -> rot;
 			}
 
-			return new ConfigData<>() {
+			return (VariableConfigData<Quaternionf>) data -> {
+				Float ang = angle.get(data);
+				if (ang == null) return null;
 
-				@Override
-				public Quaternionf get(@NotNull SpellData data) {
-					Float ang = angle.get(data);
-					if (ang == null) return null;
+				Vector3f ax = axis.get(data);
+				if (ax == null) return null;
 
-					Vector3f ax = axis.get(data);
-					if (ax == null) return null;
-
-					return new Quaternionf().setAngleAxis(ang, ax.x, ax.y, ax.z);
-				}
-
-				@Override
-				public boolean isConstant() {
-					return false;
-				}
-
+				return new Quaternionf().setAngleAxis(ang, ax.x, ax.y, ax.z);
 			};
 		}
 
@@ -826,30 +807,20 @@ public class EntityData {
 			return data -> rot;
 		}
 
-		return new ConfigData<>() {
+		return (VariableConfigData<Quaternionf>) data -> {
+			Float qx = x.get(data);
+			if (qx == null) return null;
 
-			@Override
-			public Quaternionf get(@NotNull SpellData data) {
-				Float qx = x.get(data);
-				if (qx == null) return null;
+			Float qy = y.get(data);
+			if (qy == null) return null;
 
-				Float qy = y.get(data);
-				if (qy == null) return null;
+			Float qz = z.get(data);
+			if (qz == null) return null;
 
-				Float qz = z.get(data);
-				if (qz == null) return null;
+			Float qw = w.get(data);
+			if (qw == null) return null;
 
-				Float qw = w.get(data);
-				if (qw == null) return null;
-
-				return new Quaternionf(qx, qy, qz, qw);
-			}
-
-			@Override
-			public boolean isConstant() {
-				return false;
-			}
-
+			return new Quaternionf(qx, qy, qz, qw);
 		};
 
 	}
