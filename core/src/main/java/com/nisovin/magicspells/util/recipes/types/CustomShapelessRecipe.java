@@ -9,6 +9,7 @@ import org.bukkit.inventory.ShapelessRecipe;
 import org.bukkit.inventory.recipe.CraftingBookCategory;
 import org.bukkit.configuration.ConfigurationSection;
 
+import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.util.recipes.CustomRecipe;
 
 public class CustomShapelessRecipe extends CustomRecipe {
@@ -18,7 +19,7 @@ public class CustomShapelessRecipe extends CustomRecipe {
 
 	public CustomShapelessRecipe(ConfigurationSection config) {
 		super(config);
-		category = resolveEnum(CraftingBookCategory.class, "category" , CraftingBookCategory.MISC);
+		category = resolveEnum(CraftingBookCategory.class, "category" , CraftingBookCategory.MISC, "crafting book category");
 
 		String path = "ingredients";
 		ConfigurationSection ingredientsConfig;
@@ -29,16 +30,17 @@ public class CustomShapelessRecipe extends CustomRecipe {
 			for (int i = 0; i < ingredientList.size(); i++) {
 				ingredientsConfig.set(i + "", ingredientList.get(i));
 			}
-		}
-		else ingredientsConfig = config.getConfigurationSection(path);
+		} else ingredientsConfig = config.getConfigurationSection(path);
+
 		if (ingredientsConfig == null) {
-			error(path, "None defined.");
+			MagicDebug.error("No ingredients defined for custom shapeless recipe '%s'.", config.getName());
 			return;
 		}
 
 		for (String key : ingredientsConfig.getKeys(false)) {
 			RecipeChoice choice = resolveRecipeChoice(path + "." + key);
 			if (choice == null) continue;
+
 			ingredients.add(choice);
 		}
 	}

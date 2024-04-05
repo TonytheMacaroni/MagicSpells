@@ -25,8 +25,7 @@ public class CreatureTargetSpell extends InstantSpell {
 	public void initialize() {
 		super.initialize();
 
-		targetSpell = initSubspell(targetSpellName,
-				"CreatureTargetSpell '" + internalName + "' has an invalid spell defined!");
+		targetSpell = initSubspell(targetSpellName, "CreatureTargetSpell '" + internalName + "' has an invalid spell defined!", false);
 	}
 
 	@Override

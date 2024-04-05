@@ -10,6 +10,7 @@ import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.inventory.recipe.CraftingBookCategory;
 
+import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.util.recipes.CustomRecipe;
 
 public class CustomShapedRecipe extends CustomRecipe {
@@ -21,20 +22,25 @@ public class CustomShapedRecipe extends CustomRecipe {
 	public CustomShapedRecipe(ConfigurationSection config) {
 		super(config);
 		shape = config.getStringList("shape");
-		category = resolveEnum(CraftingBookCategory.class, "category" , CraftingBookCategory.MISC);
+		category = resolveEnum(CraftingBookCategory.class, "category" , CraftingBookCategory.MISC, "crafting book category");
 
 		ConfigurationSection ingredientConfig = config.getConfigurationSection("ingredients");
 		if (ingredientConfig == null) {
-			error("ingredients", "None defined.");
+			MagicDebug.error("No ingredients defined for custom shaped recipe '%s'.", config.getName());
+			error = true;
 			return;
 		}
+
 		for (String key : ingredientConfig.getKeys(false)) {
 			if (key.length() != 1) {
-				error("ingredients", "Key '" + key + "' should be only one character.");
+				MagicDebug.error("Invalid ingredient key '%s' on custom shaped recipe '%s' - keys should a single character.", key, config.getName());
+				error = true;
 				return;
 			}
+
 			RecipeChoice choice = resolveRecipeChoice("ingredients." + key);
 			if (choice == null) return;
+
 			ingredients.put(key.charAt(0), choice);
 		}
 	}
