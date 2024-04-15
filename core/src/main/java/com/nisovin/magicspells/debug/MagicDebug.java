@@ -136,7 +136,7 @@ public class MagicDebug {
 		DebugConfig config = section.config();
 		if (config == null) return false;
 
-		return !section.all && section.config().suppressDebug(section.category, level);
+		return !section.all && config.suppressDebug(section.category, level);
 	}
 
 	public static boolean suppressLog(@NotNull DebugCategory category, DebugLevel level) {
@@ -338,7 +338,7 @@ public class MagicDebug {
 					depth++;
 				}
 
-				if (enabled || !suppressLog(DebugLevel.INFO)) {
+				if (enabled || section.category != DebugCategory.DEFAULT && !suppressLog(DebugLevel.INFO)) {
 					DebugConfig debugConfig = config;
 					if (debugConfig == null) debugConfig = MagicSpells.getDebugConfig();
 
