@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.function.BiConsumer;
 
 import org.joml.Vector3f;
@@ -108,17 +109,26 @@ public class EntityData {
 	// Villager
 	private final ConfigData<Villager.Profession> profession;
 
-	public EntityData(ConfigurationSection config) {
+	public EntityData(@NotNull ConfigurationSection config) {
 		this(config, false);
 	}
 
-	public EntityData(ConfigurationSection config, boolean forceOptional) {
+	public EntityData(@NotNull ConfigurationSection config, boolean forceOptional) {
+		this(config, null, forceOptional);
+	}
+
+	public EntityData(@NotNull ConfigurationSection config, @Nullable EntityType forceType) {
+		this(config, forceType, false);
+	}
+
+	public EntityData(@NotNull ConfigurationSection config, @Nullable EntityType forceType, boolean forceOptional) {
 		try (var ignored = MagicDebug.section(builder -> builder
 			.category(DebugCategory.OPTIONS)
 			.message("Initializing entity data section '%s'.", config.getName())
 			.path(config.getName(), "in entity data section '" + config.getName() + "'")
 		)) {
-			entityType = ConfigDataUtil.getEntityType(config, "entity", null);
+			if (forceType == null) entityType = ConfigDataUtil.getEntityType(config, "entity", null);
+			else entityType = data -> forceType;
 
 			yaw = ConfigDataUtil.getAngle(config, "yaw", Angle.DEFAULT);
 			pitch = ConfigDataUtil.getAngle(config, "pitch", Angle.DEFAULT);
@@ -195,10 +205,10 @@ public class EntityData {
 			addEulerAngle(transformers, config, "right-leg-angle", EulerAngle.ZERO, ArmorStand.class, ArmorStand::setRightLegPose, forceOptional);
 
 			// Axolotl
-			addOptEnum(transformers, config, "type", Axolotl.class, Axolotl.Variant.class, Axolotl::setVariant);
+			suppressIfNotType(Axolotl.class, () -> addOptEnum(transformers, config, "type", Axolotl.class, Axolotl.Variant.class, Axolotl::setVariant));
 
 			// Cat
-			addOptEnum(transformers, config, "type", Cat.class, Cat.Type.class, Cat::setCatType);
+			suppressIfNotType(Cat.class, () -> addOptEnum(transformers, config, "type", Cat.class, Cat.Type.class, Cat::setCatType));
 
 			// ChestedHorse
 			chested = addBoolean(transformers, config, "chested", false, ChestedHorse.class, ChestedHorse::setCarryingChest, forceOptional);
@@ -207,23 +217,23 @@ public class EntityData {
 			powered = addBoolean(transformers, config, "powered", false, Creeper.class, Creeper::setPowered, forceOptional);
 
 			// Enderman
-			carriedBlockData = addBlockData(transformers, config, "material", null, Enderman.class, Enderman::setCarriedBlock, forceOptional);
+			carriedBlockData = suppressIfNotType(Enderman.class, () -> addBlockData(transformers, config, "material", null, Enderman.class, Enderman::setCarriedBlock, forceOptional));
 
 			// Falling Block
-			fallingBlockData = addOptBlockData(transformers, config, "material", FallingBlock.class, FallingBlock::setBlockData);
+			fallingBlockData = suppressIfNotType(FallingBlock.class, () -> addOptBlockData(transformers, config, "material", FallingBlock.class, FallingBlock::setBlockData));
 
 			// Fox
-			addOptEnum(transformers, config, "type", Fox.class, Fox.Type.class, Fox::setFoxType);
+			suppressIfNotType(Fox.class, () -> addOptEnum(transformers, config, "type", Fox.class, Fox.Type.class, Fox::setFoxType));
 
 			// Frog
-			addOptEnum(transformers, config, "type", Frog.class, Frog.Variant.class, Frog::setVariant);
+			suppressIfNotType(Frog.class, () -> addOptEnum(transformers, config, "type", Frog.class, Frog.Variant.class, Frog::setVariant));
 
 			// Horse
-			horseColor = addOptEnum(transformers, config, "color", Horse.class, Horse.Color.class, Horse::setColor);
+			horseColor = suppressIfNotType(Horse.class, () -> addOptEnum(transformers, config, "color", Horse.class, Horse.Color.class, Horse::setColor));
 			horseStyle = addOptEnum(transformers, config, "style", Horse.class, Horse.Style.class, Horse::setStyle);
 
 			// Item
-			dropItemMaterial = addOptMaterial(transformers, config, "material", Item.class, (item, material) -> item.setItemStack(new ItemStack(material)));
+			dropItemMaterial = suppressIfNotType(Item.class, () -> addOptMaterial(transformers, config, "material", Item.class, (item, material) -> item.setItemStack(new ItemStack(material))));
 			addOptBoolean(transformers, config, "will-age", Item.class, Item::setWillAge);
 			addOptInteger(transformers, config, "pickup-delay", Item.class, Item::setPickupDelay);
 			addOptBoolean(transformers, config, "can-mob-pickup", Item.class, Item::setCanMobPickup);
@@ -235,18 +245,18 @@ public class EntityData {
 			addOptBoolean(transformers, config, "responsive", Interaction.class, Interaction::setResponsive);
 
 			// Llama
-			llamaColor = addOptEnum(transformers, config, "color", Llama.class, Llama.Color.class, Llama::setColor);
-			addOptMaterial(transformers, config, "material", Llama.class, (llama, material) -> llama.getInventory().setDecor(new ItemStack(material)));
+			llamaColor = suppressIfNotType(Llama.class, () -> addOptEnum(transformers, config, "color", Llama.class, Llama.Color.class, Llama::setColor));
+			suppressIfNotType(Llama.class, () -> addOptMaterial(transformers, config, "material", Llama.class, (llama, material) -> llama.getInventory().setDecor(new ItemStack(material))));
 
 			// Mushroom Cow
-			addOptEnum(transformers, config, "type", MushroomCow.class, MushroomCow.Variant.class, MushroomCow::setVariant);
+			suppressIfNotType(MushroomCow.class, () -> addOptEnum(transformers, config, "type", MushroomCow.class, MushroomCow.Variant.class, MushroomCow::setVariant));
 
 			// Panda
 			addOptEnum(transformers, config, "main-gene", Panda.class, Panda.Gene.class, Panda::setMainGene);
 			addOptEnum(transformers, config, "hidden-gene", Panda.class, Panda.Gene.class, Panda::setHiddenGene);
 
 			// Parrot
-			parrotVariant = addOptEnum(transformers, config, "type", Parrot.class, Parrot.Variant.class, Parrot::setVariant);
+			parrotVariant = suppressIfNotType(Parrot.class, () -> addOptEnum(transformers, config, "type", Parrot.class, Parrot.Variant.class, Parrot::setVariant));
 
 			// Phantom
 			addInteger(transformers, config, "size", 0, Phantom.class, Phantom::setSize, forceOptional);
@@ -256,14 +266,14 @@ public class EntityData {
 			size = addInteger(transformers, config, "size", 0, PufferFish.class, PufferFish::setPuffState, forceOptional);
 
 			// Rabbit
-			addOptEnum(transformers, config, "type", Rabbit.class, Rabbit.Type.class, Rabbit::setRabbitType);
+			suppressIfNotType(Rabbit.class, () -> addOptEnum(transformers, config, "type", Rabbit.class, Rabbit.Type.class, Rabbit::setRabbitType));
 
 			// Sheep
 			sheared = addBoolean(transformers, config, "sheared", false, Sheep.class, Sheep::setSheared, forceOptional);
-			color = addOptEnum(transformers, config, "color", Sheep.class, DyeColor.class, Sheep::setColor);
+			color = suppressIfNotType(Sheep.class, () -> addOptEnum(transformers, config, "color", Sheep.class, DyeColor.class, Sheep::setColor));
 
 			// Shulker
-			addOptEnum(transformers, config, "color", Shulker.class, DyeColor.class, Shulker::setColor);
+			suppressIfNotType(Shulker.class, () -> addOptEnum(transformers, config, "color", Shulker.class, DyeColor.class, Shulker::setColor));
 
 			// Skeleton
 			addOptBoolean(transformers, config, "should-burn-in-day", Skeleton.class, Skeleton::setShouldBurnInDay);
@@ -275,16 +285,16 @@ public class EntityData {
 			addBoolean(transformers, config, "saddled", false, Steerable.class, Steerable::setSaddle, forceOptional);
 
 			// Tropical Fish
-			addOptEnum(transformers, config, "color", TropicalFish.class, DyeColor.class, TropicalFish::setBodyColor);
+			suppressIfNotType(TropicalFish.class, () -> addOptEnum(transformers, config, "color", TropicalFish.class, DyeColor.class, TropicalFish::setBodyColor));
 			tropicalFishPatternColor = addOptEnum(transformers, config, "pattern-color", TropicalFish.class, DyeColor.class, TropicalFish::setPatternColor);
-			tropicalFishPattern = addOptEnum(transformers, config, "type", TropicalFish.class, TropicalFish.Pattern.class, TropicalFish::setPattern);
+			tropicalFishPattern = suppressIfNotType(TropicalFish.class, () -> addOptEnum(transformers, config, "type", TropicalFish.class, TropicalFish.Pattern.class, TropicalFish::setPattern));
 
 			// Villager
-			profession = addOptEnum(transformers, config, "type", Villager.class, Villager.Profession.class, Villager::setProfession);
+			profession = suppressIfNotType(Villager.class, () -> addOptEnum(transformers, config, "type", Villager.class, Villager.Profession.class, Villager::setProfession));
 
 			// Wolf
 			addBoolean(transformers, config, "angry", false, Wolf.class, Wolf::setAngry, forceOptional);
-			addOptEnum(transformers, config, "color", Wolf.class, DyeColor.class, Wolf::setCollarColor);
+			suppressIfNotType(Wolf.class, () -> addOptEnum(transformers, config, "color", Wolf.class, DyeColor.class, Wolf::setCollarColor));
 
 			// Zombie
 			addOptBoolean(transformers, config, "should-burn-in-day", Zombie.class, Zombie::setShouldBurnInDay);
@@ -400,6 +410,8 @@ public class EntityData {
 				.message("Initializing 'delayed-entity-data'.")
 				.path("delayed-entity-data", "of 'delayed-entity-data'")
 			)) {
+				EntityType type = entityType.isConstant() ? entityType.get() : null;
+
 				for (int i = 0; i < delayedDataEntries.size(); i++) {
 					try (var ignored2 = MagicDebug.section("Initializing entry at index #%d.", i).path(null, "at index #" + i)) {
 						Object object = delayedDataEntries.get(i);
@@ -421,7 +433,7 @@ public class EntityData {
 						ConfigData<Long> interval = ConfigDataUtil.getLong(section, "interval", 0);
 						ConfigData<Long> iterations = ConfigDataUtil.getLong(section, "iterations", 0);
 
-						EntityData entityData = new EntityData(dataSection, true);
+						EntityData entityData = new EntityData(dataSection, type, true);
 						delayedEntityData.add(new DelayedEntityData(entityData, delay, interval, iterations));
 					}
 				}
@@ -648,6 +660,23 @@ public class EntityData {
 			EntityEquipment equipment = entity.getEquipment();
 			equipment.setDropChance(slot, chance);
 		});
+	}
+
+	// Note: Avoid adding options with duplicate names. There should be no future usages of this method, as it leads to
+	//  degraded debug output.
+	private <T> T suppressIfNotType(Class<? extends Entity> entityClass, Supplier<T> supplier) {
+		if (entityType.isConstant()) {
+			EntityType type = entityType.get();
+
+			if (type != null) {
+				Class<? extends Entity> typeClass = type.getEntityClass();
+				if (typeClass != null && entityClass.isAssignableFrom(typeClass)) return supplier.get();
+			}
+		}
+
+		try (var ignored = MagicDebug.section(builder -> builder.suppressWarnings(true))) {
+			return supplier.get();
+		}
 	}
 
 	public ConfigData<Vector3f> getVector(ConfigurationSection config, String path) {
