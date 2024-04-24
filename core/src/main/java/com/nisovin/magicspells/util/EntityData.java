@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.function.BiConsumer;
 
 import org.joml.Vector3f;
@@ -114,17 +115,26 @@ public class EntityData {
 	// Villager
 	private final ConfigData<Villager.Profession> profession;
 
-	public EntityData(ConfigurationSection config) {
+	public EntityData(@NotNull ConfigurationSection config) {
 		this(config, false);
 	}
 
-	public EntityData(ConfigurationSection config, boolean forceOptional) {
+	public EntityData(@NotNull ConfigurationSection config, boolean forceOptional) {
+		this(config, null, forceOptional);
+	}
+
+	public EntityData(@NotNull ConfigurationSection config, @Nullable EntityType forceType) {
+		this(config, forceType, false);
+	}
+
+	public EntityData(@NotNull ConfigurationSection config, @Nullable EntityType forceType, boolean forceOptional) {
 		try (var ignored = MagicDebug.section(builder -> builder
 			.category(DebugCategory.OPTIONS)
 			.message("Initializing entity data section '%s'.", config.getName())
 			.path(config.getName(), "in entity data section '" + config.getName() + "'")
 		)) {
-			entityType = ConfigDataUtil.getEntityType(config, "entity", null);
+			if (forceType == null) entityType = ConfigDataUtil.getEntityType(config, "entity", null);
+			else entityType = data -> forceType;
 
 			yaw = ConfigDataUtil.getAngle(config, "yaw", Angle.DEFAULT);
 			pitch = ConfigDataUtil.getAngle(config, "pitch", Angle.DEFAULT);
@@ -221,19 +231,19 @@ public class EntityData {
 			// Axolotl
 			fallback(
 				key -> addOptEnum(transformers, config, key, Axolotl.class, Axolotl.Variant.class, Axolotl::setVariant),
-				"axolotl-variant", "type"
+				Axolotl.class, "axolotl-variant", "type"
 			);
 
 			// Cat
 			fallback(
 				key -> addOptRegistryEntry(transformers, config, key, Cat.class, Registry.CAT_VARIANT, Cat::setCatType),
-				"cat-variant", "type"
+				Cat.class, "cat-variant", "type"
 			);
 
 			// CollarColorable
 			fallback(
 				key -> addOptEnum(transformers, config, key, CollarColorable.class, DyeColor.class, CollarColorable::setCollarColor),
-				"collar-color", "color"
+				CollarColorable.class, "collar-color", "color"
 			);
 
 			// ChestedHorse
@@ -245,39 +255,39 @@ public class EntityData {
 			// Enderman
 			carriedBlockData = fallback(
 				key -> addBlockData(transformers, config, key, null, Enderman.class, Enderman::setCarriedBlock, forceOptional),
-				"carried-block", "material"
+				Enderman.class, "carried-block", "material"
 			);
 
 			// Falling Block
 			fallingBlockData = fallback(
 				key -> addOptBlockData(transformers, config, key, FallingBlock.class, FallingBlock::setBlockData),
-				"falling-block", "material"
+				FallingBlock.class, "falling-block", "material"
 			);
 
 			// Fox
 			fallback(
 				key -> addOptEnum(transformers, config, key, Fox.class, Fox.Type.class, Fox::setFoxType),
-				"fox-type", "type"
+				Fox.class, "fox-type", "type"
 			);
 
 			// Frog
 			fallback(
 				key -> addOptRegistryEntry(transformers, config, key, Frog.class, Registry.FROG_VARIANT, Frog::setVariant),
-				"frog-variant", "type"
+				Frog.class, "frog-variant", "type"
 			);
 
 			// Horse
 			horseColor = fallback(
 				key -> addOptEnum(transformers, config, key, Horse.class, Horse.Color.class, Horse::setColor),
-				"horse-color", "color"
+				Horse.class, "horse-color", "color"
 			);
 			horseStyle = fallback(
 				key -> addOptEnum(transformers, config, key, Horse.class, Horse.Style.class, Horse::setStyle),
-				"horse-style", "style"
+				Horse.class, "horse-style", "style"
 			);
 
 			// Item
-			dropItemMaterial = addOptMaterial(transformers, config, "material", Item.class, (item, material) -> item.setItemStack(new ItemStack(material)));
+			dropItemMaterial = suppressIfNotType(Item.class, () -> addOptMaterial(transformers, config, "material", Item.class, (item, material) -> item.setItemStack(new ItemStack(material))));
 			addOptBoolean(transformers, config, "will-age", Item.class, Item::setWillAge);
 			addOptInteger(transformers, config, "pickup-delay", Item.class, Item::setPickupDelay);
 			addOptBoolean(transformers, config, "can-mob-pickup", Item.class, Item::setCanMobPickup);
@@ -291,17 +301,17 @@ public class EntityData {
 			// Llama
 			llamaColor = fallback(
 				key -> addOptEnum(transformers, config, key, Llama.class, Llama.Color.class, Llama::setColor),
-				"llama-variant", "color"
+				Llama.class, "llama-variant", "color"
 			);
 			fallback(
 				key -> addOptMaterial(transformers, config, key, Llama.class, (llama, material) -> llama.getInventory().setDecor(new ItemStack(material))),
-				"llama-decor", "material"
+				Llama.class, "llama-decor", "material"
 			);
 
 			// Mushroom Cow
 			fallback(
 				key -> addOptEnum(transformers, config, key, MushroomCow.class, MushroomCow.Variant.class, MushroomCow::setVariant),
-				"mooshroom-type", "type"
+				MushroomCow.class, "mooshroom-type", "type"
 			);
 
 			// Panda
@@ -311,7 +321,7 @@ public class EntityData {
 			// Parrot
 			parrotVariant = fallback(
 				key -> addOptEnum(transformers, config, key, Parrot.class, Parrot.Variant.class, Parrot::setVariant),
-				"parrot-variant", "type"
+				Parrot.class, "parrot-variant", "type"
 			);
 
 			// Phantom
@@ -324,20 +334,20 @@ public class EntityData {
 			// Rabbit
 			fallback(
 				key -> addOptEnum(transformers, config, key, Rabbit.class, Rabbit.Type.class, Rabbit::setRabbitType),
-				"rabbit-type", "type"
+				Rabbit.class, "rabbit-type", "type"
 			);
 
 			// Sheep
 			sheared = addBoolean(transformers, config, "sheared", false, Sheep.class, Sheep::setSheared, forceOptional);
 			color = fallback(
 				key -> addOptEnum(transformers, config, key, Sheep.class, DyeColor.class, Sheep::setColor),
-				"sheep-color", "color"
+				Sheep.class, "sheep-color", "color"
 			);
 
 			// Shulker
 			fallback(
 				key -> addOptEnum(transformers, config, key, Shulker.class, DyeColor.class, Shulker::setColor),
-				"shulker-color", "color"
+				Shulker.class, "shulker-color", "color"
 			);
 
 			// Skeleton
@@ -352,21 +362,21 @@ public class EntityData {
 			// Tropical Fish
 			fallback(
 				key -> addOptEnum(transformers, config, key, TropicalFish.class, DyeColor.class, TropicalFish::setBodyColor),
-				"tropical-fish.body-color", "color"
+				TropicalFish.class, "tropical-fish.body-color", "color"
 			);
 			tropicalFishPatternColor = fallback(
 				key -> addOptEnum(transformers, config, key, TropicalFish.class, DyeColor.class, TropicalFish::setPatternColor),
-				"tropical-fish.pattern-color", "pattern-color"
+				TropicalFish.class, "tropical-fish.pattern-color", "pattern-color"
 			);
 			tropicalFishPattern = fallback(
 				key -> addOptEnum(transformers, config, key, TropicalFish.class, TropicalFish.Pattern.class, TropicalFish::setPattern),
-				"tropical-fish.pattern", "type"
+				TropicalFish.class, "tropical-fish.pattern", "type"
 			);
 
 			// Villager
 			profession = fallback(
 				key -> addOptRegistryEntry(transformers, config, key, Villager.class, Registry.VILLAGER_PROFESSION, Villager::setProfession),
-				"villager-profession", "type"
+				Villager.class, "villager-profession", "type"
 			);
 			addOptRegistryEntry(transformers, config, "villager-type", Villager.class, Registry.VILLAGER_TYPE, Villager::setVillagerType);
 
@@ -488,6 +498,8 @@ public class EntityData {
 				.message("Initializing 'delayed-entity-data'.")
 				.path("delayed-entity-data", "of 'delayed-entity-data'")
 			)) {
+				EntityType type = entityType.isConstant() ? entityType.get() : null;
+
 				for (int i = 0; i < delayedDataEntries.size(); i++) {
 					try (var ignored2 = MagicDebug.section("Initializing entry at index #%d.", i).path(null, "at index #" + i)) {
 						Object object = delayedDataEntries.get(i);
@@ -509,7 +521,7 @@ public class EntityData {
 						ConfigData<Long> interval = ConfigDataUtil.getLong(section, "interval", 0);
 						ConfigData<Long> iterations = ConfigDataUtil.getLong(section, "iterations", 0);
 
-						EntityData entityData = new EntityData(dataSection, true);
+						EntityData entityData = new EntityData(dataSection, type, true);
 						delayedEntityData.add(new DelayedEntityData(entityData, delay, interval, iterations));
 					}
 				}
@@ -754,13 +766,32 @@ public class EntityData {
 		return supplier;
 	}
 
-	private <T> ConfigData<T> fallback(Function<String, ConfigData<T>> function, String... keys) {
-		for (String key : keys) {
-			ConfigData<T> data = function.apply(key);
+	// Note: Avoid adding options with duplicate names.
+	private <T> T suppressIfNotType(Class<? extends Entity> entityClass, Supplier<T> supplier) {
+		if (entityType.isConstant()) {
+			EntityType type = entityType.get();
+
+			if (type != null) {
+				Class<? extends Entity> typeClass = type.getEntityClass();
+				if (typeClass != null && entityClass.isAssignableFrom(typeClass)) return supplier.get();
+			}
+		}
+
+		try (var ignored = MagicDebug.section(builder -> builder.suppressWarnings(true))) {
+			return supplier.get();
+		}
+	}
+
+	private <T> ConfigData<T> fallback(Function<String, ConfigData<T>> function, Class<? extends Entity> entityClass, String primary, String... fallbacks) {
+		ConfigData<T> data = function.apply(primary);
+		if (checkNull(data)) return data;
+
+		for (String key : fallbacks) {
+			data = suppressIfNotType(entityClass, () -> function.apply(key));
 			if (checkNull(data)) return data;
 		}
 
-		return data -> null;
+		return spellData -> null;
 	}
 
 	public ConfigData<Vector3f> getVector(ConfigurationSection config, String path) {
