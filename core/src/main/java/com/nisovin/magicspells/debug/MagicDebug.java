@@ -27,7 +27,7 @@ import com.nisovin.magicspells.util.config.ConfigData;
 
 public class MagicDebug {
 
-	private static Section section = new Section(null, null, DebugCategory.DEFAULT, new ArrayDeque<>(), 0, false);
+	private static Section section = new Section(null, null, DebugCategory.DEFAULT, new ArrayDeque<>(), 0, false, false);
 
 	@NotNull
 	public static Section.Builder section() {
@@ -107,6 +107,7 @@ public class MagicDebug {
 		Preconditions.checkNotNull(message, "message");
 		Preconditions.checkNotNull(args, "args");
 
+		if (section.suppressWarnings) level = DebugLevel.INFO;
 		if (suppressLog(config, category, level)) return;
 
 		if (config == null) config = section.config();
@@ -269,7 +270,7 @@ public class MagicDebug {
 	}
 
 	public record Section(@Nullable Section previous, @Nullable DebugConfig config, @NotNull DebugCategory category,
-						  @NotNull ArrayDeque<Path> path, int depth, boolean all) implements AutoCloseable {
+						  @NotNull ArrayDeque<Path> path, int depth, boolean all, boolean suppressWarnings) implements AutoCloseable {
 
 		public DebugConfig config() {
 			return config == null ? MagicSpells.getDebugConfig() : config;
@@ -289,6 +290,7 @@ public class MagicDebug {
 		public static class Builder {
 
 			private final ArrayDeque<Path> path;
+			private boolean suppressWarnings;
 			private DebugCategory category;
 			private DebugConfig config;
 
@@ -296,6 +298,7 @@ public class MagicDebug {
 			private Object[] args;
 
 			private Builder() {
+				suppressWarnings = section.suppressWarnings;
 				category = section.category;
 				config = section.config;
 				path = new ArrayDeque<>(section.path);
@@ -326,11 +329,16 @@ public class MagicDebug {
 				return this;
 			}
 
+			public Builder suppressWarnings(boolean suppressWarnings) {
+				this.suppressWarnings = suppressWarnings;
+				return this;
+			}
+
 			public Section build() {
 				boolean all = section.all || MagicDebug.isEnhanced(config, category);
 				int depth = section.depth;
 
-				if (message == null) return section = new Section(section, config, category, path, depth, all);
+				if (message == null) return section = new Section(section, config, category, path, depth, all, suppressWarnings);
 
 				boolean enabled = all || isEnabled(config, category);
 				if (enabled) {
@@ -352,7 +360,7 @@ public class MagicDebug {
 					logger.info(indentation + message.formatted(replaceArguments(args)));
 				}
 
-				return section = new Section(section, config, category, path, depth, all);
+				return section = new Section(section, config, category, path, depth, all, suppressWarnings);
 			}
 
 		}
