@@ -12,12 +12,12 @@ import com.nisovin.magicspells.storage.Database;
 public class SQLiteDatabase extends Database {
 
 	public SQLiteDatabase(MagicSpells plugin, String dbLocation) {
-		super(plugin, dbLocation);
+		super(dbLocation);
 	}
 
 	@Override
 	public Connection openConnection() {
-		File folder = plugin.getDataFolder();
+		File folder = MagicSpells.getInstance().getDataFolder();
 		if (!folder.exists()) folder.mkdirs();
 
 		File file = new File(folder, dbLocation);
