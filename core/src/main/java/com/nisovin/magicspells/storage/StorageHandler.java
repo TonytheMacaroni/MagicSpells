@@ -1,22 +1,19 @@
 package com.nisovin.magicspells.storage;
 
 import com.nisovin.magicspells.Spellbook;
-import com.nisovin.magicspells.MagicSpells;
 
-public abstract class StorageHandler {
+public interface StorageHandler {
 
-	protected MagicSpells plugin;
+	default void enable() {
 
-	public StorageHandler(MagicSpells plugin) {
-		this.plugin = plugin;
 	}
 
-	public abstract void initialize();
+	default void disable() {
 
-	public abstract void load(Spellbook spellbook);
+	}
 
-	public abstract void save(Spellbook spellbook);
+	void load(Spellbook spellbook);
 
-	public abstract void disable();
+	void save(Spellbook spellbook);
 
 }
