@@ -58,18 +58,9 @@ public class UnbindSpell extends CommandSpell {
 		Spellbook spellbook = MagicSpells.getSpellbook(caster);
 
 		if (data.args()[0] != null && data.args()[0].equalsIgnoreCase("*")) {
-			List<Spell> spells = new ArrayList<>();
-
-			for (CastItem i : spellbook.getItemSpells().keySet()) {
-				if (!i.equals(item)) continue;
-				spells.addAll(spellbook.getItemSpells().get(i));
-			}
-
-			for (Spell s : spells) {
-				spellbook.removeCastItem(s, item);
-			}
-
+			spellbook.removeCustomBindings(item);
 			spellbook.save();
+
 			sendMessage(strUnbindAll, caster, data);
 			playSpellEffects(EffectPosition.CASTER, caster, data);
 
@@ -92,7 +83,7 @@ public class UnbindSpell extends CommandSpell {
 			return new CastResult(PostCastAction.ALREADY_HANDLED, data);
 		}
 
-		boolean removed = spellbook.removeCastItem(spell, item);
+		boolean removed = spellbook.removeCustomBinding(item, spell);
 		if (!removed) {
 			sendMessage(strNotBound, caster, data);
 			return new CastResult(PostCastAction.ALREADY_HANDLED, data);

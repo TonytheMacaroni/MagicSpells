@@ -30,6 +30,8 @@ import static com.nisovin.magicspells.util.magicitems.MagicItemData.MagicItemAtt
 
 public class CastItem {
 
+	public static final CastItem AIR = new CastItem(new ItemStack(Material.AIR));
+
 	private Material type = null;
 	private String name = null;
 

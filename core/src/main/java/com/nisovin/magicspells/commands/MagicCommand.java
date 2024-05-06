@@ -62,7 +62,7 @@ public class MagicCommand extends BaseCommand {
 		});
 
 		// Create command completions.
-		commandManager.getCommandCompletions().registerAsyncCompletion("spells", context ->
+		commandManager.getCommandCompletions().registerCompletion("spells", context ->
 			TxtUtil.tabCompleteSpellName(context.getSender())
 		);
 		commandManager.getCommandCompletions().registerAsyncCompletion("variables", context ->

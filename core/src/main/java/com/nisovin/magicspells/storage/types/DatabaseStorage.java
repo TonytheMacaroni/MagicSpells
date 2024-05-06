@@ -5,18 +5,17 @@ import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.storage.Database;
 import com.nisovin.magicspells.storage.StorageHandler;
 
-public class DatabaseStorage extends StorageHandler {
+public class DatabaseStorage implements StorageHandler {
 
 	private final Database database;
 
-	public DatabaseStorage(MagicSpells plugin, Database database) {
-		super(plugin);
+	public DatabaseStorage(Database database) {
 		this.database = database;
 	}
 
 	@Override
-	public void initialize() {
-		database.initialize();
+	public void enable() {
+		database.enable();
 	}
 
 	@Override

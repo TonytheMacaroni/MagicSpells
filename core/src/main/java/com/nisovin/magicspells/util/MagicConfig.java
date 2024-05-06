@@ -20,11 +20,11 @@ public class MagicConfig {
 	private static final FilenameFilter FILENAME_FILTER = (File dir, String name) -> name.startsWith("spell") && name.endsWith(".yml");
 	private static final FilenameFilter DIRECTORY_FILTER = (File dir, String name) -> name.startsWith("spells");
 
-	private Map<String, String> spellFiles;
-	private Map<String, String> recipeFiles;
-	private Map<String, String> modifierFiles;
-	private Map<String, String> variableFiles;
-	private Map<String, String> magicItemFiles;
+	private final Map<String, String> spellFiles;
+	private final Map<String, String> recipeFiles;
+	private final Map<String, String> modifierFiles;
+	private final Map<String, String> variableFiles;
+	private final Map<String, String> magicItemFiles;
 
 	private YamlConfiguration mainConfig;
 	private YamlConfiguration defaultSpellConfig;

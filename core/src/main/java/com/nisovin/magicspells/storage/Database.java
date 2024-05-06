@@ -4,16 +4,14 @@ import java.sql.Connection;
 import java.sql.SQLException;
 
 import com.nisovin.magicspells.Spellbook;
-import com.nisovin.magicspells.MagicSpells;
 
-public abstract class Database extends StorageHandler {
+public abstract class Database implements StorageHandler {
 
 	protected Connection connection;
 
 	protected String dbLocation;
 
-	public Database(MagicSpells plugin, String dbLocation) {
-		super(plugin);
+	public Database(String dbLocation) {
 		this.dbLocation = dbLocation;
 	}
 
@@ -35,7 +33,7 @@ public abstract class Database extends StorageHandler {
 	}
 
 	@Override
-	public void initialize() {
+	public void enable() {
 		openConnection();
 		createTables();
 	}
