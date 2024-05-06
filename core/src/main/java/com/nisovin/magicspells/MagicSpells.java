@@ -80,9 +80,9 @@ import com.nisovin.magicspells.util.recipes.CustomRecipes;
 import com.nisovin.magicspells.util.ai.CustomGoalsManager;
 import com.nisovin.magicspells.handlers.DeprecationHandler;
 import com.nisovin.magicspells.spelleffects.EffectPosition;
-import com.nisovin.magicspells.storage.types.TXTFileStorage;
 import com.nisovin.magicspells.volatilecode.ManagerVolatile;
 import com.nisovin.magicspells.volatilecode.VolatileCodeHandle;
+import com.nisovin.magicspells.storage.types.JsonStorageHandler;
 import com.nisovin.magicspells.events.SpellLearnEvent.LearnSource;
 import com.nisovin.magicspells.spelleffects.trackers.EffectTracker;
 import com.nisovin.magicspells.spells.passive.util.PassiveListener;
@@ -189,6 +189,7 @@ public class MagicSpells extends JavaPlugin {
 	private boolean checkScoreboardTeams;
 	private boolean defaultAllPermsFalse;
 	private boolean enableTempGrantPerms;
+	private boolean sortCustomBindings;
 	private boolean ignoreDefaultBindings;
 	private boolean useExpBarAsCastTimeBar;
 	private boolean alwaysShowMessageOnCycle;
@@ -306,12 +307,12 @@ public class MagicSpells extends JavaPlugin {
 		}
 
 		// Load player data using a storage handler
-		try (var storage = MagicDebug.section(DebugCategory.STORAGE, "Initializing storage handler...")) {
-			storageHandler = new TXTFileStorage(plugin);
+		try (var storage = MagicDebug.section(DebugCategory.SPELLBOOK, "Initializing spellbook storage handler...")) {
+			storageHandler = new JsonStorageHandler();
 			//storageHandler = new DatabaseStorage(plugin, new SQLiteDatabase(plugin, "spellbooks.db"));
-			storageHandler.initialize();
+			storageHandler.enable();
 		}
-		MagicDebug.info(DebugCategory.STORAGE, "...storage handler initialized.");
+		MagicDebug.info(DebugCategory.SPELLBOOK, "...storage handler initialized.");
 
 		// Load online player spellbooks
 		try (var spellbook = MagicDebug.section(DebugCategory.SPELLBOOK, "Loading online player spellbooks...")) {
@@ -486,6 +487,7 @@ public class MagicSpells extends JavaPlugin {
 		castWithRightClick = config.getBoolean(path + "cast-with-right-click", false);
 		respectItemCooldowns = config.getBoolean(path + "respect-item-cooldowns", false);
 		cycleSpellsOnOffhandAction = config.getBoolean(path + "cycle-spells-with-offhand-action", false);
+		sortCustomBindings = config.getBoolean(path + "sort-custom-bindings", true);
 
 		ignoreDefaultBindings = config.getBoolean(path + "ignore-default-bindings", false);
 		ignoreCastItemEnchants = config.getBoolean(path + "ignore-cast-item-enchants", true);
@@ -1297,6 +1299,10 @@ public class MagicSpells extends JavaPlugin {
 
 	public static boolean isCyclingSpellsOnOffhandAction() {
 		return plugin.cycleSpellsOnOffhandAction;
+	}
+
+	public static boolean isSortingCustomBindings() {
+		return plugin.sortCustomBindings;
 	}
 
 	public static boolean canCastWithFist() {

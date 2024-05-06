@@ -48,8 +48,18 @@ public class MagicDebug {
 	}
 
 	@NotNull
+	public static Section section(@Nullable DebugConfig config, @NotNull @PrintFormat String message, @Nullable Object @NotNull ... args) {
+		return new Section.Builder().config(config).message(message, args).build();
+	}
+
+	@NotNull
 	public static Section section(@NotNull DebugCategory category, @NotNull @PrintFormat String message, @Nullable Object @NotNull ... args) {
 		return new Section.Builder().category(category).message(message, args).build();
+	}
+
+	@NotNull
+	public static Section section(@NotNull DebugCategory category, @Nullable DebugConfig config, @NotNull @PrintFormat String message, @Nullable Object @NotNull ... args) {
+		return new Section.Builder().category(category).config(config).message(message, args).build();
 	}
 
 	public static void info(@NotNull @PrintFormat String message, @Nullable Object @NotNull ... args) {
