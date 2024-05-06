@@ -121,7 +121,7 @@ public class BindSpell extends CommandSpell {
 		}
 
 		MagicSpells.debug(3, "    Performing bind...");
-		spellbook.addCastItem(spell, castItem);
+		spellbook.addCustomBinding(castItem, spell);
 		spellbook.save();
 		MagicSpells.debug(3, "    Bind successful.");
 
