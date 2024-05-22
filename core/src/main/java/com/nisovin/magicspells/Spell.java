@@ -1287,16 +1287,18 @@ public abstract class Spell implements Comparable<Spell>, Listener {
 						player.playSound(livingEntity.getLocation(), rechargeSound, 1.0F, 1.0F);
 				}, Math.round(TimeUtil.TICKS_PER_SECOND * cd));
 			}
+
 			if (charges <= 0 || chargesConsumed.get(uuid) >= charges) {
 				nextCast.put(uuid, System.currentTimeMillis() + (long) (cd * TimeUtil.MILLISECONDS_PER_SECOND));
 			}
 
+			if (serverCooldown > 0)
+				nextCastServer = System.currentTimeMillis() + (long) (serverCooldown * TimeUtil.MILLISECONDS_PER_SECOND);
 		} else {
 			nextCast.remove(uuid);
 			chargesConsumed.remove(uuid);
 		}
-		if (serverCooldown > 0)
-			nextCastServer = System.currentTimeMillis() + (long) (serverCooldown * TimeUtil.MILLISECONDS_PER_SECOND);
+
 		if (activateSharedCooldowns && sharedCooldowns != null) {
 			for (Map.Entry<Spell, Float> scd : sharedCooldowns.entrySet()) {
 				scd.getKey().setCooldown(livingEntity, scd.getValue(), false);
