@@ -557,6 +557,17 @@ public class Spellbook {
 		}
 	}
 
+	@Nullable
+	public ItemBindings getBindings(@Nullable ItemStack item) {
+		CastItem castItem = item == null || item.isEmpty() ? CastItem.AIR : new CastItem(item);
+		return getBindings(castItem);
+	}
+
+	@Nullable
+	public ItemBindings getBindings(@NotNull CastItem item) {
+		return itemBindings.get(item);
+	}
+
 	public void addTemporarySpell(Spell spell, Plugin plugin) {
 		if (hasSpell(spell)) return;
 
