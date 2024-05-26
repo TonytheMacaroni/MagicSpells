@@ -13,6 +13,7 @@ import com.nisovin.magicspells.util.*;
 import com.nisovin.magicspells.Spellbook;
 import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.spells.CommandSpell;
+import com.nisovin.magicspells.Spellbook.ItemBindings;
 import com.nisovin.magicspells.spelleffects.EffectPosition;
 
 public class UnbindSpell extends CommandSpell {
@@ -58,7 +59,21 @@ public class UnbindSpell extends CommandSpell {
 		Spellbook spellbook = MagicSpells.getSpellbook(caster);
 
 		if (data.args()[0] != null && data.args()[0].equalsIgnoreCase("*")) {
-			spellbook.removeCustomBindings(item);
+			if (allowedSpells == null) spellbook.removeCustomBindings(item);
+			else {
+				ItemBindings bindings = spellbook.getBindings(item);
+
+				if (bindings != null  && bindings.hasCustomBindings()) {
+					List<Spell> customBindings = bindings.getCustomBindings();
+
+					for (Spell spell : customBindings) {
+						if (!allowedSpells.contains(spell)) continue;
+
+						spellbook.removeCustomBinding(item, spell);
+					}
+				}
+			}
+
 			spellbook.save();
 
 			sendMessage(strUnbindAll, caster, data);
