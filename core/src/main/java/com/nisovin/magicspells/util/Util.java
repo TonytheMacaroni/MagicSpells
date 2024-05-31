@@ -15,6 +15,9 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.function.Predicate;
 
+import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.format.NamedTextColor;
+
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.inventory.*;
@@ -57,9 +60,10 @@ import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 
 public class Util {
 
+	private static final Pattern COLOR_AND_DECORATION_PATTERN = Pattern.compile("[&§]([0-9a-fk-or])", Pattern.CASE_INSENSITIVE);
 	private static final Pattern WEIRD_HEX_PATTERN = Pattern.compile("[&§]x(([&§][0-9a-f]){6})", Pattern.CASE_INSENSITIVE);
-	private static final Pattern COLOR_PATTERN = Pattern.compile("[&§]([0-9a-fk-or])", Pattern.CASE_INSENSITIVE);
-	private static final Pattern HEX_PATTERN = Pattern.compile("[&§](#[0-9a-f]{6})", Pattern.CASE_INSENSITIVE);
+	private static final Pattern COLOR_PATTERN = Pattern.compile("[&§]([0-9a-f])", Pattern.CASE_INSENSITIVE);
+	private static final Pattern HEX_PATTERN = Pattern.compile("[&§]#([0-9a-f]{6})", Pattern.CASE_INSENSITIVE);
 
 	private static final MiniMessage STRICT_SERIALIZER = MiniMessage.builder().strict(true).build();
 
@@ -642,11 +646,11 @@ public class Util {
 		matcher = HEX_PATTERN.matcher(builder.toString());
 		builder.setLength(0);
 		while (matcher.find()) {
-			matcher.appendReplacement(builder, "<" + matcher.group(1) + ">");
+			matcher.appendReplacement(builder, "<#" + matcher.group(1) + ">");
 		}
 		matcher.appendTail(builder);
 
-		matcher = COLOR_PATTERN.matcher(builder.toString());
+		matcher = COLOR_AND_DECORATION_PATTERN.matcher(builder.toString());
 		builder.setLength(0);
 		while (matcher.find()) {
 			ChatColor color = ChatColor.getByChar(matcher.group(1).toLowerCase());
@@ -667,6 +671,12 @@ public class Util {
 	public static String getLegacyFromMiniMessage(String input) {
 		if (input.isEmpty()) return "";
 		return getLegacyFromComponent(getMiniMessage(input));
+	}
+
+	public static String getPlainString(String string) {
+		if (string == null) return null;
+
+		return PlainTextComponentSerializer.plainText().serialize(getMiniMessage(string));
 	}
 
 	public static String getPlainString(Component component) {
@@ -742,8 +752,49 @@ public class Util {
 		return component == null ? "" : MiniMessage.miniMessage().serialize(component);
 	}
 
-	public static String getStrictStringFromComponent(Component component) {
+	public static String getStrictString(Component component) {
 		return component == null ? "" : STRICT_SERIALIZER.serialize(component);
+	}
+
+	public static String getStrictString(String string) {
+		if (string == null) return null;
+
+		return STRICT_SERIALIZER.serialize(getMiniMessage(string));
+	}
+
+	@NotNull
+	public static TextColor getColor(@Nullable String color, @NotNull TextColor def) {
+		if (color == null) return def;
+
+		Matcher matcher = COLOR_PATTERN.matcher(color);
+		if (matcher.matches()) {
+			return switch (matcher.group(1).toLowerCase()) {
+				case "0" -> NamedTextColor.BLACK;
+				case "1" -> NamedTextColor.DARK_BLUE;
+				case "2" -> NamedTextColor.DARK_GREEN;
+				case "3" -> NamedTextColor.DARK_AQUA;
+				case "4" -> NamedTextColor.DARK_RED;
+				case "5" -> NamedTextColor.DARK_PURPLE;
+				case "6" -> NamedTextColor.GOLD;
+				case "7" -> NamedTextColor.GRAY;
+				case "8" -> NamedTextColor.DARK_GRAY;
+				case "9" -> NamedTextColor.BLUE;
+				case "a" -> NamedTextColor.GREEN;
+				case "b" -> NamedTextColor.AQUA;
+				case "c" -> NamedTextColor.RED;
+				case "d" -> NamedTextColor.LIGHT_PURPLE;
+				case "e" -> NamedTextColor.YELLOW;
+				case "f" -> NamedTextColor.WHITE;
+				default -> def;
+			};
+		}
+
+		matcher = HEX_PATTERN.matcher(color);
+		if (matcher.matches())
+			return TextColor.color(Integer.parseInt(matcher.group(1)));
+
+		TextColor textColor = NamedTextColor.NAMES.value(color.toLowerCase());
+		return textColor == null ? def : textColor;
 	}
 
 	public static String colorize(String string) {
