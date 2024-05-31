@@ -13,6 +13,8 @@ import java.util.concurrent.ThreadLocalRandom;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.LinkedListMultimap;
 
+import org.incendo.cloud.suggestion.SuggestionProvider;
+
 import org.bukkit.*;
 import org.bukkit.entity.*;
 import org.bukkit.util.Vector;
@@ -40,6 +42,7 @@ import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.block.fluid.FluidData;
 import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.command.brigadier.CommandSourceStack;
 
 import com.nisovin.magicspells.util.*;
 import com.nisovin.magicspells.events.*;
@@ -1234,8 +1237,9 @@ public abstract class Spell implements Comparable<Spell>, Listener {
 		return true;
 	}
 
-	public List<String> tabComplete(CommandSender sender, String[] args) {
-		return null;
+	@SuppressWarnings({"UnstableApiUsage", "unchecked"})
+	public SuggestionProvider<CommandSourceStack> suggestionProvider() {
+		return this instanceof SuggestionProvider ? (SuggestionProvider<CommandSourceStack>) this : SuggestionProvider.noSuggestions();
 	}
 
 	// TODO can this safely be made varargs?
@@ -1272,6 +1276,10 @@ public abstract class Spell implements Comparable<Spell>, Listener {
 
 	public boolean isIgnoringGlobalCooldown() {
 		return ignoreGlobalCooldown;
+	}
+
+	public boolean isRequiringCastItemOnCommand() {
+		return requireCastItemOnCommand;
 	}
 
 	public boolean isValidItemForCastCommand(ItemStack item) {
