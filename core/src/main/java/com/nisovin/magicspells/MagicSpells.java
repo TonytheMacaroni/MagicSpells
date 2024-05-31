@@ -31,7 +31,12 @@ import org.bstats.charts.DrilldownPie;
 
 import org.jetbrains.annotations.NotNull;
 
-import co.aikar.commands.PaperCommandManager;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.format.NamedTextColor;
+
+import org.incendo.cloud.paper.PaperCommandManager;
+import org.incendo.cloud.execution.ExecutionCoordinator;
 
 import org.bukkit.*;
 import org.bukkit.event.Event;
@@ -50,6 +55,8 @@ import org.bukkit.permissions.Permission;
 import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.configuration.ConfigurationSection;
 
+import io.papermc.paper.command.brigadier.CommandSourceStack;
+
 import me.clip.placeholderapi.PlaceholderAPI;
 
 import com.nisovin.magicspells.util.*;
@@ -65,8 +72,8 @@ import com.nisovin.magicspells.debug.DebugConfig;
 import com.nisovin.magicspells.variables.Variable;
 import com.nisovin.magicspells.debug.DebugCategory;
 import com.nisovin.magicspells.spells.PassiveSpell;
-import com.nisovin.magicspells.commands.MagicCommand;
 import com.nisovin.magicspells.util.compat.EventUtil;
+import com.nisovin.magicspells.commands.MagicCommands;
 import com.nisovin.magicspells.storage.StorageHandler;
 import com.nisovin.magicspells.util.prompt.PromptType;
 import com.nisovin.magicspells.util.compat.CompatBasics;
@@ -74,7 +81,6 @@ import com.nisovin.magicspells.zones.NoMagicZoneManager;
 import com.nisovin.magicspells.spelleffects.SpellEffect;
 import com.nisovin.magicspells.util.magicitems.MagicItem;
 import com.nisovin.magicspells.castmodifiers.ModifierSet;
-import com.nisovin.magicspells.commands.CommandHelpFilter;
 import com.nisovin.magicspells.util.magicitems.MagicItems;
 import com.nisovin.magicspells.util.recipes.CustomRecipes;
 import com.nisovin.magicspells.spelleffects.EffectPosition;
@@ -135,7 +141,8 @@ public class MagicSpells extends JavaPlugin {
 	private SpellEffectManager spellEffectManager;
 	private ConditionManager conditionManager;
 	private NoMagicZoneManager zoneManager;
-	private PaperCommandManager commandManager;
+	@SuppressWarnings("UnstableApiUsage")
+	private PaperCommandManager<CommandSourceStack> commandManager;
 	private ExperienceBarManager expBarManager;
 
 	private MagicConfig config;
@@ -206,7 +213,7 @@ public class MagicSpells extends JavaPlugin {
 
 	private long lastReloadTime = 0;
 
-	private ChatColor textColor;
+	private TextColor textColor;
 
 	private double losRaySize;
 	private boolean losIgnorePassableBlocks;
@@ -233,6 +240,7 @@ public class MagicSpells extends JavaPlugin {
 	public void onEnable() {
 		load();
 		initMetrics();
+		initCommands();
 	}
 
 	public void load() {
@@ -240,8 +248,6 @@ public class MagicSpells extends JavaPlugin {
 
 		effectManager = new EffectManager(this);
 		effectManager.enableDebug(debug);
-
-		commandManager = new PaperCommandManager(plugin);
 
 		// Create storage stuff
 		spells = new HashMap<>();
@@ -382,11 +388,6 @@ public class MagicSpells extends JavaPlugin {
 			magicLogger = new MagicLogger(this);
 		}
 
-		// Register commands
-		commandManager.enableUnstableAPI("help");
-		commandManager.registerCommand(new MagicCommand());
-		CommandHelpFilter.mapPerms();
-
 		// Setup profiling
 		if (enableProfiling) {
 			profilingTotalTime = new HashMap<>();
@@ -441,6 +442,15 @@ public class MagicSpells extends JavaPlugin {
 		metrics.addCustomChart(new SimplePie("reload_time", () -> "<" + (lastReloadTime - lastReloadTime % 500 + 500) + " ms"));
 	}
 
+	@SuppressWarnings("UnstableApiUsage")
+	private void initCommands() {
+		commandManager = PaperCommandManager.builder()
+			.executionCoordinator(ExecutionCoordinator.simpleCoordinator())
+			.buildOnEnable(this);
+
+		MagicCommands.register(commandManager);
+	}
+
 	private void initOptions() {
 		// General
 		String path = "general.";
@@ -461,7 +471,6 @@ public class MagicSpells extends JavaPlugin {
 		enableErrorLogging = config.getBoolean(path + "enable-error-logging", true);
 		errorLogLimit = config.getInt(path + "error-log-limit", -1);
 		enableProfiling = config.getBoolean(path + "enable-profiling", false);
-		textColor = ChatColor.getByChar(config.getString(path + "text-color", ChatColor.DARK_AQUA.getChar() + ""));
 		broadcastRange = config.getInt(path + "broadcast-range", 20);
 		effectlibInstanceLimit = config.getInt(path + "effectlib-instance-limit", 20000);
 
@@ -532,6 +541,8 @@ public class MagicSpells extends JavaPlugin {
 				entityNames.put(entityType, config.getString(path + "entity-names." + key, ""));
 			}
 		}
+
+		textColor = Util.getColor(config.getString(path + "text-color", null), NamedTextColor.DARK_AQUA);
 
 		soundFailOnCooldown = config.getString(path + "sound-on-cooldown", null);
 		soundFailMissingReagents = config.getString(path + "sound-missing-reagents", null);
@@ -1154,7 +1165,7 @@ public class MagicSpells extends JavaPlugin {
 		return plugin.spellbooks.computeIfAbsent(player.getName(), playerName -> new Spellbook(player));
 	}
 
-	public static ChatColor getTextColor() {
+	public static TextColor getTextColor() {
 		return plugin.textColor;
 	}
 
@@ -1576,7 +1587,8 @@ public class MagicSpells extends JavaPlugin {
 		return plugin.effectManager;
 	}
 
-	public static PaperCommandManager getCommandManager() {
+	@SuppressWarnings("UnstableApiUsage")
+	public static PaperCommandManager<CommandSourceStack> getCommandManager() {
 		return plugin.commandManager;
 	}
 
@@ -1652,7 +1664,7 @@ public class MagicSpells extends JavaPlugin {
 
 		message = doReplacements(message, recipient, data, replacements);
 
-		recipient.sendMessage(Util.getMiniMessage(getTextColor() + message));
+		recipient.sendMessage(Component.text().color(getTextColor()).append(Util.getMiniMessage(message)));
 	}
 
 	private static final Pattern chatVarMatchPattern = Pattern.compile("%var:(\\w+)(?::(\\d+))?%", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
@@ -1964,13 +1976,13 @@ public class MagicSpells extends JavaPlugin {
 	public static String getTargetName(Entity target) {
 		if (target instanceof Player) return target.getName();
 
-		if (target.customName() != null) return Util.getStrictStringFromComponent(target.customName());
+		if (target.customName() != null) return Util.getStrictString(target.customName());
 
 		EntityType type = target.getType();
 		String name = plugin.entityNames.get(type);
 		if (name != null) return name;
 
-		return Util.getStrictStringFromComponent(target.name());
+		return Util.getStrictString(target.name());
 	}
 
 	public static void registerEvents(final Listener listener) {

@@ -1,11 +1,12 @@
 package com.nisovin.magicspells.mana;
 
-import org.bukkit.ChatColor;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.TextColor;
 
 public class ManaRank {
 	
 	private String name;
-	private String prefix;
+	private Component prefix;
 
 	private char symbol;
 
@@ -15,14 +16,14 @@ public class ManaRank {
 	private int regenAmount;
 	private int regenInterval;
 
-	private ChatColor colorFull;
-	private ChatColor colorEmpty;
+	private TextColor colorFull;
+	private TextColor colorEmpty;
 
 	ManaRank() {
 
 	}
 
-	ManaRank(String name, String prefix, char symbol, int barSize, int maxMana, int startingMana, int regenAmount, int regenInterval, ChatColor colorFull, ChatColor colorEmpty) {
+	ManaRank(String name, Component prefix, char symbol, int barSize, int maxMana, int startingMana, int regenAmount, int regenInterval, TextColor colorFull, TextColor colorEmpty) {
 		this.name = name;
 		this.prefix = prefix;
 		this.symbol = symbol;
@@ -43,11 +44,11 @@ public class ManaRank {
 		this.name = name;
 	}
 
-	public String getPrefix() {
+	public Component getPrefix() {
 		return prefix;
 	}
 
-	public void setPrefix(String prefix) {
+	public void setPrefix(Component prefix) {
 		this.prefix = prefix;
 	}
 
@@ -99,19 +100,19 @@ public class ManaRank {
 		this.regenInterval = regenInterval;
 	}
 
-	public ChatColor getColorFull() {
+	public TextColor getColorFull() {
 		return colorFull;
 	}
 
-	public void setColorFull(ChatColor colorFull) {
+	public void setColorFull(TextColor colorFull) {
 		this.colorFull = colorFull;
 	}
 
-	public ChatColor getColorEmpty() {
+	public TextColor getColorEmpty() {
 		return colorEmpty;
 	}
 
-	public void setColorEmpty(ChatColor colorEmpty) {
+	public void setColorEmpty(TextColor colorEmpty) {
 		this.colorEmpty = colorEmpty;
 	}
 	
