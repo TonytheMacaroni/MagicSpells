@@ -41,7 +41,7 @@ public class FireworkHandler extends ItemHandler {
 		for (String effectString : effectStrings) {
 			String[] values = effectString.split(" ");
 			if (values.length != 4 && values.length != 5) {
-				MagicDebug.warn("Invalid firework effect '%s' %s - missing or too many values.", effectString, MagicDebug.resolvePath());
+				MagicDebug.warn("Invalid firework effect '%s' %s - missing or too many values.", effectString, MagicDebug.resolveFullPath());
 				return false;
 			}
 
@@ -49,7 +49,7 @@ public class FireworkHandler extends ItemHandler {
 			try {
 				type = FireworkEffect.Type.valueOf(values[0].toUpperCase());
 			} catch (IllegalArgumentException e) {
-				MagicDebug.warn("Invalid firework effect type '%s' %s.", values[0], MagicDebug.resolvePath());
+				MagicDebug.warn("Invalid firework effect type '%s' %s.", values[0], MagicDebug.resolveFullPath());
 				return false;
 			}
 

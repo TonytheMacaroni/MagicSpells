@@ -14,14 +14,14 @@ public class DebugConfig {
 	public DebugConfig(ConfigurationSection config) {
 		String indentCharacter = config.getString("debug-test.indent-character", " ");
 		if (indentCharacter.length() != 1) {
-			MagicDebug.warn("Invalid value '%s' for 'indent-character' in 'debug-test' %s. Defaulting to ' '.", indentCharacter, MagicDebug.resolvePath());
+			MagicDebug.warn("Invalid value '%s' for 'indent-character' in 'debug-test' %s. Defaulting to ' '.", indentCharacter, MagicDebug.resolveFullPath());
 			indentCharacter = " ";
 		}
 		this.indentCharacter = " ";
 
 		int indent = config.getInt("debug-test.indent-size", 4);
 		if (indent <= 0) {
-			MagicDebug.warn("Invalid value '%s' for 'indent-size' in 'debug-test' %s. Defaulting to '4'.", indentCharacter, MagicDebug.resolvePath());
+			MagicDebug.warn("Invalid value '%s' for 'indent-size' in 'debug-test' %s. Defaulting to '4'.", indentCharacter, MagicDebug.resolveFullPath());
 			indent = 4;
 		}
 		this.indent = indent;
@@ -40,7 +40,7 @@ public class DebugConfig {
 			try {
 				level = DebugLevel.valueOf(levelString.toUpperCase());
 			} catch (IllegalArgumentException e) {
-				MagicDebug.warn("Invalid debug level of '%s' for 'debug-test' %s. Defaulting to 'WARNING'.", levelString, MagicDebug.resolvePath());
+				MagicDebug.warn("Invalid debug level of '%s' for 'debug-test' %s. Defaulting to 'WARNING'.", levelString, MagicDebug.resolveFullPath());
 				level = DebugLevel.WARNING;
 			}
 			levels.defaultReturnValue(level);
@@ -60,7 +60,7 @@ public class DebugConfig {
 		try {
 			defaultLevel = DebugLevel.valueOf(defaultLevelString.toUpperCase());
 		} catch (IllegalArgumentException | NullPointerException e) {
-			MagicDebug.warn("Invalid debug level of '%s' for 'level' in 'debug-test' %s. Defaulting to 'WARNING'.", defaultLevelString, MagicDebug.resolvePath());
+			MagicDebug.warn("Invalid debug level of '%s' for 'level' in 'debug-test' %s. Defaulting to 'WARNING'.", defaultLevelString, MagicDebug.resolveFullPath());
 			defaultLevel = DebugLevel.WARNING;
 		}
 
@@ -75,7 +75,7 @@ public class DebugConfig {
 			try {
 				category = DebugCategory.valueOf(override.toUpperCase().replace("-", "_"));
 			} catch (IllegalArgumentException e) {
-				MagicDebug.warn("Invalid debug category '%s' for 'debug.overrides' %s.", override, MagicDebug.resolvePath());
+				MagicDebug.warn("Invalid debug category '%s' for 'debug.overrides' %s.", override, MagicDebug.resolveFullPath());
 				continue;
 			}
 
@@ -84,7 +84,7 @@ public class DebugConfig {
 			try {
 				level = DebugLevel.valueOf(levelString.toUpperCase());
 			} catch (IllegalArgumentException e) {
-				MagicDebug.warn("Invalid debug level of '%s' for category '%s' for 'debug.overrides' %s.", levelString, override, MagicDebug.resolvePath());
+				MagicDebug.warn("Invalid debug level of '%s' for category '%s' for 'debug.overrides' %s.", levelString, override, MagicDebug.resolveFullPath());
 				continue;
 			}
 

@@ -78,9 +78,9 @@ public class NovaSpell extends TargetedSpell implements TargetedLocationSpell, T
 	public void initialize() {
 		super.initialize();
 
-		locationSpell = initSubspell(locationSpellName, true, "for 'spell'");
-		spellOnWaveRemove = initSubspell(spellOnWaveRemoveName, true, "for 'spell-on-wave-remove'");
-		spellOnEnd = initSubspell(spellOnEndName, true, "for 'spell-on-end'");
+		locationSpell = initSubspell(locationSpellName, true, "spell");
+		spellOnWaveRemove = initSubspell(spellOnWaveRemoveName, true, "spell-on-wave-remove");
+		spellOnEnd = initSubspell(spellOnEndName, true, "spell-on-end");
 
 		locationSpellName = null;
 		spellOnWaveRemoveName = null;

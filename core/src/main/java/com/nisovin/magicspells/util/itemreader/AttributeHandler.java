@@ -64,13 +64,13 @@ public class AttributeHandler extends ItemHandler {
 	public static AttributeInfo getAttributeModifier(String attributeString) {
 		String[] args = attributeString.split(" ");
 		if (args.length < 2 || args.length > 5) {
-			MagicDebug.warn("Invalid attribute modifier '%s' %s - too many or too few arguments.", attributeString, MagicDebug.resolvePath());
+			MagicDebug.warn("Invalid attribute modifier '%s' %s - too many or too few arguments.", attributeString, MagicDebug.resolveFullPath());
 			return null;
 		}
 
 		Attribute attribute = AttributeUtil.getAttribute(args[0]);
 		if (attribute == null) {
-			MagicDebug.warn("Invalid attribute '%s' on attribute modifier '%s' %s.", args[0], attributeString, MagicDebug.resolvePath());
+			MagicDebug.warn("Invalid attribute '%s' on attribute modifier '%s' %s.", args[0], attributeString, MagicDebug.resolveFullPath());
 			return null;
 		}
 
@@ -78,7 +78,7 @@ public class AttributeHandler extends ItemHandler {
 		try {
 			value = Double.parseDouble(args[1]);
 		} catch (NumberFormatException e) {
-			MagicDebug.warn("Invalid value '%s' on attribute modifier '%s' %s.", args[1], attributeString, MagicDebug.resolvePath());
+			MagicDebug.warn("Invalid value '%s' on attribute modifier '%s' %s.", args[1], attributeString, MagicDebug.resolveFullPath());
 			return null;
 		}
 
@@ -87,7 +87,7 @@ public class AttributeHandler extends ItemHandler {
 			operation = AttributeUtil.getOperation(args[2]);
 
 			if (operation == null) {
-				MagicDebug.warn("Invalid operation '%s' on attribute modifier '%s' %s.", args[2], attributeString, MagicDebug.resolvePath());
+				MagicDebug.warn("Invalid operation '%s' on attribute modifier '%s' %s.", args[2], attributeString, MagicDebug.resolveFullPath());
 				return null;
 			}
 		}
@@ -112,7 +112,7 @@ public class AttributeHandler extends ItemHandler {
 				};
 
 				if (!valid) {
-					MagicDebug.warn("Invalid slot '%s' on attribute modifier '%s' %s.", args[3], attributeString, MagicDebug.resolvePath());
+					MagicDebug.warn("Invalid slot '%s' on attribute modifier '%s' %s.", args[3], attributeString, MagicDebug.resolveFullPath());
 					return null;
 				}
 			}
@@ -123,7 +123,7 @@ public class AttributeHandler extends ItemHandler {
 			try {
 				uuid = java.util.UUID.fromString(args[4]);
 			} catch (IllegalArgumentException e) {
-				MagicDebug.warn("Invalid UUID '%s' on attribute modifier '%s' %s.", args[3], attributeString, MagicDebug.resolvePath());
+				MagicDebug.warn("Invalid UUID '%s' on attribute modifier '%s' %s.", args[3], attributeString, MagicDebug.resolveFullPath());
 				return null;
 			}
 		} else {

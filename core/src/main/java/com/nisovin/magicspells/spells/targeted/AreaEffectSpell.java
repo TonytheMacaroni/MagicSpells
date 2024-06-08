@@ -84,7 +84,7 @@ public class AreaEffectSpell extends TargetedSpell implements TargetedLocationSp
 		for (int i = 0; i < spellNames.size(); i++) {
 			String spellName = spellNames.get(i);
 
-			Subspell spell = initSubspell(spellName, false, "at index #" + i + " of 'spells'");
+			Subspell spell = initSubspell(spellName, false, "spells[" + i + "]");
 			if (spell == null) continue;
 
 			spells.add(spell);

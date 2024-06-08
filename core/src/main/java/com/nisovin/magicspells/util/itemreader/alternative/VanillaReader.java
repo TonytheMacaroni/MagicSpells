@@ -20,7 +20,7 @@ public class VanillaReader implements ItemConfigTransformer {
 		try {
 			item = Bukkit.getItemFactory().createItemStack(data);
 		} catch (IllegalArgumentException e) {
-			MagicDebug.warn(e, "Invalid 'data' value '%s' for type 'external::vanilla' %s.", data, MagicDebug.resolvePath());
+			MagicDebug.warn(e, "Invalid 'data' value '%s' for type 'external::vanilla' %s.", data, MagicDebug.resolveFullPath());
 			return null;
 		}
 
