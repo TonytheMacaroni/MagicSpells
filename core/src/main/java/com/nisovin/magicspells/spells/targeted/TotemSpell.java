@@ -157,15 +157,15 @@ public class TotemSpell extends TargetedSpell implements TargetedLocationSpell {
 			for (int i = 0; i < spellNames.size(); i++) {
 				String spellName = spellNames.get(i);
 
-				Subspell spell = initSubspell(spellName, false, "at index #" + i + " of 'spells'");
+				Subspell spell = initSubspell(spellName, false, "spells[" + i + "]");
 				if (spell == null) continue;
 
 				spells.add(spell);
 			}
 		}
 
-		spellOnBreak = initSubspell(spellOnBreakName, true, "for 'spell-on-break'");
-		spellOnSpawn = initSubspell(spellOnSpawnName, true, "for 'spell-on-spawn'");
+		spellOnBreak = initSubspell(spellOnBreakName, true, "spell-on-break");
+		spellOnSpawn = initSubspell(spellOnSpawnName, true, "spell-on-spawn");
 
 		spellOnBreakName = null;
 		spellOnSpawnName = null;

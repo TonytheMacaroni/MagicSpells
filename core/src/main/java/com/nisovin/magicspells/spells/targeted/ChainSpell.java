@@ -42,7 +42,7 @@ public class ChainSpell extends TargetedSpell implements TargetedEntitySpell, Ta
 	public void initialize() {
 		super.initialize();
 
-		spellToCast = initSubspell(spellToCastName, false, "for 'spell'");
+		spellToCast = initSubspell(spellToCastName, false, "spell");
 		spellToCastName = null;
 	}
 

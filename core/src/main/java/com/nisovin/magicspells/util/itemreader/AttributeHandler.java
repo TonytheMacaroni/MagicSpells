@@ -75,13 +75,13 @@ public class AttributeHandler extends ItemHandler {
 				case String string -> {
 					String[] args = string.split(" ");
 					if (args.length < 2 || args.length > 5) {
-						MagicDebug.warn("Invalid attribute modifier '%s' %s - too many or too few arguments.", string, MagicDebug.resolvePath());
+						MagicDebug.warn("Invalid attribute modifier '%s' %s - too many or too few arguments.", string, MagicDebug.resolveFullPath());
 						return null;
 					}
 
 					Attribute attribute = AttributeUtil.getAttribute(args[0]);
 					if (attribute == null) {
-						MagicDebug.warn("Invalid attribute '%s' on attribute modifier '%s' %s.", args[0], string, MagicDebug.resolvePath());
+						MagicDebug.warn("Invalid attribute '%s' on attribute modifier '%s' %s.", args[0], string, MagicDebug.resolveFullPath());
 						return null;
 					}
 
@@ -89,7 +89,7 @@ public class AttributeHandler extends ItemHandler {
 					try {
 						value = Double.parseDouble(args[1]);
 					} catch (NumberFormatException e) {
-						MagicDebug.warn("Invalid value '%s' on attribute modifier '%s' %s.", args[1], string, MagicDebug.resolvePath());
+						MagicDebug.warn("Invalid value '%s' on attribute modifier '%s' %s.", args[1], string, MagicDebug.resolveFullPath());
 						return null;
 					}
 
@@ -98,7 +98,7 @@ public class AttributeHandler extends ItemHandler {
 						operation = AttributeUtil.getOperation(args[2]);
 
 						if (operation == null) {
-							MagicDebug.warn("Invalid operation '%s' on attribute modifier '%s' %s.", args[2], string, MagicDebug.resolvePath());
+							MagicDebug.warn("Invalid operation '%s' on attribute modifier '%s' %s.", args[2], string, MagicDebug.resolveFullPath());
 							return null;
 						}
 					}
@@ -113,7 +113,7 @@ public class AttributeHandler extends ItemHandler {
 						};
 
 						if (group == null) {
-							MagicDebug.warn("Invalid equipment slot group '%s' on attribute modifier '%s' %s.", args[3], string, MagicDebug.resolvePath());
+							MagicDebug.warn("Invalid equipment slot group '%s' on attribute modifier '%s' %s.", args[3], string, MagicDebug.resolveFullPath());
 							return null;
 						}
 					}
@@ -123,7 +123,7 @@ public class AttributeHandler extends ItemHandler {
 						key = NamespacedKey.fromString(args[4], MagicSpells.getInstance());
 
 						if (key == null) {
-							MagicDebug.warn("Invalid namespaced key '%s' on attribute modifier '%s' %s.", args[4], string, MagicDebug.resolvePath());
+							MagicDebug.warn("Invalid namespaced key '%s' on attribute modifier '%s' %s.", args[4], string, MagicDebug.resolveFullPath());
 							return null;
 						}
 					} else {
@@ -146,33 +146,33 @@ public class AttributeHandler extends ItemHandler {
 
 					String attributeString = config.getString("type");
 					if (attributeString == null) {
-						MagicDebug.warn("No 'type' specified on attribute modifier %s.", MagicDebug.resolvePath());
+						MagicDebug.warn("No 'type' specified on attribute modifier %s.", MagicDebug.resolveFullPath());
 						return null;
 					}
 
 					Attribute attribute = AttributeUtil.getAttribute(attributeString);
 					if (attribute == null) {
-						MagicDebug.warn("Invalid attribute '%s' specified for 'type' on attribute modifier %s.", attributeString, MagicDebug.resolvePath());
+						MagicDebug.warn("Invalid attribute '%s' specified for 'type' on attribute modifier %s.", attributeString, MagicDebug.resolveFullPath());
 						return null;
 					}
 
 					Object amountObj = config.get("amount");
 					if (!(amountObj instanceof Number amount)) {
 						if (amountObj == null) MagicDebug.warn("No 'amount' specified on attribute modifier.");
-						else MagicDebug.warn("Invalid value '%s' specified for 'amount' on attribute modifier %s.", amountObj, MagicDebug.resolvePath());
+						else MagicDebug.warn("Invalid value '%s' specified for 'amount' on attribute modifier %s.", amountObj, MagicDebug.resolveFullPath());
 
 						return null;
 					}
 
 					String operationString = config.getString("operation");
 					if (operationString == null) {
-						MagicDebug.warn("No 'operation' specified on attribute modifier %s.", MagicDebug.resolvePath());
+						MagicDebug.warn("No 'operation' specified on attribute modifier %s.", MagicDebug.resolveFullPath());
 						return null;
 					}
 
 					AttributeModifier.Operation operation = AttributeUtil.getOperation(operationString);
 					if (operation == null) {
-						MagicDebug.warn("Invalid operation '%s' specified for 'operation' on attribute modifier %s.", operationString, MagicDebug.resolvePath());
+						MagicDebug.warn("Invalid operation '%s' specified for 'operation' on attribute modifier %s.", operationString, MagicDebug.resolveFullPath());
 						return null;
 					}
 
@@ -190,26 +190,26 @@ public class AttributeHandler extends ItemHandler {
 					};
 
 					if (group == null) {
-						MagicDebug.warn("Invalid equipment slot group '%s' specified for 'slot' on attribute modifier %s.", slotString, MagicDebug.resolvePath());
+						MagicDebug.warn("Invalid equipment slot group '%s' specified for 'slot' on attribute modifier %s.", slotString, MagicDebug.resolveFullPath());
 						return null;
 					}
 
 					String idString = config.getString("id");
 					if (idString == null) {
-						MagicDebug.warn("No 'id' specified on attribute modifier %s.", MagicDebug.resolvePath());
+						MagicDebug.warn("No 'id' specified on attribute modifier %s.", MagicDebug.resolveFullPath());
 						return null;
 					}
 
 					NamespacedKey id = NamespacedKey.fromString(idString, MagicSpells.getInstance());
 					if (id == null) {
-						MagicDebug.warn("Invalid namespaced key '%s' specified for 'id' on attribute modifier %s.", idString, MagicDebug.resolvePath());
+						MagicDebug.warn("Invalid namespaced key '%s' specified for 'id' on attribute modifier %s.", idString, MagicDebug.resolveFullPath());
 						return null;
 					}
 
 					modifiers.put(attribute, new AttributeModifier(id, amount.doubleValue(), operation, group));
 				}
 				default -> {
-					MagicDebug.warn("Invalid attribute modifier '%s' %s.", object, MagicDebug.resolvePath());
+					MagicDebug.warn("Invalid attribute modifier '%s' %s.", object, MagicDebug.resolveFullPath());
 					return null;
 				}
 			}
