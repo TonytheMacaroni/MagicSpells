@@ -19,7 +19,7 @@ public class DurabilityHandler extends ItemHandler {
 		if (!config.isInt(DURABILITY.getKey())) return invalidIfSet(config, DURABILITY);
 
 		if (!(meta instanceof Damageable damageable && item.getType().getMaxDurability() > 0)) {
-			MagicDebug.warn("Invalid 'durability' specified %s - item type '%s' does not have durability.", MagicDebug.resolvePath(), item.getType().getKey().getKey());
+			MagicDebug.warn("Invalid 'durability' specified %s - item type '%s' does not have durability.", MagicDebug.resolveFullPath(), item.getType().getKey().getKey());
 			return false;
 		}
 

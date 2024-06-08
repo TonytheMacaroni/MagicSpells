@@ -123,14 +123,14 @@ public class PlayerMenuSpell extends TargetedSpell implements TargetedEntitySpel
 	public void initialize() {
 		super.initialize();
 
-		spellRange = initSubspell(spellRangeName, true, "for 'spell-range'");
-		spellOffline = initSubspell(spellOfflineName, true, "for 'spell-offline'");
-		spellOnLeft = initSubspell(spellOnLeftName, true, "for 'spell-on-left'");
-		spellOnRight = initSubspell(spellOnRightName, true, "for 'spell-on-right'");
-		spellOnDrop = initSubspell(spellOnDropName, true, "for 'spell-on-drop'");
-		spellOnSwap = initSubspell(spellOnSwapName, true, "for 'spell-on-swap'");
-		spellOnSneakLeft = initSubspell(spellOnSneakLeftName, true, "for 'spell-on-sneak-left'");
-		spellOnSneakRight = initSubspell(spellOnSneakRightName, true, "for 'spell-on-sneak-right'");
+		spellRange = initSubspell(spellRangeName, true, "spell-range");
+		spellOffline = initSubspell(spellOfflineName, true, "spell-offline");
+		spellOnLeft = initSubspell(spellOnLeftName, true, "spell-on-left");
+		spellOnRight = initSubspell(spellOnRightName, true, "spell-on-right");
+		spellOnDrop = initSubspell(spellOnDropName, true, "spell-on-drop");
+		spellOnSwap = initSubspell(spellOnSwapName, true, "spell-on-swap");
+		spellOnSneakLeft = initSubspell(spellOnSneakLeftName, true, "spell-on-sneak-left");
+		spellOnSneakRight = initSubspell(spellOnSneakRightName, true, "spell-on-sneak-right");
 
 		spellRangeName = null;
 		spellOfflineName = null;

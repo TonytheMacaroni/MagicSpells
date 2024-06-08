@@ -104,10 +104,10 @@ public class ItemProjectileSpell extends InstantSpell implements TargetedLocatio
 	public void initialize() {
 		super.initialize();
 
-		spellOnTick = initSubspell(spellOnTickName, true, "for 'spell-on-tick'");
-		spellOnDelay = initSubspell(spellOnDelayName, true, "for 'spell-on-delay'");
-		spellOnHitEntity = initSubspell(spellOnHitEntityName, true, "for 'spell-on-hit-entity'");
-		spellOnHitGround = initSubspell(spellOnHitGroundName, true, "for 'spell-on-hit-ground'");
+		spellOnTick = initSubspell(spellOnTickName, true, "spell-on-tick");
+		spellOnDelay = initSubspell(spellOnDelayName, true, "spell-on-delay");
+		spellOnHitEntity = initSubspell(spellOnHitEntityName, true, "spell-on-hit-entity");
+		spellOnHitGround = initSubspell(spellOnHitGroundName, true, "spell-on-hit-ground");
 
 		spellOnTickName = null;
 		spellOnDelayName = null;

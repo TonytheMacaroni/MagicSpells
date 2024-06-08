@@ -59,7 +59,7 @@ public class CarpetSpell extends TargetedSpell implements TargetedLocationSpell 
 	public void initialize() {
 		super.initialize();
 
-		spellOnTouch = initSubspell(spellOnTouchName, true, "for 'spell-on-touch'");
+		spellOnTouch = initSubspell(spellOnTouchName, true, "spell-on-touch");
 		spellOnTouchName = null;
 
 		if (spellOnTouch != null) checker = new TouchChecker();
