@@ -28,7 +28,7 @@ public class BannerHandler extends ItemHandler {
 		if (!config.isList(PATTERNS.getKey())) return invalidIfSet(config, PATTERNS);
 
 		if (!(meta instanceof BannerMeta bannerMeta)) {
-			MagicDebug.warn("Invalid option 'patterns' specified %s - item type '%s' cannot have banner patterns applied.", MagicDebug.resolvePath(), item.getType().getKey().getKey());
+			MagicDebug.warn("Invalid option 'patterns' specified %s - item type '%s' cannot have banner patterns applied.", MagicDebug.resolveFullPath(), item.getType().getKey().getKey());
 			return false;
 		}
 
@@ -38,7 +38,7 @@ public class BannerHandler extends ItemHandler {
 		for (String patternString : patternStrings) {
 			String[] patternData = patternString.split(" ");
 			if (patternData.length != 2) {
-				MagicDebug.warn("Invalid banner pattern '%s' %s.", patternString, MagicDebug.resolvePath());
+				MagicDebug.warn("Invalid banner pattern '%s' %s.", patternString, MagicDebug.resolveFullPath());
 				return false;
 			}
 
@@ -50,7 +50,7 @@ public class BannerHandler extends ItemHandler {
 				if (key != null) patternType = RegistryAccess.registryAccess().getRegistry(RegistryKey.BANNER_PATTERN).get(key);
 
 				if (patternType == null) {
-					MagicDebug.warn("Invalid pattern type '%s' in pattern '%s' %s.", patternData[0], patternString, MagicDebug.resolvePath());
+					MagicDebug.warn("Invalid pattern type '%s' in pattern '%s' %s.", patternData[0], patternString, MagicDebug.resolveFullPath());
 					return false;
 				}
 			}
@@ -59,7 +59,7 @@ public class BannerHandler extends ItemHandler {
 			try {
 				dyeColor = DyeColor.valueOf(patternData[1].toUpperCase());
 			} catch (IllegalArgumentException e) {
-				MagicDebug.warn("Invalid banner color '%s' in pattern '%s' %s.", patternData[1], patternString, MagicDebug.resolvePath());
+				MagicDebug.warn("Invalid banner color '%s' in pattern '%s' %s.", patternData[1], patternString, MagicDebug.resolveFullPath());
 				return false;
 			}
 

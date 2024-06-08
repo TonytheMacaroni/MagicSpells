@@ -176,15 +176,15 @@ public class ProjectileModifySpell extends TargetedSpell implements TargetedLoca
 	public void initialize() {
 		super.initialize();
 
-		projectileSpell = initSubspell(projectileSpellName, true, "for 'spell'");
-		airSpell = initSubspell(airSpellName, true, "for 'spell-on-hit-air'");
-		selfSpell = initSubspell(selfSpellName, true, "for 'spell-on-hit-self'");
-		tickSpell = initSubspell(tickSpellName, true, "for 'spell-on-tick'");
-		groundSpell = initSubspell(groundSpellName, true, "for 'spell-on-hit-ground'");
-		entitySpell = initSubspell(entitySpellName, true, "for 'spell-on-hit-entity'");
-		durationSpell = initSubspell(durationSpellName, true, "for 'spell-on-duration-end'");
-		modifierSpell = initSubspell(modifierSpellName, true, "for 'spell-on-modifier-fail'");
-		entityLocationSpell = initSubspell(entityLocationSpellName, true, "for 'spell-on-entity-location'");
+		projectileSpell = initSubspell(projectileSpellName, true, "spell");
+		airSpell = initSubspell(airSpellName, true, "spell-on-hit-air");
+		selfSpell = initSubspell(selfSpellName, true, "spell-on-hit-self");
+		tickSpell = initSubspell(tickSpellName, true, "spell-on-tick");
+		groundSpell = initSubspell(groundSpellName, true, "spell-on-hit-ground");
+		entitySpell = initSubspell(entitySpellName, true, "spell-on-hit-entity");
+		durationSpell = initSubspell(durationSpellName, true, "spell-on-duration-end");
+		modifierSpell = initSubspell(modifierSpellName, true, "spell-on-modifier-fail");
+		entityLocationSpell = initSubspell(entityLocationSpellName, true, "spell-on-entity-location");
 
 		projectileSpellName = null;
 		airSpellName = null;

@@ -88,7 +88,7 @@ public class SteedSpell extends InstantSpell {
 	protected void initialize() {
 		super.initialize();
 
-		spellOnSpawn = initSubspell(spellOnSpawnName, true, "for 'spell-on-spawn'");
+		spellOnSpawn = initSubspell(spellOnSpawnName, true, "spell-on-spawn");
 		spellOnSpawnName = null;
 	}
 

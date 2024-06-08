@@ -63,7 +63,7 @@ public final class TargetedMultiSpell extends TargetedSpell implements TargetedE
 				continue;
 			}
 
-			Subspell spell = initSubspell(s, false, "at index #" + i + " of 'spells'");
+			Subspell spell = initSubspell(s, false, "spells[" + i + "]");
 			if (spell != null) actions.add(new SpellAction(spell));
 		}
 

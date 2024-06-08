@@ -75,19 +75,19 @@ public class SilenceSpell extends TargetedSpell implements TargetedEntitySpell {
 		super.initialize();
 
 		if (preventCast) {
-			preventCastSpell = initSubspell(preventCastSpellName, true, "for 'spell-on-denied-cast'");
+			preventCastSpell = initSubspell(preventCastSpellName, true, "spell-on-denied-cast");
 			preventCastSpellName = null;
 			registerEvents(new CastListener());
 		}
 
 		if (preventChat) {
-			preventChatSpell = initSubspell(preventChatSpellName, true, "for 'spell-on-denied-chat'");
+			preventChatSpell = initSubspell(preventChatSpellName, true, "spell-on-denied-chat");
 			preventChatSpellName = null;
 			registerEvents(new ChatListener());
 		}
 
 		if (preventCommands) {
-			preventCommandSpell = initSubspell(preventCommandSpellName, true, "for 'spell-on-denied-command'");
+			preventCommandSpell = initSubspell(preventCommandSpellName, true, "spell-on-denied-command");
 			preventCommandSpellName = null;
 			registerEvents(new CommandListener());
 		}

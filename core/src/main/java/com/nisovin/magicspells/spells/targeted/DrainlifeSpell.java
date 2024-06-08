@@ -90,7 +90,7 @@ public class DrainlifeSpell extends TargetedSpell implements TargetedEntitySpell
 	public void initialize() {
 		super.initialize();
 
-		spellOnAnimation = initSubspell(spellOnAnimationName, true, "for 'spell-on-animation'");
+		spellOnAnimation = initSubspell(spellOnAnimationName, true, "spell-on-animation");
 		spellOnAnimationName = null;
 	}
 

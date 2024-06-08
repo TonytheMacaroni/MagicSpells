@@ -86,14 +86,14 @@ public class PulserSpell extends TargetedSpell implements TargetedLocationSpell 
 			for (int i = 0; i < spellNames.size(); i++) {
 				String spellName = spellNames.get(i);
 
-				Subspell spell = initSubspell(spellName, false, "at index #" + i + " of 'spells'");
+				Subspell spell = initSubspell(spellName, false, "spells[" + i + "]");
 				if (spell == null) continue;
 
 				spells.add(spell);
 			}
 		}
 
-		spellOnBreak = initSubspell(spellOnBreakName, true, "for 'spell-on-break'");
+		spellOnBreak = initSubspell(spellOnBreakName, true, "spell-on-break");
 		spellOnBreakName = null;
 
 		if (spells.isEmpty()) MagicSpells.error("PulserSpell '" + internalName + "' has no spells defined!");

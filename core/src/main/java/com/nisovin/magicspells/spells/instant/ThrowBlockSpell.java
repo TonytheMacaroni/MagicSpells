@@ -74,7 +74,7 @@ public class ThrowBlockSpell extends InstantSpell implements TargetedLocationSpe
 				int fuse = Integer.parseInt(split[1]);
 				tntFuse = data -> fuse;
 			} catch (NumberFormatException e) {
-				tntFuse = FunctionData.build(split[1], Double::intValue, 0);
+				tntFuse = FunctionData.build(split[1], Double::intValue, 0, true);
 				if (tntFuse == null)
 					MagicSpells.error("Invalid tnt fuse '" + split[1] + "' for ThrowBlockSpell '" + internalName + "'.");
 			}
@@ -111,7 +111,7 @@ public class ThrowBlockSpell extends InstantSpell implements TargetedLocationSpe
 		if (material == null && tntFuse == null)
 			MagicSpells.error("ThrowBlockSpell '" + internalName + "' has an invalid block-type defined!");
 
-		spellOnLand = initSubspell(spellOnLandName, true, "for 'spell-on-land'");
+		spellOnLand = initSubspell(spellOnLandName, true, "spell-on-land");
 		spellOnLandName = null;
 
 		if (throwBlockListener == null) {

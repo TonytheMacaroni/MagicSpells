@@ -139,12 +139,12 @@ public class HomingMissileSpell extends TargetedSpell implements TargetedEntityS
 	public void initialize() {
 		super.initialize();
 
-		hitSpell = initSubspell(hitSpellName, true, "for 'spell'");
-		groundSpell = initSubspell(groundSpellName, true, "for 'spell-on-hit-ground'");
-		airSpell = initSubspell(airSpellName, true, "for 'spell-on-hit-air'");
-		durationSpell = initSubspell(durationSpellName, true, "for 'spell-after-duration'");
-		modifierSpell = initSubspell(modifierSpellName, true, "for 'spell-on-modifier-fail'");
-		entityLocationSpell = initSubspell(entityLocationSpellName, true, "for 'spell-on-entity-location'");
+		hitSpell = initSubspell(hitSpellName, true, "spell");
+		groundSpell = initSubspell(groundSpellName, true, "spell-on-hit-ground");
+		airSpell = initSubspell(airSpellName, true, "spell-on-hit-air");
+		durationSpell = initSubspell(durationSpellName, true, "spell-after-duration");
+		modifierSpell = initSubspell(modifierSpellName, true, "spell-on-modifier-fail");
+		entityLocationSpell = initSubspell(entityLocationSpellName, true, "spell-on-entity-location");
 
 		hitSpellName = null;
 		groundSpellName = null;

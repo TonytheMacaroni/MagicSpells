@@ -21,7 +21,7 @@ public class BlockDataHandler extends ItemHandler {
 		if (!config.isString(BLOCK_DATA.getKey())) return invalidIfSet(config, BLOCK_DATA);
 
 		if (!(meta instanceof BlockDataMeta blockDataMeta)) {
-			MagicDebug.warn("Invalid option 'block-data' specified %s - item type '%s' cannot have block data applied.", MagicDebug.resolvePath(), item.getType().getKey().getKey());
+			MagicDebug.warn("Invalid option 'block-data' specified %s - item type '%s' cannot have block data applied.", MagicDebug.resolveFullPath(), item.getType().getKey().getKey());
 			return false;
 		}
 
