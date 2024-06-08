@@ -216,9 +216,9 @@ public class MinionSpell extends BuffSpell {
 	public void initialize() {
 		super.initialize();
 
-		spawnSpell = initSubspell(spawnSpellName, true, "for 'spell-on-spawn'");
-		attackSpell = initSubspell(attackSpellName, true, "for 'spell-on-attack'");
-		deathSpell = initSubspell(deathSpellName, true, "for 'spell-on-death'");
+		spawnSpell = initSubspell(spawnSpellName, true, "spell-on-spawn");
+		attackSpell = initSubspell(attackSpellName, true, "spell-on-attack");
+		deathSpell = initSubspell(deathSpellName, true, "spell-on-death");
 
 		spawnSpellName = null;
 		attackSpellName = null;

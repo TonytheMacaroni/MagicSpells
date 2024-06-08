@@ -103,11 +103,11 @@ public class BeamSpell extends InstantSpell implements TargetedLocationSpell, Ta
 	public void initialize() {
 		super.initialize();
 
-		hitSpell = initSubspell(hitSpellName, true, "for 'spell'");
-		endSpell = initSubspell(endSpellName, true, "for 'spell-on-end'");
-		travelSpell = initSubspell(travelSpellName, true, "for 'spell-on-travel'");
-		groundSpell = initSubspell(groundSpellName, true, "for 'spell-on-hit-ground'");
-		entityLocationSpell = initSubspell(entityLocationSpellName, true, "for 'spell-on-entity-location");
+		hitSpell = initSubspell(hitSpellName, true, "spell");
+		endSpell = initSubspell(endSpellName, true, "spell-on-end");
+		travelSpell = initSubspell(travelSpellName, true, "spell-on-travel");
+		groundSpell = initSubspell(groundSpellName, true, "spell-on-hit-ground");
+		entityLocationSpell = initSubspell(entityLocationSpellName, true, "spell-on-entity-location");
 
 		hitSpellName = null;
 		endSpellName = null;

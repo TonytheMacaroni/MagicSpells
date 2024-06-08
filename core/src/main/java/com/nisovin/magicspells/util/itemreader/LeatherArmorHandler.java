@@ -27,7 +27,7 @@ public class LeatherArmorHandler extends ItemHandler {
 
 		Color color = ColorUtil.getColorFromHexString(colorString, false);
 		if (color == null) {
-			MagicDebug.warn("Invalid 'color' value '%s' %s.", colorString, MagicDebug.resolvePath());
+			MagicDebug.warn("Invalid 'color' value '%s' %s.", colorString, MagicDebug.resolveFullPath());
 			return false;
 		}
 

@@ -55,6 +55,7 @@ import com.nisovin.magicspells.util.*;
 import com.nisovin.magicspells.events.*;
 import com.nisovin.magicspells.util.config.*;
 import com.nisovin.magicspells.spelleffects.*;
+import com.nisovin.magicspells.debug.DebugPath;
 import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.mana.ManaHandler;
 import com.nisovin.magicspells.spells.BuffSpell;
@@ -596,41 +597,41 @@ public abstract class Spell implements Comparable<Spell>, Listener {
 		}
 
 		if (!config.isSection(internalKey + "effects")) {
-			MagicDebug.warn("Invalid 'effects' section %s.", MagicDebug.resolvePath());
+			MagicDebug.warn("Invalid 'effects' section %s.", MagicDebug.resolveFullPath());
 			return;
 		}
 
 		effects = new EnumMap<>(EffectPosition.class);
 
 		for (String key : config.getKeys(internalKey + "effects")) {
-			try (var context = MagicDebug.section("Initializing spell effect '%s'.", key).path(key, "on spell effect '" + key + "'")) {
+			try (var context = MagicDebug.section("Initializing spell effect '%s'.", key).pushPath(key, DebugPath.Type.SECTION)) {
 				ConfigurationSection section = config.getSection(internalKey + "effects." + key);
 				if (section == null) {
-					MagicDebug.warn("Missing configuration section %s.", MagicDebug.resolvePath());
+					MagicDebug.warn("Missing configuration section %s.", MagicDebug.resolveFullPath());
 					continue;
 				}
 
 				String positionName = section.getString("position");
 				if (positionName == null) {
-					MagicDebug.warn("No 'position' set %s.", MagicDebug.resolvePath());
+					MagicDebug.warn("No 'position' set %s.", MagicDebug.resolveFullPath());
 					continue;
 				}
 
 				EffectPosition position = EffectPosition.getPositionFromString(positionName);
 				if (position == null) {
-					MagicDebug.warn("Invalid 'position' value '%s' %s.", positionName, MagicDebug.resolvePath());
+					MagicDebug.warn("Invalid 'position' value '%s' %s.", positionName, MagicDebug.resolveFullPath());
 					continue;
 				}
 
 				String effectType = section.getString("effect");
 				if (effectType == null) {
-					MagicDebug.warn("No 'effect' set %s.", MagicDebug.resolvePath());
+					MagicDebug.warn("No 'effect' set %s.", MagicDebug.resolveFullPath());
 					continue;
 				}
 
 				SpellEffect effect = MagicSpells.getSpellEffectManager().getSpellEffectByName(effectType);
 				if (effect == null) {
-					MagicDebug.warn("Invalid 'effect' value '%s' %s.", effectType, MagicDebug.resolvePath());
+					MagicDebug.warn("Invalid 'effect' value '%s' %s.", effectType, MagicDebug.resolveFullPath());
 					continue;
 				}
 
@@ -686,13 +687,13 @@ public abstract class Spell implements Comparable<Spell>, Listener {
 				if (object instanceof String s) {
 					String[] data = s.split(" ");
 					if (data.length != 2) {
-						MagicDebug.warn("Invalid shared cooldown '%s' %s - too many/few arguments.", s, MagicDebug.resolvePath());
+						MagicDebug.warn("Invalid shared cooldown '%s' %s - too many/few arguments.", s, MagicDebug.resolveFullPath());
 						continue;
 					}
 
 					Spell spell = MagicSpells.getSpellByInternalName(data[0]);
 					if (spell == null) {
-						MagicDebug.warn("Invalid spell '%s' in shared cooldown '%s' %s.", data[0], s, MagicDebug.resolvePath());
+						MagicDebug.warn("Invalid spell '%s' in shared cooldown '%s' %s.", data[0], s, MagicDebug.resolveFullPath());
 						continue;
 					}
 
@@ -700,7 +701,7 @@ public abstract class Spell implements Comparable<Spell>, Listener {
 					try {
 						cooldown = Float.parseFloat(data[1]);
 					} catch (NumberFormatException e) {
-						MagicDebug.warn("Invalid cooldown '%s' in shared cooldown '%s' %s.", data[1], s, MagicDebug.resolvePath());
+						MagicDebug.warn("Invalid cooldown '%s' in shared cooldown '%s' %s.", data[1], s, MagicDebug.resolveFullPath());
 						continue;
 					}
 
@@ -712,7 +713,7 @@ public abstract class Spell implements Comparable<Spell>, Listener {
 					ConfigurationSection section = ConfigReaderUtil.mapToSection(map);
 
 					if (!section.isString("filter") && !section.isConfigurationSection("filter")) {
-						MagicDebug.warn("No 'filter' specified in shared cooldown %s.", MagicDebug.resolvePath());
+						MagicDebug.warn("No 'filter' specified in shared cooldown %s.", MagicDebug.resolveFullPath());
 						continue;
 					}
 
@@ -720,7 +721,7 @@ public abstract class Spell implements Comparable<Spell>, Listener {
 
 					ConfigData<Float> cooldown = ConfigDataUtil.getFloat(section, "cooldown");
 					if (cooldown.isNull()) {
-						MagicDebug.warn("Invalid or no 'cooldown' specified in shared cooldown %s.", MagicDebug.resolvePath());
+						MagicDebug.warn("Invalid or no 'cooldown' specified in shared cooldown %s.", MagicDebug.resolveFullPath());
 						continue;
 					}
 
@@ -728,7 +729,7 @@ public abstract class Spell implements Comparable<Spell>, Listener {
 					continue;
 				}
 
-				MagicDebug.warn("Invalid shared cooldown %s on %s.", object, MagicDebug.resolvePath());
+				MagicDebug.warn("Invalid shared cooldown %s on %s.", object, MagicDebug.resolveFullPath());
 			}
 		}
 
@@ -736,8 +737,8 @@ public abstract class Spell implements Comparable<Spell>, Listener {
 		registerEvents();
 
 		// Other processing
-		initSubspell(spellNameOnFail, true, "for 'spell-on-fail'");
-		initSubspell(spellNameOnInterrupt, true, "for 'spell-on-interrupt'");
+		initSubspell(spellNameOnFail, true, "spell-on-fail");
+		initSubspell(spellNameOnInterrupt, true, "spell-on-interrupt");
 
 		spellNameOnFail = null;
 		spellNameOnInterrupt = null;
@@ -2159,13 +2160,13 @@ public abstract class Spell implements Comparable<Spell>, Listener {
 		if (ignoreEmptyName && (subspellName == null || subspellName.isEmpty())) return null;
 
 		if (subspellName == null || subspellName.isEmpty()) {
-			MagicDebug.warn("No subspell defined %s %s.", location, MagicDebug.resolvePath());
+			MagicDebug.warn("No subspell defined %s.", MagicDebug.resolveFullPath(location));
 			return null;
 		}
 
 		Subspell subspell = new Subspell(subspellName);
 		if (!subspell.process()) {
-			MagicDebug.warn("Invalid subspell '%s' defined %s %s.", subspellName, location, MagicDebug.resolvePath());
+			MagicDebug.warn("Invalid subspell '%s' defined %s.", subspellName, MagicDebug.resolveFullPath(location));
 			return null;
 		}
 

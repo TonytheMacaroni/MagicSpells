@@ -132,7 +132,7 @@ public class AreaScanSpell extends TargetedSpell implements TargetedLocationSpel
 	public void initialize() {
 		super.initialize();
 
-		spellToCast = initSubspell(spellToCastName, false, "for 'spell'");
+		spellToCast = initSubspell(spellToCastName, false, "spell");
 		spellToCastName = null;
 	}
 

@@ -26,6 +26,7 @@ import net.kyori.adventure.text.Component;
 import com.nisovin.magicspells.util.*;
 import com.nisovin.magicspells.Subspell;
 import com.nisovin.magicspells.MagicSpells;
+import com.nisovin.magicspells.debug.DebugPath;
 import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.variables.Variable;
 import com.nisovin.magicspells.util.config.ConfigData;
@@ -154,19 +155,24 @@ public class MenuSpell extends TargetedSpell implements TargetedEntitySpell, Tar
 	public void initialize() {
 		super.initialize();
 
-		for (MenuOption option : options.values()) {
-			try {
-				MagicDebug.pushPath(null, "on menu option '" + option.menuOptionName + "'");
+		DebugPath optionsPath = MagicDebug.pushPath("options", DebugPath.Type.SECTION);
+		try {
+			for (MenuOption option : options.values()) {
+				DebugPath optionPath = MagicDebug.pushPath(option.menuOptionName, DebugPath.Type.SECTION);
 
-				option.spell = initSubspell(option.spellName, true, "for 'spell'");
-				option.spellRight = initSubspell(option.spellRightName, true, "for 'spell-right'");
-				option.spellSneakLeft = initSubspell(option.spellSneakLeftName, true, "for 'spell-sneak-left'");
-				option.spellSneakRight = initSubspell(option.spellSneakRightName, true, "for 'spell-sneak-right'");
-				option.spellDrop = initSubspell(option.spellDropName, true, "for 'spell-drop'");
-				option.spellSwap = initSubspell(option.spellSwapName, true, "for 'spell-swap'");
-			} finally {
-				MagicDebug.popPath(null);
+				try {
+					option.spell = initSubspell(option.spellName, true, "spell");
+					option.spellRight = initSubspell(option.spellRightName, true, "spell-right");
+					option.spellSneakLeft = initSubspell(option.spellSneakLeftName, true, "spell-sneak-left");
+					option.spellSneakRight = initSubspell(option.spellSneakRightName, true, "spell-sneak-right");
+					option.spellDrop = initSubspell(option.spellDropName, true, "spell-drop");
+					option.spellSwap = initSubspell(option.spellSwapName, true, "spell-swap");
+				} finally {
+					MagicDebug.popPath(optionPath);
+				}
 			}
+		} finally {
+			MagicDebug.popPath(optionsPath);
 		}
 	}
 

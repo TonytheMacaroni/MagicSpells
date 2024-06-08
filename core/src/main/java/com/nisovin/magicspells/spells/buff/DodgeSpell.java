@@ -54,8 +54,8 @@ public class DodgeSpell extends BuffSpell {
 	public void initialize() {
 		super.initialize();
 
-		spellBeforeDodge = initSubspell(spellBeforeDodgeName, true, "for 'spell-before-dodge'");
-		spellAfterDodge = initSubspell(spellAfterDodgeName, true, "for 'spell-after-dodge'");
+		spellBeforeDodge = initSubspell(spellBeforeDodgeName, true, "spell-before-dodge");
+		spellAfterDodge = initSubspell(spellAfterDodgeName, true, "spell-after-dodge");
 
 		spellBeforeDodgeName = null;
 		spellAfterDodgeName = null;

@@ -42,6 +42,7 @@ import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 
 import com.nisovin.magicspells.MagicSpells;
+import com.nisovin.magicspells.debug.DebugPath;
 import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.debug.DebugCategory;
 import com.nisovin.magicspells.util.config.ConfigData;
@@ -131,7 +132,7 @@ public class EntityData {
 		try (var ignored = MagicDebug.section(builder -> builder
 			.category(DebugCategory.OPTIONS)
 			.message("Initializing entity data section '%s'.", config.getName())
-			.path(config.getName(), "in entity data section '" + config.getName() + "'")
+			.path(config.getName(), DebugPath.Type.SECTION)
 		)) {
 			if (forceType == null) entityType = ConfigDataUtil.getEntityType(config, "entity", null);
 			else entityType = data -> forceType;
@@ -489,23 +490,23 @@ public class EntityData {
 			List<?> delayedDataEntries = config.getList("delayed-entity-data");
 			if (delayedDataEntries == null || delayedDataEntries.isEmpty()) {
 				if (delayedDataEntries == null && config.isSet("delayed-entity-data"))
-					MagicDebug.warn("Invalid 'delayed-entity-data' section %s.", MagicDebug.resolvePath());
+					MagicDebug.warn("Invalid 'delayed-entity-data' section %s.", MagicDebug.resolveFullPath());
 
 				return;
 			}
 
 			try (var ignored1 = MagicDebug.section(builder -> builder
 				.message("Initializing 'delayed-entity-data'.")
-				.path("delayed-entity-data", "of 'delayed-entity-data'")
+				.path("delayed-entity-data", DebugPath.Type.LIST)
 			)) {
 				EntityType type = entityType.isConstant() ? entityType.get() : null;
 
 				for (int i = 0; i < delayedDataEntries.size(); i++) {
-					try (var ignored2 = MagicDebug.section("Initializing entry at index #%d.", i).path(null, "at index #" + i)) {
+					try (var ignored2 = MagicDebug.section("Initializing entry at index #%d.", i).pushPath(Integer.toString(i), DebugPath.Type.LIST_ENTRY)) {
 						Object object = delayedDataEntries.get(i);
 
 						if (!(object instanceof Map<?, ?> map)) {
-							MagicDebug.warn("Invalid value '%s' %s.", object, MagicDebug.resolvePath());
+							MagicDebug.warn("Invalid value '%s' %s.", object, MagicDebug.resolveFullPath());
 							continue;
 						}
 
@@ -513,7 +514,7 @@ public class EntityData {
 
 						ConfigurationSection dataSection = section.getConfigurationSection("entity-data");
 						if (dataSection == null) {
-							MagicDebug.warn("No 'entity-data' section %s.", MagicDebug.resolvePath());
+							MagicDebug.warn("No 'entity-data' section %s.", MagicDebug.resolveFullPath());
 							continue;
 						}
 
@@ -777,7 +778,7 @@ public class EntityData {
 			}
 		}
 
-		try (var ignored = MagicDebug.section(builder -> builder.suppressWarnings(true))) {
+		try (var ignored = MagicDebug.suppressWarnings()) {
 			return supplier.get();
 		}
 	}
@@ -833,21 +834,21 @@ public class EntityData {
 				float val = number.floatValue();
 				x = data -> val;
 			} else if (xObj instanceof String string) {
-				x = FunctionData.build(string, Double::floatValue);
+				x = FunctionData.build(string, Double::floatValue, true);
 			} else x = null;
 
 			if (yObj instanceof Number number) {
 				float val = number.floatValue();
 				y = data -> val;
 			} else if (yObj instanceof String string) {
-				y = FunctionData.build(string, Double::floatValue);
+				y = FunctionData.build(string, Double::floatValue, true);
 			} else y = null;
 
 			if (zObj instanceof Number number) {
 				float val = number.floatValue();
 				z = data -> val;
 			} else if (zObj instanceof String string) {
-				z = FunctionData.build(string, Double::floatValue);
+				z = FunctionData.build(string, Double::floatValue, true);
 			} else z = null;
 
 			if (x == null || y == null || z == null) return data -> null;
@@ -943,28 +944,28 @@ public class EntityData {
 				float val = number.floatValue();
 				x = data -> val;
 			} else if (xObj instanceof String string) {
-				x = FunctionData.build(string, Double::floatValue);
+				x = FunctionData.build(string, Double::floatValue, true);
 			} else x = null;
 
 			if (yObj instanceof Number number) {
 				float val = number.floatValue();
 				y = data -> val;
 			} else if (yObj instanceof String string) {
-				y = FunctionData.build(string, Double::floatValue);
+				y = FunctionData.build(string, Double::floatValue, true);
 			} else y = null;
 
 			if (zObj instanceof Number number) {
 				float val = number.floatValue();
 				z = data -> val;
 			} else if (zObj instanceof String string) {
-				z = FunctionData.build(string, Double::floatValue);
+				z = FunctionData.build(string, Double::floatValue, true);
 			} else z = null;
 
 			if (wObj instanceof Number number) {
 				float val = number.floatValue();
 				w = data -> val;
 			} else if (zObj instanceof String string) {
-				w = FunctionData.build(string, Double::floatValue);
+				w = FunctionData.build(string, Double::floatValue, true);
 			} else w = null;
 
 			if (x == null || y == null || z == null || w == null) return data -> null;

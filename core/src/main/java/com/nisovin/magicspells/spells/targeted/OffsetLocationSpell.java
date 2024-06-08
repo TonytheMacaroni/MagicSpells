@@ -36,7 +36,7 @@ public class OffsetLocationSpell extends TargetedSpell implements TargetedLocati
 	public void initialize() {
 		super.initialize();
 
-		spellToCast = initSubspell(spellToCastName, false, "for 'spell'");
+		spellToCast = initSubspell(spellToCastName, false, "spell");
 		spellToCastName = null;
 	}
 

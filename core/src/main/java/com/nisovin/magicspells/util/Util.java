@@ -43,6 +43,7 @@ import com.destroystokyo.paper.profile.ProfileProperty;
 import io.papermc.paper.block.fluid.FluidData;
 
 import com.nisovin.magicspells.MagicSpells;
+import com.nisovin.magicspells.debug.DebugPath;
 import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.debug.DebugCategory;
 import com.nisovin.magicspells.util.config.ConfigData;
@@ -79,10 +80,10 @@ public class Util {
 		try (var ignored = MagicDebug.section(builder -> builder
 			.category(DebugCategory.OPTIONS)
 			.message("Initializing 'potion-effects'.")
-			.path("potion-effects", "of 'potion-effects'")
+			.path("potion-effects", DebugPath.Type.LIST)
 		)) {
 			for (int i = 0; i < potionEffectData.size(); i++) {
-				try (var ignored1 = MagicDebug.section("Initializing entry at index #%d.", i).path(null, "at index #" + i)) {
+				try (var ignored1 = MagicDebug.section("Initializing entry at index #%d.", i).pushPath(Integer.toString(i), DebugPath.Type.LIST_ENTRY)) {
 					Object potionEffectObj = potionEffectData.get(i);
 
 					if (potionEffectObj instanceof Map<?, ?> potionEffectMap) {
@@ -117,19 +118,19 @@ public class Util {
 					}
 
 					if (!(potionEffectObj instanceof String potionEffectString)) {
-						MagicDebug.warn("Invalid value '%s' %s.", potionEffectObj, MagicDebug.resolvePath());
+						MagicDebug.warn("Invalid value '%s' %s.", potionEffectObj, MagicDebug.resolveFullPath());
 						continue;
 					}
 
 					String[] data = potionEffectString.split(" ");
 					if (data.length > 6) {
-						MagicDebug.warn("Invalid potion effect string '%s' %s - too many arguments.", potionEffectString, MagicDebug.resolvePath());
+						MagicDebug.warn("Invalid potion effect string '%s' %s - too many arguments.", potionEffectString, MagicDebug.resolveFullPath());
 						continue;
 					}
 
 					PotionEffectType type = PotionEffectHandler.getPotionEffectType(data[0]);
 					if (type == null) {
-						MagicDebug.warn("Invalid potion type '%s' %s.", data[0], MagicDebug.resolvePath());
+						MagicDebug.warn("Invalid potion type '%s' %s.", data[0], MagicDebug.resolveFullPath());
 						continue;
 					}
 
@@ -138,7 +139,7 @@ public class Util {
 						try {
 							duration = Integer.parseInt(data[1]);
 						} catch (NumberFormatException e) {
-							MagicDebug.warn("Invalid duration '%s' %s.", data[1], MagicDebug.resolvePath());
+							MagicDebug.warn("Invalid duration '%s' %s.", data[1], MagicDebug.resolveFullPath());
 							continue;
 						}
 					}
@@ -148,7 +149,7 @@ public class Util {
 						try {
 							strength = Integer.parseInt(data[2]);
 						} catch (NumberFormatException e) {
-							MagicDebug.warn("Invalid strength '%s' %s.", data[2], MagicDebug.resolvePath());
+							MagicDebug.warn("Invalid strength '%s' %s.", data[2], MagicDebug.resolveFullPath());
 							continue;
 						}
 					}

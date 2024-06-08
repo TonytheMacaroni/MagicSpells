@@ -126,9 +126,9 @@ public class OrbitSpell extends TargetedSpell implements TargetedEntitySpell, Ta
 	public void initialize() {
 		super.initialize();
 
-		orbitSpell = initSubspell(orbitSpellName, true, "for 'spell'");
-		groundSpell = initSubspell(groundSpellName, true, "for 'spell-on-hit-ground'");
-		entitySpell = initSubspell(entitySpellName, true, "for 'spell-on-hit-entity'");
+		orbitSpell = initSubspell(orbitSpellName, true, "spell");
+		groundSpell = initSubspell(groundSpellName, true, "spell-on-hit-ground");
+		entitySpell = initSubspell(entitySpellName, true, "spell-on-hit-entity");
 
 		orbitSpellName = null;
 		groundSpellName = null;

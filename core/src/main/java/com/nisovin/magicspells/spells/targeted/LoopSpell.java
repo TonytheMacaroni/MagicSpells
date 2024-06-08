@@ -128,7 +128,7 @@ public class LoopSpell extends TargetedSpell implements TargetedEntitySpell, Tar
 			registerEvents(deathListener);
 		}
 
-		spellOnEnd = initSubspell(spellOnEndName, true, "for 'spell-on-end'");
+		spellOnEnd = initSubspell(spellOnEndName, true, "spell-on-end");
 		spellOnEndName = null;
 
 		if (spellNames != null && !spellNames.isEmpty()) {
@@ -137,7 +137,7 @@ public class LoopSpell extends TargetedSpell implements TargetedEntitySpell, Tar
 			for (int i = 0; i < spellNames.size(); i++) {
 				String spellName = spellNames.get(i);
 
-				Subspell spell = initSubspell(spellName, false, "at index #" + i + " of 'spells'");
+				Subspell spell = initSubspell(spellName, false, "spells[" + i + "]");
 				if (spell == null) continue;
 
 				spells.add(spell);

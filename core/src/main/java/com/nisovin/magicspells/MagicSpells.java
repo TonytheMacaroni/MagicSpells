@@ -60,17 +60,15 @@ import io.papermc.paper.command.brigadier.CommandSourceStack;
 import me.clip.placeholderapi.PlaceholderAPI;
 
 import com.nisovin.magicspells.util.*;
+import com.nisovin.magicspells.debug.*;
 import com.nisovin.magicspells.events.*;
 import com.nisovin.magicspells.handlers.*;
 import com.nisovin.magicspells.listeners.*;
 import com.nisovin.magicspells.util.managers.*;
 import com.nisovin.magicspells.mana.ManaSystem;
-import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.mana.ManaHandler;
 import com.nisovin.magicspells.spells.BuffSpell;
-import com.nisovin.magicspells.debug.DebugConfig;
 import com.nisovin.magicspells.variables.Variable;
-import com.nisovin.magicspells.debug.DebugCategory;
 import com.nisovin.magicspells.spells.PassiveSpell;
 import com.nisovin.magicspells.util.compat.EventUtil;
 import com.nisovin.magicspells.commands.MagicCommands;
@@ -463,9 +461,9 @@ public class MagicSpells extends JavaPlugin {
 		debugLevelOriginal = config.getInt(path + "debug-level", 3);
 		debugLevel = debugLevelOriginal;
 
-		MagicDebug.pushPath("general", "in 'general.yml'");
+		DebugPath generalPath = MagicDebug.pushPath("general.yml", DebugPath.Type.FILE);
 		debugConfig = new DebugConfig(config.getSection("general"));
-		MagicDebug.popPath("general");
+		MagicDebug.popPath(generalPath);
 
 		tabCompleteInternalNames = config.getBoolean(path + "tab-complete-internal-names", false);
 		terminateEffectlibInstances = config.getBoolean(path + "terminate-effectlib-instances", true);
@@ -597,7 +595,10 @@ public class MagicSpells extends JavaPlugin {
 				try (var itemContext = MagicDebug.section(builder -> builder
 					.category(DebugCategory.MAGIC_ITEMS)
 					.message("Loading magic item '%s'...", internalName)
-					.path("general.magic-items", "on magic item '" + internalName + "'")
+					.path(fileName, DebugPath.Type.FILE)
+					.path("general", DebugPath.Type.SECTION, false)
+					.path("magic-items", DebugPath.Type.SECTION)
+					.path(internalName, DebugPath.Type.SECTION)
 				)) {
 					if (magicItems.isString(internalName)) {
 						String data = magicItems.getString(internalName, null);
@@ -688,8 +689,9 @@ public class MagicSpells extends JavaPlugin {
 			Map<String, Constructor<? extends Spell>> constructors = new HashMap<>();
 
 			for (String internalName : spellKeys) {
-				MagicDebug.pushPath("spells", "in '" + config.getFile(MagicConfig.Category.SPELLS, internalName) + "'");
-				MagicDebug.pushPath(internalName, "on spell '" + internalName + "'");
+				DebugPath filePath = MagicDebug.pushPath(config.getFile(MagicConfig.Category.SPELLS, internalName), DebugPath.Type.FILE);
+				DebugPath spellsPath = MagicDebug.pushPath("spells", DebugPath.Type.SECTION, false);
+				DebugPath spellPath = MagicDebug.pushPath(internalName, DebugPath.Type.SECTION);
 
 				DebugConfig debugConfig = DebugConfig.fromConfig(config.getSection("spells." + internalName));
 
@@ -755,8 +757,9 @@ public class MagicSpells extends JavaPlugin {
 					long elapsed = System.currentTimeMillis() - startTime;
 					if (elapsed > 50) MagicDebug.warn("Spell '%s' took a long time to load (%dms).", internalName, elapsed);
 				} finally {
-					MagicDebug.popPath(internalName);
-					MagicDebug.popPath("spells");
+					MagicDebug.popPath(spellPath);
+					MagicDebug.popPath(spellsPath);
+					MagicDebug.popPath(filePath);
 				}
 			}
 
@@ -894,8 +897,9 @@ public class MagicSpells extends JavaPlugin {
 				try (var spellContext = MagicDebug.section(builder -> builder
 					.message("Initializing '%s'...", spell.getInternalName())
 					.config(spell.getDebugConfig())
-					.path("spells", "in '" + config.getSpellFile(spell) + "'")
-					.path(spell.getInternalName(), "on spell '" + spell.getInternalName() + "'")
+					.path(config.getSpellFile(spell), DebugPath.Type.FILE)
+					.path("spells", DebugPath.Type.SECTION, false)
+					.path(spell.getInternalName(), DebugPath.Type.SECTION)
 				)) {
 					DependsOn dependsOn = spell.getClass().getAnnotation(DependsOn.class);
 					if (dependsOn != null) {
@@ -987,9 +991,10 @@ public class MagicSpells extends JavaPlugin {
 				try (var spellContext = MagicDebug.section(builder -> builder
 					.message("Initializing spell effects for '%s'...", spell.getInternalName())
 					.config(spell.getDebugConfig())
-					.path("spells", "in '" + config.getSpellFile(spell) + "'")
-					.path(spell.getInternalName(), "of spell '" + spell.getInternalName() + "'")
-					.path("effects", null)
+					.path(config.getSpellFile(spell), DebugPath.Type.FILE)
+					.path("spells", DebugPath.Type.SECTION, false)
+					.path(spell.getInternalName(), DebugPath.Type.SECTION)
+					.path("effects", DebugPath.Type.SECTION)
 				)) {
 					spell.initializeSpellEffects();
 				}

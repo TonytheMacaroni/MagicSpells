@@ -25,7 +25,7 @@ public class LocationSpell extends InstantSpell {
 	public void initialize() {
 		super.initialize();
 
-		spellToCast = initSubspell(spellToCastName, false, "for 'spell'");
+		spellToCast = initSubspell(spellToCastName, false, "spell");
 		spellToCastName = null;
 	}
 

@@ -49,7 +49,7 @@ public class HoldRightSpell extends TargetedSpell implements TargetedEntitySpell
 	public void initialize() {
 		super.initialize();
 
-		spellToCast = initSubspell(spellToCastName, false, "for 'spell'");
+		spellToCast = initSubspell(spellToCastName, false, "spell");
 		spellToCastName = null;
 	}
 

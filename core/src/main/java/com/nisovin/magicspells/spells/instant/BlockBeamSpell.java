@@ -128,9 +128,9 @@ public class BlockBeamSpell extends InstantSpell implements TargetedLocationSpel
 	public void initialize() {
 		super.initialize();
 
-		hitSpell = initSubspell(hitSpellName, true, "for 'spell'");
-		endSpell = initSubspell(endSpellName, true, "for 'spell-on-end'");
-		groundSpell = initSubspell(groundSpellName, true, "for 'spell-on-hit-ground'");
+		hitSpell = initSubspell(hitSpellName, true, "spell");
+		endSpell = initSubspell(endSpellName, true, "spell-on-end");
+		groundSpell = initSubspell(groundSpellName, true, "spell-on-hit-ground");
 
 		hitSpellName = null;
 		endSpellName = null;

@@ -241,10 +241,10 @@ public class SpawnEntitySpell extends TargetedSpell implements TargetedLocationS
 			entityData = null;
 		}
 
-		spellOnSpawn = initSubspell(spellOnSpawnName, true, "for 'spell-on-spawn'");
-		spellOnDeath = initSubspell(spellOnDeathName, true, "for 'spell-on-death'");
-		spellOnTarget = initSubspell(spellOnTargetName, true, "for 'spell-on-target'");
-		attackSpell = initSubspell(attackSpellName, true, "for 'attack-spell'");
+		spellOnSpawn = initSubspell(spellOnSpawnName, true, "spell-on-spawn");
+		spellOnDeath = initSubspell(spellOnDeathName, true, "spell-on-death");
+		spellOnTarget = initSubspell(spellOnTargetName, true, "spell-on-target");
+		attackSpell = initSubspell(attackSpellName, true, "attack-spell");
 
 		spellOnSpawnName = null;
 		spellOnDeathName = null;

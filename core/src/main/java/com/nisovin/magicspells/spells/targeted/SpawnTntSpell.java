@@ -57,7 +57,7 @@ public class SpawnTntSpell extends TargetedSpell implements TargetedLocationSpel
 	public void initialize() {
 		super.initialize();
 
-		spellToCast = initSubspell(spellToCastName, true, "for 'spell'");
+		spellToCast = initSubspell(spellToCastName, true, "spell");
 		spellToCastName = null;
 	}
 

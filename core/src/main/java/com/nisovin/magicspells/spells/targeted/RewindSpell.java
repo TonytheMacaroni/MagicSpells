@@ -60,7 +60,7 @@ public class RewindSpell extends TargetedSpell implements TargetedEntitySpell {
 	public void initialize() {
 		super.initialize();
 
-		rewindSpell = initSubspell(rewindSpellName, true, "for 'spell-on-rewind'");
+		rewindSpell = initSubspell(rewindSpellName, true, "spell-on-rewind");
 		rewindSpellName = null;
 	}
 

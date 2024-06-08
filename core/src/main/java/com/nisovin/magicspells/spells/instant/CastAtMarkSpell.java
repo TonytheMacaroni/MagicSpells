@@ -39,12 +39,12 @@ public class CastAtMarkSpell extends InstantSpell {
 
 		Spell spell = MagicSpells.getSpellByInternalName(markSpellName);
 		if (!(spell instanceof MarkSpell mark)) {
-			MagicDebug.warn("Invalid spell '%s' for 'mark-spell' %s.", markSpellName, MagicDebug.resolvePath());
+			MagicDebug.warn("Invalid spell '%s' for 'mark-spell' %s.", markSpellName, MagicDebug.resolveFullPath());
 			return;
 		}
 		markSpell = mark;
 
-		spellToCast = initSubspell(spellToCastName, false, "for 'spell'");
+		spellToCast = initSubspell(spellToCastName, false, "spell");
 
 		markSpellName = null;
 		spellToCastName = null;

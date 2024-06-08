@@ -45,7 +45,7 @@ public class BombSpell extends TargetedSpell implements TargetedLocationSpell {
 	public void initialize() {
 		super.initialize();
 
-		targetSpell = initSubspell(targetSpellName, true, "for 'spell'");
+		targetSpell = initSubspell(targetSpellName, true, "spell");
 		targetSpellName = null;
 	}
 

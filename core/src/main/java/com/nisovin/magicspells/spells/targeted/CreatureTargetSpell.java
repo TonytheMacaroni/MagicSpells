@@ -25,7 +25,7 @@ public class CreatureTargetSpell extends InstantSpell {
 	public void initialize() {
 		super.initialize();
 
-		targetSpell = initSubspell(targetSpellName, false, "for 'spell'");
+		targetSpell = initSubspell(targetSpellName, false, "spell");
 		targetSpellName = null;
 	}
 

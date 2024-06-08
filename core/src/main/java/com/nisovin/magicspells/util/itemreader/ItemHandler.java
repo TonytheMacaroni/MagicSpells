@@ -24,7 +24,7 @@ public abstract class ItemHandler {
 	public static boolean invalidIfSet(@NotNull ConfigurationSection config, @NotNull String @NotNull... keys) {
 		for (String key : keys) {
 			if (config.isSet(key)) {
-				MagicDebug.warn("Invalid value '%s' found for magic item option '%s' %s.", config.getString(key), key, MagicDebug.resolvePath());
+				MagicDebug.warn("Invalid value '%s' found for magic item option '%s' %s.", config.getString(key), key, MagicDebug.resolveFullPath());
 				return false;
 			}
 		}

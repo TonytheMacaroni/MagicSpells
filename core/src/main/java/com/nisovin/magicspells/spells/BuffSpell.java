@@ -131,9 +131,9 @@ public abstract class BuffSpell extends TargetedSpell implements TargetedEntityS
 	public void initialize() {
 		super.initialize();
 
-		spellOnUseIncrement = initSubspell(spellOnUseIncrementName, true, "for 'spell-on-use-increment'");
-		spellOnCost = initSubspell(spellOnCostName, true, "for 'spell-on-cost'");
-		spellOnEnd = initSubspell(spellOnEndName, true, "for 'spell-on-end'");
+		spellOnUseIncrement = initSubspell(spellOnUseIncrementName, true, "spell-on-use-increment");
+		spellOnCost = initSubspell(spellOnCostName, true, "spell-on-cost");
+		spellOnEnd = initSubspell(spellOnEndName, true, "spell-on-end");
 
 		spellOnUseIncrementName = null;
 		spellOnCostName = null;
