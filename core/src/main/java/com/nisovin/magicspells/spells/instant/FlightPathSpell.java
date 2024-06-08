@@ -53,7 +53,7 @@ public class FlightPathSpell extends InstantSpell {
 	public void initialize() {
 		super.initialize();
 
-		landSpell = initSubspell(landSpellName, true, "for 'land-spell'");
+		landSpell = initSubspell(landSpellName, true, "land-spell");
 		landSpellName = null;
 
 		flightHandler = new FlightHandler();

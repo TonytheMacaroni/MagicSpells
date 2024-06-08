@@ -24,11 +24,14 @@ import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.debug.DebugCategory;
 import com.nisovin.magicspells.handlers.PotionEffectHandler;
 
+import static com.nisovin.magicspells.debug.MagicDebug.resolvePath;
+import static com.nisovin.magicspells.debug.MagicDebug.resolveShortPath;
+
 public class ConfigDataUtil {
 
 	@NotNull
 	public static ConfigData<Integer> getInteger(@NotNull ConfigurationSection config, @NotNull String path) {
-		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving integer option '%s'.", getShortPath(path))) {
+		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving integer option '%s'.", resolveShortPath(config, path))) {
 			if (config.isInt(path)) {
 				int value = config.getInt(path);
 				MagicDebug.info("Resolved value '%d'.", value);
@@ -40,7 +43,7 @@ public class ConfigDataUtil {
 
 				FunctionData<Integer> function = FunctionData.build(functionString, Double::intValue, true);
 				if (function == null) {
-					MagicDebug.warn("Invalid expression '%s' for integer option %s.", functionString, MagicDebug.resolvePath(path));
+					MagicDebug.warn("Invalid expression '%s' for integer option %s.", functionString, resolvePath(config, path));
 					return data -> null;
 				}
 
@@ -49,7 +52,7 @@ public class ConfigDataUtil {
 			}
 
 			if (config.isSet(path))
-				MagicDebug.warn("Invalid value '%s' found for integer option %s.", config.getString(path), MagicDebug.resolvePath(path));
+				MagicDebug.warn("Invalid value '%s' found for integer option %s.", config.getString(path), resolvePath(config, path));
 			else
 				MagicDebug.info("No value found.");
 
@@ -59,7 +62,7 @@ public class ConfigDataUtil {
 
 	@NotNull
 	public static ConfigData<Integer> getInteger(@NotNull ConfigurationSection config, @NotNull String path, int def) {
-		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving integer option '%s'.", getShortPath(path))) {
+		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving integer option '%s'.", resolveShortPath(config, path))) {
 			if (config.isInt(path)) {
 				int value = config.getInt(path, def);
 				MagicDebug.info("Resolved value '%d'.", value);
@@ -71,7 +74,7 @@ public class ConfigDataUtil {
 
 				FunctionData<Integer> function = FunctionData.build(functionString, Double::intValue, def, true);
 				if (function == null) {
-					MagicDebug.warn("Invalid expression '%s' for integer option %s. Defaulting to '%d'.", functionString, MagicDebug.resolvePath(path), def);
+					MagicDebug.warn("Invalid expression '%s' for integer option %s. Defaulting to '%d'.", functionString, resolvePath(config, path), def);
 					return data -> def;
 				}
 
@@ -80,7 +83,7 @@ public class ConfigDataUtil {
 			}
 
 			if (config.isSet(path))
-				MagicDebug.warn("Invalid value '%s' found for integer option %s. Defaulting to '%d'.", config.getString(path), MagicDebug.resolvePath(path), def);
+				MagicDebug.warn("Invalid value '%s' found for integer option %s. Defaulting to '%d'.", config.getString(path), resolvePath(config, path), def);
 			else
 				MagicDebug.info("No value found. Defaulting to '%d'.", def);
 
@@ -90,7 +93,7 @@ public class ConfigDataUtil {
 
 	@NotNull
 	public static ConfigData<Integer> getInteger(@NotNull ConfigurationSection config, @NotNull String path, @NotNull ConfigData<Integer> def) {
-		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving integer option '%s'.", getShortPath(path))) {
+		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving integer option '%s'.", resolveShortPath(config, path))) {
 			if (config.isInt(path)) {
 				int value = config.getInt(path);
 				MagicDebug.info("Resolved value '%d'.", value);
@@ -102,7 +105,7 @@ public class ConfigDataUtil {
 
 				FunctionData<Integer> function = FunctionData.build(config.getString(path), Double::intValue, def, true);
 				if (function == null) {
-					MagicDebug.warn("Invalid expression '%s' for integer option %s. Defaulting to expression '%s'.", functionString, MagicDebug.resolvePath(path), def);
+					MagicDebug.warn("Invalid expression '%s' for integer option %s. Defaulting to expression '%s'.", functionString, resolvePath(config, path), def);
 					return def;
 				}
 
@@ -111,7 +114,7 @@ public class ConfigDataUtil {
 			}
 
 			if (config.isSet(path))
-				MagicDebug.warn("Invalid value '%s' found for integer option %s. Defaulting to expression '%s'.", config.getString(path), MagicDebug.resolvePath(path), def);
+				MagicDebug.warn("Invalid value '%s' found for integer option %s. Defaulting to expression '%s'.", config.getString(path), resolvePath(config, path), def);
 			else
 				MagicDebug.info("No value found. Defaulting to expression '%s'.", def);
 
@@ -121,7 +124,7 @@ public class ConfigDataUtil {
 
 	@NotNull
 	public static ConfigData<Long> getLong(@NotNull ConfigurationSection config, @NotNull String path) {
-		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving long option '%s'.", getShortPath(path))) {
+		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving long option '%s'.", resolveShortPath(config, path))) {
 			if (config.isInt(path) || config.isLong(path)) {
 				long value = config.getLong(path);
 				MagicDebug.info("Resolved value '%d'.", value);
@@ -131,9 +134,9 @@ public class ConfigDataUtil {
 			if (config.isString(path)) {
 				String functionString = config.getString(path);
 
-				FunctionData<Long> function = FunctionData.build(functionString, Double::longValue);
+				FunctionData<Long> function = FunctionData.build(functionString, Double::longValue, true);
 				if (function == null) {
-					MagicDebug.warn("Invalid expression '%s' for long option %s.", functionString, MagicDebug.resolvePath(path));
+					MagicDebug.warn("Invalid expression '%s' for long option %s.", functionString, resolvePath(config, path));
 					return data -> null;
 				}
 
@@ -142,7 +145,7 @@ public class ConfigDataUtil {
 			}
 
 			if (config.isSet(path))
-				MagicDebug.warn("Invalid value '%s' found for long option %s.", config.getString(path), MagicDebug.resolvePath(path));
+				MagicDebug.warn("Invalid value '%s' found for long option %s.", config.getString(path), resolvePath(config, path));
 			else
 				MagicDebug.info("No value found.");
 
@@ -152,7 +155,7 @@ public class ConfigDataUtil {
 
 	@NotNull
 	public static ConfigData<Long> getLong(@NotNull ConfigurationSection config, @NotNull String path, long def) {
-		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving long option '%s'.", getShortPath(path))) {
+		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving long option '%s'.", resolveShortPath(config, path))) {
 			if (config.isInt(path) || config.isLong(path)) {
 				long value = config.getLong(path);
 				MagicDebug.info("Resolved value '%d'.", value);
@@ -162,9 +165,9 @@ public class ConfigDataUtil {
 			if (config.isString(path)) {
 				String functionString = config.getString(path);
 
-				FunctionData<Long> function = FunctionData.build(functionString, Double::longValue, def);
+				FunctionData<Long> function = FunctionData.build(functionString, Double::longValue, def, true);
 				if (function == null) {
-					MagicDebug.warn("Invalid expression '%s' for long option %s. Defaulting to '%d'.", functionString, MagicDebug.resolvePath(path), def);
+					MagicDebug.warn("Invalid expression '%s' for long option %s. Defaulting to '%d'.", functionString, resolvePath(config, path), def);
 					return data -> def;
 				}
 
@@ -173,7 +176,7 @@ public class ConfigDataUtil {
 			}
 
 			if (config.isSet(path))
-				MagicDebug.warn("Invalid value '%s' found for long option %s. Defaulting to '%d'.", config.getString(path), MagicDebug.resolvePath(path), def);
+				MagicDebug.warn("Invalid value '%s' found for long option %s. Defaulting to '%d'.", config.getString(path), resolvePath(config, path), def);
 			else
 				MagicDebug.info("No value found. Defaulting to '%d'.", def);
 
@@ -183,7 +186,7 @@ public class ConfigDataUtil {
 
 	@NotNull
 	public static ConfigData<Long> getLong(@NotNull ConfigurationSection config, @NotNull String path, @NotNull ConfigData<Long> def) {
-		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving long option '%s'.", getShortPath(path))) {
+		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving long option '%s'.", resolveShortPath(config, path))) {
 			if (config.isInt(path) || config.isLong(path)) {
 				long value = config.getLong(path);
 				MagicDebug.info("Resolved value '%d'.", value);
@@ -193,9 +196,9 @@ public class ConfigDataUtil {
 			if (config.isString(path)) {
 				String functionString = config.getString(path);
 
-				FunctionData<Long> function = FunctionData.build(functionString, Double::longValue, def);
+				FunctionData<Long> function = FunctionData.build(functionString, Double::longValue, def, true);
 				if (function == null) {
-					MagicDebug.warn("Invalid expression '%s' for long option %s. Defaulting to expression '%s'.", functionString, MagicDebug.resolvePath(path), def);
+					MagicDebug.warn("Invalid expression '%s' for long option %s. Defaulting to expression '%s'.", functionString, resolvePath(config, path), def);
 					return def;
 				}
 
@@ -204,7 +207,7 @@ public class ConfigDataUtil {
 			}
 
 			if (config.isSet(path))
-				MagicDebug.warn("Invalid value '%s' found for long option %s. Defaulting to expression '%s'.", config.getString(path), MagicDebug.resolvePath(path), def);
+				MagicDebug.warn("Invalid value '%s' found for long option %s. Defaulting to expression '%s'.", config.getString(path), resolvePath(config, path), def);
 			else
 				MagicDebug.info("No value found. Defaulting to expression '%s'.", def);
 
@@ -214,7 +217,7 @@ public class ConfigDataUtil {
 
 	@NotNull
 	public static ConfigData<Short> getShort(@NotNull ConfigurationSection config, @NotNull String path) {
-		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving short option '%s'.", getShortPath(path))) {
+		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving short option '%s'.", resolveShortPath(config, path))) {
 			if (config.isInt(path)) {
 				short value = (short) config.getInt(path);
 				MagicDebug.info("Resolved value '%d'.", value);
@@ -224,9 +227,9 @@ public class ConfigDataUtil {
 			if (config.isString(path)) {
 				String functionString = config.getString(path);
 
-				FunctionData<Short> function = FunctionData.build(functionString, Double::shortValue);
+				FunctionData<Short> function = FunctionData.build(functionString, Double::shortValue, true);
 				if (function == null) {
-					MagicDebug.warn("Invalid expression '%s' for short option %s.", functionString, MagicDebug.resolvePath(path));
+					MagicDebug.warn("Invalid expression '%s' for short option %s.", functionString, resolvePath(config, path));
 					return data -> null;
 				}
 
@@ -235,7 +238,7 @@ public class ConfigDataUtil {
 			}
 
 			if (config.isSet(path))
-				MagicDebug.warn("Invalid value '%s' found for short option %s.", config.getString(path), MagicDebug.resolvePath(path));
+				MagicDebug.warn("Invalid value '%s' found for short option %s.", config.getString(path), resolvePath(config, path));
 			else
 				MagicDebug.info("No value found.");
 
@@ -245,7 +248,7 @@ public class ConfigDataUtil {
 
 	@NotNull
 	public static ConfigData<Short> getShort(@NotNull ConfigurationSection config, @NotNull String path, short def) {
-		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving short option '%s'.", getShortPath(path))) {
+		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving short option '%s'.", resolveShortPath(config, path))) {
 			if (config.isInt(path)) {
 				short value = (short) config.getInt(path);
 				MagicDebug.info("Resolved value '%d'.", value);
@@ -255,9 +258,9 @@ public class ConfigDataUtil {
 			if (config.isString(path)) {
 				String functionString = config.getString(path);
 
-				FunctionData<Short> function = FunctionData.build(functionString, Double::shortValue, def);
+				FunctionData<Short> function = FunctionData.build(functionString, Double::shortValue, def, true);
 				if (function == null) {
-					MagicDebug.warn("Invalid expression '%s' for short option %s. Defaulting to '%d'.", functionString, MagicDebug.resolvePath(path), def);
+					MagicDebug.warn("Invalid expression '%s' for short option %s. Defaulting to '%d'.", functionString, resolvePath(config, path), def);
 					return data -> def;
 				}
 
@@ -266,7 +269,7 @@ public class ConfigDataUtil {
 			}
 
 			if (config.isSet(path))
-				MagicDebug.warn("Invalid value '%s' found for short option %s. Defaulting to '%d'.", config.getString(path), MagicDebug.resolvePath(path), def);
+				MagicDebug.warn("Invalid value '%s' found for short option %s. Defaulting to '%d'.", config.getString(path), resolvePath(config, path), def);
 			else
 				MagicDebug.info("No value found. Defaulting to '%d'.", def);
 
@@ -276,7 +279,7 @@ public class ConfigDataUtil {
 
 	@NotNull
 	public static ConfigData<Short> getShort(@NotNull ConfigurationSection config, @NotNull String path, @NotNull ConfigData<Short> def) {
-		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving short option '%s'.", getShortPath(path))) {
+		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving short option '%s'.", resolveShortPath(config, path))) {
 			if (config.isInt(path)) {
 				short value = (short) config.getInt(path);
 				MagicDebug.info("Resolved value '%d'.", value);
@@ -286,9 +289,9 @@ public class ConfigDataUtil {
 			if (config.isString(path)) {
 				String functionString = config.getString(path);
 
-				FunctionData<Short> function = FunctionData.build(functionString, Double::shortValue, def);
+				FunctionData<Short> function = FunctionData.build(functionString, Double::shortValue, def, true);
 				if (function == null) {
-					MagicDebug.warn("Invalid expression '%s' for short option %s. Defaulting to expression '%s'.", functionString, MagicDebug.resolvePath(path), def);
+					MagicDebug.warn("Invalid expression '%s' for short option %s. Defaulting to expression '%s'.", functionString, resolvePath(config, path), def);
 					return def;
 				}
 
@@ -297,7 +300,7 @@ public class ConfigDataUtil {
 			}
 
 			if (config.isSet(path))
-				MagicDebug.warn("Invalid value '%s' found for short option %s. Defaulting to expression '%s'.", config.getString(path), MagicDebug.resolvePath(path), def);
+				MagicDebug.warn("Invalid value '%s' found for short option %s. Defaulting to expression '%s'.", config.getString(path), resolvePath(config, path), def);
 			else
 				MagicDebug.info("No value found. Defaulting to expression '%s'.", def);
 
@@ -307,7 +310,7 @@ public class ConfigDataUtil {
 
 	@NotNull
 	public static ConfigData<Byte> getByte(@NotNull ConfigurationSection config, @NotNull String path) {
-		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving byte option '%s'.", getShortPath(path))) {
+		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving byte option '%s'.", resolveShortPath(config, path))) {
 			if (config.isInt(path)) {
 				byte value = (byte) config.getInt(path);
 				MagicDebug.info("Resolved value '%d'.", value);
@@ -317,9 +320,9 @@ public class ConfigDataUtil {
 			if (config.isString(path)) {
 				String functionString = config.getString(path);
 
-				FunctionData<Byte> function = FunctionData.build(functionString, Double::byteValue);
+				FunctionData<Byte> function = FunctionData.build(functionString, Double::byteValue, true);
 				if (function == null) {
-					MagicDebug.warn("Invalid expression '%s' for byte option %s.", functionString, MagicDebug.resolvePath(path));
+					MagicDebug.warn("Invalid expression '%s' for byte option %s.", functionString, resolvePath(config, path));
 					return data -> null;
 				}
 
@@ -328,7 +331,7 @@ public class ConfigDataUtil {
 			}
 
 			if (config.isSet(path))
-				MagicDebug.warn("Invalid value '%s' found for byte option %s.", config.getString(path), MagicDebug.resolvePath(path));
+				MagicDebug.warn("Invalid value '%s' found for byte option %s.", config.getString(path), resolvePath(config, path));
 			else
 				MagicDebug.info("No value found.");
 
@@ -338,7 +341,7 @@ public class ConfigDataUtil {
 
 	@NotNull
 	public static ConfigData<Byte> getByte(@NotNull ConfigurationSection config, @NotNull String path, byte def) {
-		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving byte option '%s'.", getShortPath(path))) {
+		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving byte option '%s'.", resolveShortPath(config, path))) {
 			if (config.isInt(path)) {
 				byte value = (byte) config.getInt(path);
 				MagicDebug.info("Resolved value '%d'.", value);
@@ -348,9 +351,9 @@ public class ConfigDataUtil {
 			if (config.isString(path)) {
 				String functionString = config.getString(path);
 
-				FunctionData<Byte> function = FunctionData.build(functionString, Double::byteValue, def);
+				FunctionData<Byte> function = FunctionData.build(functionString, Double::byteValue, def, true);
 				if (function == null) {
-					MagicDebug.warn("Invalid expression '%s' for byte option %s. Defaulting to '%d'.", functionString, MagicDebug.resolvePath(path), def);
+					MagicDebug.warn("Invalid expression '%s' for byte option %s. Defaulting to '%d'.", functionString, resolvePath(config, path), def);
 					return data -> def;
 				}
 
@@ -359,7 +362,7 @@ public class ConfigDataUtil {
 			}
 
 			if (config.isSet(path))
-				MagicDebug.warn("Invalid value '%s' found for byte option %s. Defaulting to '%d'.", config.getString(path), MagicDebug.resolvePath(path), def);
+				MagicDebug.warn("Invalid value '%s' found for byte option %s. Defaulting to '%d'.", config.getString(path), resolvePath(config, path), def);
 			else
 				MagicDebug.info("No value found. Defaulting to '%d'.", def);
 
@@ -369,7 +372,7 @@ public class ConfigDataUtil {
 
 	@NotNull
 	public static ConfigData<Byte> getByte(@NotNull ConfigurationSection config, @NotNull String path, @NotNull ConfigData<Byte> def) {
-		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving byte option '%s'.", getShortPath(path))) {
+		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving byte option '%s'.", resolveShortPath(config, path))) {
 			if (config.isInt(path)) {
 				byte value = (byte) config.getInt(path);
 				MagicDebug.info("Resolved value '%d'.", value);
@@ -379,9 +382,9 @@ public class ConfigDataUtil {
 			if (config.isString(path)) {
 				String functionString = config.getString(path);
 
-				FunctionData<Byte> function = FunctionData.build(functionString, Double::byteValue, def);
+				FunctionData<Byte> function = FunctionData.build(functionString, Double::byteValue, def, true);
 				if (function == null) {
-					MagicDebug.warn("Invalid expression '%s' for byte option %s. Defaulting to expression '%s'.", functionString, MagicDebug.resolvePath(path), def);
+					MagicDebug.warn("Invalid expression '%s' for byte option %s. Defaulting to expression '%s'.", functionString, resolvePath(config, path), def);
 					return def;
 				}
 
@@ -390,7 +393,7 @@ public class ConfigDataUtil {
 			}
 
 			if (config.isSet(path))
-				MagicDebug.warn("Invalid value '%s' found for byte option %s. Defaulting to expression '%s'.", config.getString(path), MagicDebug.resolvePath(path), def);
+				MagicDebug.warn("Invalid value '%s' found for byte option %s. Defaulting to expression '%s'.", config.getString(path), resolvePath(config, path), def);
 			else
 				MagicDebug.info("No value found. Defaulting to expression '%s'.", def);
 
@@ -400,7 +403,7 @@ public class ConfigDataUtil {
 
 	@NotNull
 	public static ConfigData<Double> getDouble(@NotNull ConfigurationSection config, @NotNull String path) {
-		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving double option '%s'.", getShortPath(path))) {
+		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving double option '%s'.", resolveShortPath(config, path))) {
 			if (config.isInt(path) || config.isLong(path) || config.isDouble(path)) {
 				double value = config.getDouble(path);
 				MagicDebug.info("Resolved value '%s'.", value);
@@ -410,9 +413,9 @@ public class ConfigDataUtil {
 			if (config.isString(path)) {
 				String functionString = config.getString(path);
 
-				FunctionData<Double> function = FunctionData.build(functionString, Function.identity());
+				FunctionData<Double> function = FunctionData.build(functionString, Function.identity(), true);
 				if (function == null) {
-					MagicDebug.warn("Invalid expression '%s' for double option %s.", functionString, MagicDebug.resolvePath(path));
+					MagicDebug.warn("Invalid expression '%s' for double option %s.", functionString, resolvePath(config, path));
 					return data -> null;
 				}
 
@@ -421,7 +424,7 @@ public class ConfigDataUtil {
 			}
 
 			if (config.isSet(path))
-				MagicDebug.warn("Invalid value '%s' found for double option %s.", config.getString(path), MagicDebug.resolvePath(path));
+				MagicDebug.warn("Invalid value '%s' found for double option %s.", config.getString(path), resolvePath(config, path));
 			else
 				MagicDebug.info("No value found.");
 
@@ -431,7 +434,7 @@ public class ConfigDataUtil {
 
 	@NotNull
 	public static ConfigData<Double> getDouble(@NotNull ConfigurationSection config, @NotNull String path, double def) {
-		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving double option '%s'.", getShortPath(path))) {
+		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving double option '%s'.", resolveShortPath(config, path))) {
 			if (config.isInt(path) || config.isLong(path) || config.isDouble(path)) {
 				double value = config.getDouble(path);
 				MagicDebug.info("Resolved value '%s'.", value);
@@ -441,9 +444,9 @@ public class ConfigDataUtil {
 			if (config.isString(path)) {
 				String functionString = config.getString(path);
 
-				FunctionData<Double> function = FunctionData.build(functionString, Function.identity(), def);
+				FunctionData<Double> function = FunctionData.build(functionString, Function.identity(), def, true);
 				if (function == null) {
-					MagicDebug.warn("Invalid expression '%s' for double option %s. Defaulting to '%s'.", functionString, MagicDebug.resolvePath(path), def);
+					MagicDebug.warn("Invalid expression '%s' for double option %s. Defaulting to '%s'.", functionString, resolvePath(config, path), def);
 					return data -> def;
 				}
 
@@ -452,7 +455,7 @@ public class ConfigDataUtil {
 			}
 
 			if (config.isSet(path))
-				MagicDebug.warn("Invalid value '%s' found for double option %s. Defaulting to '%s'.", config.getString(path), MagicDebug.resolvePath(path), def);
+				MagicDebug.warn("Invalid value '%s' found for double option %s. Defaulting to '%s'.", config.getString(path), resolvePath(config, path), def);
 			else
 				MagicDebug.info("No value found. Defaulting to '%s'.", def);
 
@@ -462,7 +465,7 @@ public class ConfigDataUtil {
 
 	@NotNull
 	public static ConfigData<Double> getDouble(@NotNull ConfigurationSection config, @NotNull String path, @NotNull ConfigData<Double> def) {
-		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving double option '%s'.", getShortPath(path))) {
+		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving double option '%s'.", resolveShortPath(config, path))) {
 			if (config.isInt(path) || config.isLong(path) || config.isDouble(path)) {
 				double value = config.getDouble(path);
 				MagicDebug.info("Resolved value '%s'.", value);
@@ -472,9 +475,9 @@ public class ConfigDataUtil {
 			if (config.isString(path)) {
 				String functionString = config.getString(path);
 
-				FunctionData<Double> function = FunctionData.build(functionString, Function.identity(), def);
+				FunctionData<Double> function = FunctionData.build(functionString, Function.identity(), def, true);
 				if (function == null) {
-					MagicDebug.warn("Invalid expression '%s' for double option %s. Defaulting to expression '%s'.", functionString, MagicDebug.resolvePath(path), def);
+					MagicDebug.warn("Invalid expression '%s' for double option %s. Defaulting to expression '%s'.", functionString, resolvePath(config, path), def);
 					return def;
 				}
 
@@ -483,7 +486,7 @@ public class ConfigDataUtil {
 			}
 
 			if (config.isSet(path))
-				MagicDebug.warn("Invalid value '%s' found for double option %s. Defaulting to expression '%s'.", config.getString(path), MagicDebug.resolvePath(path), def);
+				MagicDebug.warn("Invalid value '%s' found for double option %s. Defaulting to expression '%s'.", config.getString(path), resolvePath(config, path), def);
 			else
 				MagicDebug.info("No value found. Defaulting to expression '%s'.", def);
 
@@ -493,7 +496,7 @@ public class ConfigDataUtil {
 
 	@NotNull
 	public static ConfigData<Float> getFloat(@NotNull ConfigurationSection config, @NotNull String path) {
-		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving float option '%s'.", getShortPath(path))) {
+		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving float option '%s'.", resolveShortPath(config, path))) {
 			if (config.isInt(path) || config.isLong(path) || config.isDouble(path)) {
 				float value = (float) config.getDouble(path);
 				MagicDebug.info("Resolved value '%s'.", value);
@@ -503,9 +506,9 @@ public class ConfigDataUtil {
 			if (config.isString(path)) {
 				String functionString = config.getString(path);
 
-				FunctionData<Float> function = FunctionData.build(functionString, Double::floatValue);
+				FunctionData<Float> function = FunctionData.build(functionString, Double::floatValue, true);
 				if (function == null) {
-					MagicDebug.warn("Invalid expression '%s' for float option %s.", functionString, MagicDebug.resolvePath(path));
+					MagicDebug.warn("Invalid expression '%s' for float option %s.", functionString, resolvePath(config, path));
 					return data -> null;
 				}
 
@@ -514,7 +517,7 @@ public class ConfigDataUtil {
 			}
 
 			if (config.isSet(path))
-				MagicDebug.warn("Invalid value '%s' found for float option %s.", config.getString(path), MagicDebug.resolvePath(path));
+				MagicDebug.warn("Invalid value '%s' found for float option %s.", config.getString(path), resolvePath(config, path));
 			else
 				MagicDebug.info("No value found.");
 
@@ -524,7 +527,7 @@ public class ConfigDataUtil {
 
 	@NotNull
 	public static ConfigData<Float> getFloat(@NotNull ConfigurationSection config, @NotNull String path, float def) {
-		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving float option '%s'.", getShortPath(path))) {
+		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving float option '%s'.", resolveShortPath(config, path))) {
 			if (config.isInt(path) || config.isLong(path) || config.isDouble(path)) {
 				float value = (float) config.getDouble(path);
 				MagicDebug.info("Resolved value '%s'.", value);
@@ -534,9 +537,9 @@ public class ConfigDataUtil {
 			if (config.isString(path)) {
 				String functionString = config.getString(path);
 
-				FunctionData<Float> function = FunctionData.build(functionString, Double::floatValue, def);
+				FunctionData<Float> function = FunctionData.build(functionString, Double::floatValue, def, true);
 				if (function == null) {
-					MagicDebug.warn("Invalid expression '%s' for float option %s. Defaulting to '%s'.", functionString, MagicDebug.resolvePath(path), def);
+					MagicDebug.warn("Invalid expression '%s' for float option %s. Defaulting to '%s'.", functionString, resolvePath(config, path), def);
 					return data -> def;
 				}
 
@@ -545,7 +548,7 @@ public class ConfigDataUtil {
 			}
 
 			if (config.isSet(path))
-				MagicDebug.warn("Invalid value '%s' found for float option %s. Defaulting to '%s'.", config.getString(path), MagicDebug.resolvePath(path), def);
+				MagicDebug.warn("Invalid value '%s' found for float option %s. Defaulting to '%s'.", config.getString(path), resolvePath(config, path), def);
 			else
 				MagicDebug.info("No value found. Defaulting to '%s'.", def);
 
@@ -555,7 +558,7 @@ public class ConfigDataUtil {
 
 	@NotNull
 	public static ConfigData<Float> getFloat(@NotNull ConfigurationSection config, @NotNull String path, @NotNull ConfigData<Float> def) {
-		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving float option '%s'.", getShortPath(path))) {
+		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving float option '%s'.", resolveShortPath(config, path))) {
 			if (config.isInt(path) || config.isLong(path) || config.isDouble(path)) {
 				float value = (float) config.getDouble(path);
 				MagicDebug.info("Resolved value '%s'.", value);
@@ -565,9 +568,9 @@ public class ConfigDataUtil {
 			if (config.isString(path)) {
 				String functionString = config.getString(path);
 
-				FunctionData<Float> function = FunctionData.build(functionString, Double::floatValue, def);
+				FunctionData<Float> function = FunctionData.build(functionString, Double::floatValue, def, true);
 				if (function == null) {
-					MagicDebug.warn("Invalid expression '%s' for float option %s. Defaulting to expression '%s'.", functionString, MagicDebug.resolvePath(path), def);
+					MagicDebug.warn("Invalid expression '%s' for float option %s. Defaulting to expression '%s'.", functionString, resolvePath(config, path), def);
 					return def;
 				}
 
@@ -576,7 +579,7 @@ public class ConfigDataUtil {
 			}
 
 			if (config.isSet(path))
-				MagicDebug.warn("Invalid value '%s' found for float option %s. Defaulting to expression '%s'.", config.getString(path), MagicDebug.resolvePath(path), def);
+				MagicDebug.warn("Invalid value '%s' found for float option %s. Defaulting to expression '%s'.", config.getString(path), resolvePath(config, path), def);
 			else
 				MagicDebug.info("No value found. Defaulting to expression '%s'.", def);
 
@@ -586,13 +589,13 @@ public class ConfigDataUtil {
 
 	@NotNull
 	public static ConfigData<String> getString(@NotNull ConfigurationSection config, @NotNull String path, @Nullable String def) {
-		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving string option '%s'.", getShortPath(path))) {
+		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving string option '%s'.", resolveShortPath(config, path))) {
 			String value;
 
 			if (config.isString(path)) value = config.getString(path);
 			else if (config.isSet(path)) {
-				if (def == null) MagicDebug.warn("Invalid value '%s' found for string option %s.", config.getString(path), MagicDebug.resolvePath(path));
-				else MagicDebug.warn("Invalid value '%s' found for string option %s. Defaulting to '%s'.", config.getString(path), MagicDebug.resolvePath(path), def);
+				if (def == null) MagicDebug.warn("Invalid value '%s' found for string option %s.", config.getString(path), resolvePath(config, path));
+				else MagicDebug.warn("Invalid value '%s' found for string option %s. Defaulting to '%s'.", config.getString(path), resolvePath(config, path), def);
 
 				value = def;
 			} else {
@@ -638,7 +641,7 @@ public class ConfigDataUtil {
 
 	@NotNull
 	public static ConfigData<Component> getComponent(@NotNull ConfigurationSection config, @NotNull String path, @Nullable Component def) {
-		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving rich text option '%s'.", getShortPath(path))) {
+		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving rich text option '%s'.", resolveShortPath(config, path))) {
 			ConfigData<String> supplier = getString(config, path, null);
 			if (supplier.isConstant()) {
 				String value = supplier.get();
@@ -685,7 +688,7 @@ public class ConfigDataUtil {
 	}
 
 	public static ConfigData<Boolean> getBoolean(@NotNull ConfigurationSection config, @NotNull String path) {
-		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving boolean option '%s'.", getShortPath(path))) {
+		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving boolean option '%s'.", resolveShortPath(config, path))) {
 			if (config.isBoolean(path)) {
 				boolean val = config.getBoolean(path);
 				MagicDebug.info("Resolved value '%b'.", val);
@@ -712,7 +715,7 @@ public class ConfigDataUtil {
 			}
 
 			if (config.isSet(path))
-				MagicDebug.warn("Invalid value '%s' found for boolean option %s.", config.getString(path), MagicDebug.resolvePath(path));
+				MagicDebug.warn("Invalid value '%s' found for boolean option %s.", config.getString(path), resolvePath(config, path));
 			else
 				MagicDebug.info("No value found.");
 
@@ -721,7 +724,7 @@ public class ConfigDataUtil {
 	}
 
 	public static ConfigData<Boolean> getBoolean(@NotNull ConfigurationSection config, @NotNull String path, boolean def) {
-		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving boolean option '%s'.", getShortPath(path))) {
+		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving boolean option '%s'.", resolveShortPath(config, path))) {
 			if (config.isBoolean(path)) {
 				boolean val = config.getBoolean(path);
 				MagicDebug.info("Resolved value '%b'.", val);
@@ -748,7 +751,7 @@ public class ConfigDataUtil {
 			}
 
 			if (config.isSet(path))
-				MagicDebug.warn("Invalid value '%s' found for boolean option %s. Defaulting to '%b'.", config.getString(path), MagicDebug.resolvePath(path), def);
+				MagicDebug.warn("Invalid value '%s' found for boolean option %s. Defaulting to '%b'.", config.getString(path), resolvePath(config, path), def);
 			else
 				MagicDebug.info("No value found. Defaulting to '%b'.", def);
 
@@ -757,7 +760,7 @@ public class ConfigDataUtil {
 	}
 
 	public static ConfigData<Boolean> getBoolean(@NotNull ConfigurationSection config, @NotNull String path, ConfigData<Boolean> def) {
-		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving boolean option '%s'.", getShortPath(path))) {
+		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving boolean option '%s'.", resolveShortPath(config, path))) {
 			if (config.isBoolean(path)) {
 				boolean val = config.getBoolean(path);
 				MagicDebug.info("Resolved value '%s'.", val);
@@ -784,7 +787,7 @@ public class ConfigDataUtil {
 			}
 
 			if (config.isSet(path))
-				MagicDebug.warn("Invalid value '%s' found for boolean option %s. Defaulting to expression '%s'.", config.getString(path), MagicDebug.resolvePath(path), def);
+				MagicDebug.warn("Invalid value '%s' found for boolean option %s. Defaulting to expression '%s'.", config.getString(path), resolvePath(config, path), def);
 			else
 				MagicDebug.info("No value found. Defaulting to expression '%s'.", def);
 
@@ -797,7 +800,7 @@ public class ConfigDataUtil {
 															@NotNull String path,
 															@NotNull Class<T> type,
 															@Nullable T def) {
-		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving enum option '%s'.", getShortPath(path))) {
+		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving enum option '%s'.", resolveShortPath(config, path))) {
 			String value = config.getString(path);
 			if (value == null) {
 				if (def == null) MagicDebug.info("No value found.");
@@ -815,9 +818,9 @@ public class ConfigDataUtil {
 				ConfigData<String> supplier = getString(value);
 				if (supplier.isConstant()) {
 					if (def != null)
-						MagicDebug.warn("Invalid value '%s' found for enum option %s. Defaulting to '%s'.", value, MagicDebug.resolvePath(path), def);
+						MagicDebug.warn("Invalid value '%s' found for enum option %s. Defaulting to '%s'.", value, resolvePath(config, path), def);
 					else
-						MagicDebug.warn("Invalid value '%s' found for enum option %s.", value, MagicDebug.resolvePath(path));
+						MagicDebug.warn("Invalid value '%s' found for enum option %s.", value, resolvePath(config, path));
 
 					return data -> def;
 				}
@@ -839,7 +842,7 @@ public class ConfigDataUtil {
 	}
 
 	public static ConfigData<Material> getMaterial(@NotNull ConfigurationSection config, @NotNull String path, @Nullable Material def) {
-		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving material option '%s'.", getShortPath(path))) {
+		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving material option '%s'.", resolveShortPath(config, path))) {
 			String value = config.getString(path);
 			if (value == null) {
 				if (def == null) MagicDebug.info("No value found.");
@@ -857,9 +860,9 @@ public class ConfigDataUtil {
 			ConfigData<String> supplier = getString(value);
 			if (supplier.isConstant()) {
 				if (def != null)
-					MagicDebug.warn("Invalid value '%s' found for material option %s. Defaulting to '%s'.", value, MagicDebug.resolvePath(path), def);
+					MagicDebug.warn("Invalid value '%s' found for material option %s. Defaulting to '%s'.", value, resolvePath(config, path), def);
 				else
-					MagicDebug.warn("Invalid value '%s' found for material option %s.", value, MagicDebug.resolvePath(path));
+					MagicDebug.warn("Invalid value '%s' found for material option %s.", value, resolvePath(config, path));
 
 				return data -> def;
 			}
@@ -878,7 +881,7 @@ public class ConfigDataUtil {
 
 	@NotNull
 	public static ConfigData<PotionEffectType> getPotionEffectType(@NotNull ConfigurationSection config, @NotNull String path, @Nullable PotionEffectType def) {
-		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving potion effect type option '%s'.", getShortPath(path))) {
+		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving potion effect type option '%s'.", resolveShortPath(config, path))) {
 			String value = config.getString(path);
 			if (value == null) {
 				if (def == null) MagicDebug.info("No value found.");
@@ -896,9 +899,9 @@ public class ConfigDataUtil {
 			ConfigData<String> supplier = getString(value);
 			if (supplier.isConstant()) {
 				if (def != null)
-					MagicDebug.warn("Invalid value '%s' found for potion effect type option %s. Defaulting to '%s'.", value, MagicDebug.resolvePath(path), def);
+					MagicDebug.warn("Invalid value '%s' found for potion effect type option %s. Defaulting to '%s'.", value, resolvePath(config, path), def);
 				else
-					MagicDebug.warn("Invalid value '%s' found for potion effect type option %s.", value, MagicDebug.resolvePath(path));
+					MagicDebug.warn("Invalid value '%s' found for potion effect type option %s.", value, resolvePath(config, path));
 
 				return data -> def;
 			}
@@ -917,7 +920,7 @@ public class ConfigDataUtil {
 
 	@NotNull
 	public static ConfigData<Particle> getParticle(@NotNull ConfigurationSection config, @NotNull String path, @Nullable Particle def) {
-		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving particle option '%s'.", getShortPath(path))) {
+		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving particle option '%s'.", resolveShortPath(config, path))) {
 			String value = config.getString(path);
 			if (value == null) {
 				if (def == null) MagicDebug.info("No value found.");
@@ -935,9 +938,9 @@ public class ConfigDataUtil {
 			ConfigData<String> supplier = getString(value);
 			if (supplier.isConstant()) {
 				if (def != null)
-					MagicDebug.warn("Invalid value '%s' found for particle option %s. Defaulting to '%s'.", value, MagicDebug.resolvePath(path), def);
+					MagicDebug.warn("Invalid value '%s' found for particle option %s. Defaulting to '%s'.", value, resolvePath(config, path), def);
 				else
-					MagicDebug.warn("Invalid value '%s' found for particle option %s.", value, MagicDebug.resolvePath(path));
+					MagicDebug.warn("Invalid value '%s' found for particle option %s.", value, resolvePath(config, path));
 
 				return data -> def;
 			}
@@ -955,7 +958,7 @@ public class ConfigDataUtil {
 	}
 
 	public static ConfigData<TargetBooleanState> getTargetBooleanState(@NotNull ConfigurationSection config, @NotNull String path, @Nullable TargetBooleanState def) {
-		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving boolean state option '%s'.", getShortPath(path))) {
+		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving boolean state option '%s'.", resolveShortPath(config, path))) {
 			String value = config.getString(path);
 			if (value == null) {
 				if (def == null) MagicDebug.info("No value found.");
@@ -973,9 +976,9 @@ public class ConfigDataUtil {
 			ConfigData<String> supplier = getString(value);
 			if (supplier.isConstant()) {
 				if (def != null)
-					MagicDebug.warn("Invalid value '%s' found for boolean state option %s. Defaulting to '%s'.", value, MagicDebug.resolvePath(path), def);
+					MagicDebug.warn("Invalid value '%s' found for boolean state option %s. Defaulting to '%s'.", value, resolvePath(config, path), def);
 				else
-					MagicDebug.warn("Invalid value '%s' found for boolean state option %s.", value, MagicDebug.resolvePath(path));
+					MagicDebug.warn("Invalid value '%s' found for boolean state option %s.", value, resolvePath(config, path));
 
 				return data -> def;
 			}
@@ -993,7 +996,7 @@ public class ConfigDataUtil {
 	}
 
 	public static ConfigData<EntityType> getEntityType(@NotNull ConfigurationSection config, @NotNull String path, @Nullable EntityType def) {
-		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving entity type option '%s'.", getShortPath(path))) {
+		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving entity type option '%s'.", resolveShortPath(config, path))) {
 			String value = config.getString(path);
 			if (value == null) {
 				if (def == null) MagicDebug.info("No value found.");
@@ -1011,9 +1014,9 @@ public class ConfigDataUtil {
 			ConfigData<String> supplier = getString(value);
 			if (supplier.isConstant()) {
 				if (def != null)
-					MagicDebug.warn("Invalid value '%s' found for entity type option %s. Defaulting to '%s'.", value, MagicDebug.resolvePath(path), def);
+					MagicDebug.warn("Invalid value '%s' found for entity type option %s. Defaulting to '%s'.", value, resolvePath(config, path), def);
 				else
-					MagicDebug.warn("Invalid value '%s' found for entity type option %s.", value, MagicDebug.resolvePath(path));
+					MagicDebug.warn("Invalid value '%s' found for entity type option %s.", value, resolvePath(config, path));
 
 				return data -> def;
 			}
@@ -1032,7 +1035,7 @@ public class ConfigDataUtil {
 
 	@NotNull
 	public static ConfigData<BlockData> getBlockData(@NotNull ConfigurationSection config, @NotNull String path, @Nullable BlockData def) {
-		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving block data option '%s'.", getShortPath(path))) {
+		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving block data option '%s'.", resolveShortPath(config, path))) {
 			String value = config.getString(path);
 			if (value == null) {
 				if (def == null) MagicDebug.info("No value found.");
@@ -1049,9 +1052,9 @@ public class ConfigDataUtil {
 				ConfigData<String> supplier = getString(value);
 				if (supplier.isConstant()) {
 					if (def != null)
-						MagicDebug.warn("Invalid value '%s' found for block data option %s. Defaulting to '%s'.", value, MagicDebug.resolvePath(path), def.getAsString());
+						MagicDebug.warn("Invalid value '%s' found for block data option %s. Defaulting to '%s'.", value, resolvePath(config, path), def.getAsString());
 					else
-						MagicDebug.warn("Invalid value '%s' found for block data option %s.", value, MagicDebug.resolvePath(path));
+						MagicDebug.warn("Invalid value '%s' found for block data option %s.", value, resolvePath(config, path));
 
 					return data -> def;
 				}
@@ -1131,7 +1134,7 @@ public class ConfigDataUtil {
 				}
 			}
 
-			FunctionData<Float> function = FunctionData.build(string, Double::floatValue);
+			FunctionData<Float> function = FunctionData.build(string, Double::floatValue, true);
 			if (function == null) return data -> def;
 
 			return data -> new Angle(function.get(data), relative);
@@ -1142,27 +1145,27 @@ public class ConfigDataUtil {
 
 	@NotNull
 	public static ConfigData<Vector> getVector(@NotNull ConfigurationSection config, @NotNull String path, @Nullable Vector def) {
-		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving vector option '%s'.", getShortPath(path))) {
+		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving vector option '%s'.", resolveShortPath(config, path))) {
 			if (config.isString(path)) {
 				String value = config.getString(path);
 				if (value == null) {
 					if (def == null) {
-						MagicDebug.warn("Invalid value found for vector option %s.", MagicDebug.resolvePath(path));
+						MagicDebug.warn("Invalid value found for vector option %s.", resolvePath(config, path));
 						return data -> null;
 					}
 
-					MagicDebug.warn("Invalid value found for vector option %s. Defaulting to '%s'.", MagicDebug.resolvePath(path), def);
+					MagicDebug.warn("Invalid value found for vector option %s. Defaulting to '%s'.", resolvePath(config, path), def);
 					return data -> def.clone();
 				}
 
 				String[] vec = value.split(",");
 				if (vec.length != 3) {
 					if (def == null) {
-						MagicDebug.warn("Invalid value '%s' found for vector option %s - too many or too few arguments.", value, MagicDebug.resolvePath(path));
+						MagicDebug.warn("Invalid value '%s' found for vector option %s - too many or too few arguments.", value, resolvePath(config, path));
 						return data -> null;
 					}
 
-					MagicDebug.warn("Invalid value '%s' found for vector option %s - too many or too few arguments. Defaulting to '%s'.", value, MagicDebug.resolvePath(path), def);
+					MagicDebug.warn("Invalid value '%s' found for vector option %s - too many or too few arguments. Defaulting to '%s'.", value, resolvePath(config, path), def);
 					return data -> def.clone();
 				}
 
@@ -1172,11 +1175,11 @@ public class ConfigDataUtil {
 					return data -> vector.clone();
 				} catch (NumberFormatException e) {
 					if (def == null) {
-						MagicDebug.warn("Invalid value '%s' found for vector option %s.", value, MagicDebug.resolvePath(path));
+						MagicDebug.warn("Invalid value '%s' found for vector option %s.", value, resolvePath(config, path));
 						return data -> null;
 					}
 
-					MagicDebug.warn("Invalid value '%s' found for vector option %s. Defaulting to '%s'.", value, MagicDebug.resolvePath(path), def);
+					MagicDebug.warn("Invalid value '%s' found for vector option %s. Defaulting to '%s'.", value, resolvePath(config, path), def);
 					return data -> def.clone();
 				}
 			}
@@ -1193,11 +1196,11 @@ public class ConfigDataUtil {
 			} else if (obj instanceof List<?> list) {
 				if (list.size() != 3) {
 					if (def == null) {
-						MagicDebug.warn("Invalid value '%s' found for vector option %s - too many or too few arguments.", list, MagicDebug.resolvePath(path));
+						MagicDebug.warn("Invalid value '%s' found for vector option %s - too many or too few arguments.", list, resolvePath(config, path));
 						return data -> null;
 					}
 
-					MagicDebug.warn("Invalid value '%s' found for vector option %s - too many or too few arguments. Defaulting to '%s'.", list, MagicDebug.resolvePath(path), def);
+					MagicDebug.warn("Invalid value '%s' found for vector option %s - too many or too few arguments. Defaulting to '%s'.", list, resolvePath(config, path), def);
 					return data -> def.clone();
 				}
 
@@ -1209,60 +1212,60 @@ public class ConfigDataUtil {
 					double val = number.doubleValue();
 					x = data -> val;
 				} else if (xObj instanceof String string) {
-					x = FunctionData.build(string, Function.identity());
+					x = FunctionData.build(string, Function.identity(), true);
 				} else x = null;
 
 				if (yObj instanceof Number number) {
 					double val = number.doubleValue();
 					y = data -> val;
 				} else if (yObj instanceof String string) {
-					y = FunctionData.build(string, Function.identity());
+					y = FunctionData.build(string, Function.identity(), true);
 				} else y = null;
 
 				if (zObj instanceof Number number) {
 					double val = number.doubleValue();
 					z = data -> val;
 				} else if (zObj instanceof String string) {
-					z = FunctionData.build(string, Function.identity());
+					z = FunctionData.build(string, Function.identity(), true);
 				} else z = null;
 
 				if (x == null || y == null || z == null) {
 					if (def == null) {
 						if (x == null) {
-							MagicDebug.warn("Invalid value '%s' found for x component of vector option %s.", xObj, MagicDebug.resolvePath(path));
+							MagicDebug.warn("Invalid value '%s' found for x component of vector option %s.", xObj, resolvePath(config, path));
 							return data -> null;
 						}
 
 						if (y == null) {
-							MagicDebug.warn("Invalid value '%s' found for y component of vector option %s.", yObj, MagicDebug.resolvePath(path));
+							MagicDebug.warn("Invalid value '%s' found for y component of vector option %s.", yObj, resolvePath(config, path));
 							return data -> null;
 						}
 
-						MagicDebug.warn("Invalid value '%s' found for z component of vector option %s.", zObj, MagicDebug.resolvePath(path));
+						MagicDebug.warn("Invalid value '%s' found for z component of vector option %s.", zObj, resolvePath(config, path));
 						return data -> null;
 					}
 
 					if (x == null) {
-						MagicDebug.warn("Invalid value '%s' found for x component of vector option %s. Defaulting to '%s'.", xObj, MagicDebug.resolvePath(path), def);
+						MagicDebug.warn("Invalid value '%s' found for x component of vector option %s. Defaulting to '%s'.", xObj, resolvePath(config, path), def);
 						return data -> def.clone();
 					}
 
 					if (y == null) {
-						MagicDebug.warn("Invalid value '%s' found for y component of vector option %s. Defaulting to '%s'.", yObj, MagicDebug.resolvePath(path), def);
+						MagicDebug.warn("Invalid value '%s' found for y component of vector option %s. Defaulting to '%s'.", yObj, resolvePath(config, path), def);
 						return data -> def.clone();
 					}
 
-					MagicDebug.warn("Invalid value '%s' found for z component of vector option %s. Defaulting to '%s'.", zObj, MagicDebug.resolvePath(path), def);
+					MagicDebug.warn("Invalid value '%s' found for z component of vector option %s. Defaulting to '%s'.", zObj, resolvePath(config, path), def);
 					return data -> def.clone();
 
 				}
 			} else if (obj != null) {
 				if (def == null) {
-					MagicDebug.warn("Invalid value '%s' found for vector option %s.", obj, MagicDebug.resolvePath(path));
+					MagicDebug.warn("Invalid value '%s' found for vector option %s.", obj, resolvePath(config, path));
 					return data -> null;
 				}
 
-				MagicDebug.warn("Invalid value '%s' found for vector option %s. Defaulting to '%s'.", obj, MagicDebug.resolvePath(path), def);
+				MagicDebug.warn("Invalid value '%s' found for vector option %s. Defaulting to '%s'.", obj, resolvePath(config, path), def);
 				return data -> def.clone();
 			} else {
 				if (def == null) {
@@ -1288,27 +1291,27 @@ public class ConfigDataUtil {
 
 	@NotNull
 	public static ConfigData<EulerAngle> getEulerAngle(@NotNull ConfigurationSection config, @NotNull String path, @Nullable EulerAngle def) {
-		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving euler angle option '%s'.", getShortPath(path))) {
+		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving euler angle option '%s'.", resolveShortPath(config, path))) {
 			if (config.isString(path)) {
 				String value = config.getString(path);
 				if (value == null) {
 					if (def == null) {
-						MagicDebug.warn("Invalid value found for euler angle option %s.", MagicDebug.resolvePath(path));
+						MagicDebug.warn("Invalid value found for euler angle option %s.", resolvePath(config, path));
 						return data -> null;
 					}
 
-					MagicDebug.warn("Invalid value found for euler angle option %s. Defaulting to '%s'.", MagicDebug.resolvePath(path), def);
+					MagicDebug.warn("Invalid value found for euler angle option %s. Defaulting to '%s'.", resolvePath(config, path), def);
 					return data -> new EulerAngle(def.getX(), def.getY(), def.getZ());
 				}
 
 				String[] ang = value.split(",");
 				if (ang.length != 3) {
 					if (def == null) {
-						MagicDebug.warn("Invalid value '%s' found for euler angle option %s - too many or too few arguments.", value, MagicDebug.resolvePath(path));
+						MagicDebug.warn("Invalid value '%s' found for euler angle option %s - too many or too few arguments.", value, resolvePath(config, path));
 						return data -> null;
 					}
 
-					MagicDebug.warn("Invalid value '%s' found for euler angle option %s - too many or too few arguments. Defaulting to '%s'.", value, MagicDebug.resolvePath(path), def);
+					MagicDebug.warn("Invalid value '%s' found for euler angle option %s - too many or too few arguments. Defaulting to '%s'.", value, resolvePath(config, path), def);
 					return data -> new EulerAngle(def.getX(), def.getY(), def.getZ());
 				}
 
@@ -1318,11 +1321,11 @@ public class ConfigDataUtil {
 					return data -> new EulerAngle(angle.getX(), angle.getY(), angle.getZ());
 				} catch (NumberFormatException e) {
 					if (def == null) {
-						MagicDebug.warn("Invalid value '%s' found for euler angle option %s.", value, MagicDebug.resolvePath(path));
+						MagicDebug.warn("Invalid value '%s' found for euler angle option %s.", value, resolvePath(config, path));
 						return data -> null;
 					}
 
-					MagicDebug.warn("Invalid value '%s' found for euler angle option %s. Defaulting to '%s'.", value, MagicDebug.resolvePath(path), def);
+					MagicDebug.warn("Invalid value '%s' found for euler angle option %s. Defaulting to '%s'.", value, resolvePath(config, path), def);
 					return data -> new EulerAngle(def.getX(), def.getY(), def.getZ());
 				}
 			}
@@ -1339,11 +1342,11 @@ public class ConfigDataUtil {
 			} else if (obj instanceof List<?> list) {
 				if (list.size() != 3) {
 					if (def == null) {
-						MagicDebug.warn("Invalid value '%s' found for euler angle option %s - too many or too few arguments.", list, MagicDebug.resolvePath(path));
+						MagicDebug.warn("Invalid value '%s' found for euler angle option %s - too many or too few arguments.", list, resolvePath(config, path));
 						return data -> null;
 					}
 
-					MagicDebug.warn("Invalid value '%s' found for euler angle option %s - too many or too few arguments. Defaulting to '%s'.", list, MagicDebug.resolvePath(path), def);
+					MagicDebug.warn("Invalid value '%s' found for euler angle option %s - too many or too few arguments. Defaulting to '%s'.", list, resolvePath(config, path), def);
 					return data -> new EulerAngle(def.getX(), def.getY(), def.getZ());
 				}
 
@@ -1355,60 +1358,60 @@ public class ConfigDataUtil {
 					double val = number.doubleValue();
 					x = data -> val;
 				} else if (xObj instanceof String string) {
-					x = FunctionData.build(string, Function.identity());
+					x = FunctionData.build(string, Function.identity(), true);
 				} else x = null;
 
 				if (yObj instanceof Number number) {
 					double val = number.doubleValue();
 					y = data -> val;
 				} else if (yObj instanceof String string) {
-					y = FunctionData.build(string, Function.identity());
+					y = FunctionData.build(string, Function.identity(), true);
 				} else y = null;
 
 				if (zObj instanceof Number number) {
 					double val = number.doubleValue();
 					z = data -> val;
 				} else if (zObj instanceof String string) {
-					z = FunctionData.build(string, Function.identity());
+					z = FunctionData.build(string, Function.identity(), true);
 				} else z = null;
 
 				if (x == null || y == null || z == null) {
 					if (def == null) {
 						if (x == null) {
-							MagicDebug.warn("Invalid value '%s' found for x component of euler angle option %s.", xObj, MagicDebug.resolvePath(path));
+							MagicDebug.warn("Invalid value '%s' found for x component of euler angle option %s.", xObj, resolvePath(config, path));
 							return data -> null;
 						}
 
 						if (y == null) {
-							MagicDebug.warn("Invalid value '%s' found for y component of euler angle option %s.", yObj, MagicDebug.resolvePath(path));
+							MagicDebug.warn("Invalid value '%s' found for y component of euler angle option %s.", yObj, resolvePath(config, path));
 							return data -> null;
 						}
 
-						MagicDebug.warn("Invalid value '%s' found for z component of euler angle option %s.", zObj, MagicDebug.resolvePath(path));
+						MagicDebug.warn("Invalid value '%s' found for z component of euler angle option %s.", zObj, resolvePath(config, path));
 						return data -> null;
 					}
 
 					if (x == null) {
-						MagicDebug.warn("Invalid value '%s' found for x component of euler angle option %s. Defaulting to '%s,%s,%s'.", xObj, MagicDebug.resolvePath(path), def.getX(), def.getY(), def.getZ());
+						MagicDebug.warn("Invalid value '%s' found for x component of euler angle option %s. Defaulting to '%s,%s,%s'.", xObj, resolvePath(config, path), def.getX(), def.getY(), def.getZ());
 						return data -> new EulerAngle(def.getX(), def.getY(), def.getZ());
 					}
 
 					if (y == null) {
-						MagicDebug.warn("Invalid value '%s' found for y component of euler angle option %s. Defaulting to '%s,%s,%s'.", yObj, MagicDebug.resolvePath(path), def.getX(), def.getY(), def.getZ());
+						MagicDebug.warn("Invalid value '%s' found for y component of euler angle option %s. Defaulting to '%s,%s,%s'.", yObj, resolvePath(config, path), def.getX(), def.getY(), def.getZ());
 						return data -> new EulerAngle(def.getX(), def.getY(), def.getZ());
 					}
 
-					MagicDebug.warn("Invalid value '%s' found for z component of euler angle option %s. Defaulting to '%s,%s,%s'.", zObj, MagicDebug.resolvePath(path), def.getX(), def.getY(), def.getZ());
+					MagicDebug.warn("Invalid value '%s' found for z component of euler angle option %s. Defaulting to '%s,%s,%s'.", zObj, resolvePath(config, path), def.getX(), def.getY(), def.getZ());
 					return data -> new EulerAngle(def.getX(), def.getY(), def.getZ());
 
 				}
 			} else if (obj != null) {
 				if (def == null) {
-					MagicDebug.warn("Invalid value '%s' found for euler angle option %s.", obj, MagicDebug.resolvePath(path));
+					MagicDebug.warn("Invalid value '%s' found for euler angle option %s.", obj, resolvePath(config, path));
 					return data -> null;
 				}
 
-				MagicDebug.warn("Invalid value '%s' found for euler angle option %s. Defaulting to '%s,%s,%s'.", obj, MagicDebug.resolvePath(path), def.getX(), def.getY(), def.getZ());
+				MagicDebug.warn("Invalid value '%s' found for euler angle option %s. Defaulting to '%s,%s,%s'.", obj, resolvePath(config, path), def.getX(), def.getY(), def.getZ());
 				return data -> new EulerAngle(def.getX(), def.getY(), def.getZ());
 			} else {
 				if (def == null) {
@@ -1433,14 +1436,14 @@ public class ConfigDataUtil {
 	}
 
 	public static ConfigData<Color> getColor(@NotNull ConfigurationSection config, @NotNull String path, @Nullable Color def) {
-		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving color option '%s'.", getShortPath(path))) {
+		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving color option '%s'.", resolveShortPath(config, path))) {
 			if (config.isInt(path) || config.isString(path)) {
 				String value = config.getString(path);
 				if (value == null) {
 					if (def == null)
-						MagicDebug.warn("Invalid value found for color option %s.", MagicDebug.resolvePath(path));
+						MagicDebug.warn("Invalid value found for color option %s.", resolvePath(config, path));
 					else
-						MagicDebug.warn("Invalid value found for color option %s. Defaulting to '%s'.", MagicDebug.resolvePath(path), (Supplier<String>) () -> Integer.toHexString(def.asRGB()));
+						MagicDebug.warn("Invalid value found for color option %s. Defaulting to '%s'.", resolvePath(config, path), (Supplier<String>) () -> Integer.toHexString(def.asRGB()));
 
 					return data -> def;
 				}
@@ -1450,9 +1453,9 @@ public class ConfigDataUtil {
 					Color color = ColorUtil.getColorFromHexString(value, false);
 					if (color == null) {
 						if (def == null)
-							MagicDebug.warn("Invalid value '%s' found for color option %s.", value, MagicDebug.resolvePath(path));
+							MagicDebug.warn("Invalid value '%s' found for color option %s.", value, resolvePath(config, path));
 						else
-							MagicDebug.warn("Invalid value '%s' found for color option %s. Defaulting to '%s'.", value, MagicDebug.resolvePath(path), (Supplier<String>) () -> Integer.toHexString(def.asRGB()));
+							MagicDebug.warn("Invalid value '%s' found for color option %s. Defaulting to '%s'.", value, resolvePath(config, path), (Supplier<String>) () -> Integer.toHexString(def.asRGB()));
 
 						return data -> def;
 					}
@@ -1472,9 +1475,9 @@ public class ConfigDataUtil {
 				ConfigurationSection section = config.getConfigurationSection(path);
 				if (section == null) {
 					if (def == null)
-						MagicDebug.warn("Invalid value found for color option %s.", MagicDebug.resolvePath(path));
+						MagicDebug.warn("Invalid value found for color option %s.", resolvePath(config, path));
 					else
-						MagicDebug.warn("Invalid value found for color option %s. Defaulting to '%s'.", MagicDebug.resolvePath(path), (Supplier<String>) () -> Integer.toHexString(def.asRGB()));
+						MagicDebug.warn("Invalid value found for color option %s. Defaulting to '%s'.", resolvePath(config, path), (Supplier<String>) () -> Integer.toHexString(def.asRGB()));
 
 					return data -> def;
 				}
@@ -1487,9 +1490,9 @@ public class ConfigDataUtil {
 					int r = red.get();
 					if (r < 0 || r > 255) {
 						if (def == null)
-							MagicDebug.warn("Invalid red value '%d' found for color option %s.", r, MagicDebug.resolvePath(path));
+							MagicDebug.warn("Invalid red value '%d' found for color option %s.", r, resolvePath(config, path));
 						else
-							MagicDebug.warn("Invalid value red value '%d' found for color option %s. Defaulting to '%s'.", r, MagicDebug.resolvePath(path), (Supplier<String>) () -> Integer.toHexString(def.asRGB()));
+							MagicDebug.warn("Invalid value red value '%d' found for color option %s. Defaulting to '%s'.", r, resolvePath(config, path), (Supplier<String>) () -> Integer.toHexString(def.asRGB()));
 
 						return data -> def;
 					}
@@ -1497,9 +1500,9 @@ public class ConfigDataUtil {
 					int g = green.get();
 					if (g < 0 || g > 255) {
 						if (def == null)
-							MagicDebug.warn("Invalid green value '%d' found for color option %s.", g, MagicDebug.resolvePath(path));
+							MagicDebug.warn("Invalid green value '%d' found for color option %s.", g, resolvePath(config, path));
 						else
-							MagicDebug.warn("Invalid value green value '%d' found for color option %s. Defaulting to '%s'.", g, MagicDebug.resolvePath(path), (Supplier<String>) () -> Integer.toHexString(def.asRGB()));
+							MagicDebug.warn("Invalid value green value '%d' found for color option %s. Defaulting to '%s'.", g, resolvePath(config, path), (Supplier<String>) () -> Integer.toHexString(def.asRGB()));
 
 						return data -> def;
 					}
@@ -1507,9 +1510,9 @@ public class ConfigDataUtil {
 					int b = blue.get();
 					if (b < 0 || b > 255) {
 						if (def == null)
-							MagicDebug.warn("Invalid blue value '%d' found for color option %s.", b, MagicDebug.resolvePath(path));
+							MagicDebug.warn("Invalid blue value '%d' found for color option %s.", b, resolvePath(config, path));
 						else
-							MagicDebug.warn("Invalid blue red value '%d' found for color option %s. Defaulting to '%s'.", b, MagicDebug.resolvePath(path), (Supplier<String>) () -> Integer.toHexString(def.asRGB()));
+							MagicDebug.warn("Invalid blue red value '%d' found for color option %s. Defaulting to '%s'.", b, resolvePath(config, path), (Supplier<String>) () -> Integer.toHexString(def.asRGB()));
 
 						return data -> def;
 					}
@@ -1534,8 +1537,8 @@ public class ConfigDataUtil {
 			}
 
 			if (config.isSet(path)) {
-				if (def == null) MagicDebug.warn("Invalid value '%s' found for color option %s.", config.getString(path), MagicDebug.resolvePath(path));
-				else MagicDebug.warn("Invalid value '%s' found for color option %s. Defaulting to value '%s'.", config.getString(path), MagicDebug.resolvePath(path), (Supplier<String>) () -> Integer.toHexString(def.asRGB()));
+				if (def == null) MagicDebug.warn("Invalid value '%s' found for color option %s.", config.getString(path), resolvePath(config, path));
+				else MagicDebug.warn("Invalid value '%s' found for color option %s. Defaulting to value '%s'.", config.getString(path), resolvePath(config, path), (Supplier<String>) () -> Integer.toHexString(def.asRGB()));
 			} else {
 				if (def == null) MagicDebug.info("No value found.");
 				else MagicDebug.info("No value found. Defaulting to value '%s'.", (Supplier<String>) () -> Integer.toHexString(def.asRGB()));
@@ -1546,14 +1549,14 @@ public class ConfigDataUtil {
 	}
 
 	public static ConfigData<Color> getARGBColor(@NotNull ConfigurationSection config, @NotNull String path, @Nullable Color def) {
-		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving color option '%s'.", getShortPath(path))) {
+		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving color option '%s'.", resolveShortPath(config, path))) {
 			if (config.isInt(path) || config.isString(path)) {
 				String value = config.getString(path);
 				if (value == null) {
 					if (def == null)
-						MagicDebug.warn("Invalid value found for color option %s.", MagicDebug.resolvePath(path));
+						MagicDebug.warn("Invalid value found for color option %s.", resolvePath(config, path));
 					else
-						MagicDebug.warn("Invalid value found for color option %s. Defaulting to '%s'.", MagicDebug.resolvePath(path), (Supplier<String>) () -> Integer.toHexString(def.asARGB()));
+						MagicDebug.warn("Invalid value found for color option %s. Defaulting to '%s'.", resolvePath(config, path), (Supplier<String>) () -> Integer.toHexString(def.asARGB()));
 
 					return data -> def;
 				}
@@ -1563,9 +1566,9 @@ public class ConfigDataUtil {
 					Color color = ColorUtil.getColorFromARGHexString(value, false);
 					if (color == null) {
 						if (def == null)
-							MagicDebug.warn("Invalid value '%s' found for color option %s.", value, MagicDebug.resolvePath(path));
+							MagicDebug.warn("Invalid value '%s' found for color option %s.", value, resolvePath(config, path));
 						else
-							MagicDebug.warn("Invalid value '%s' found for color option %s. Defaulting to '%s'.", value, MagicDebug.resolvePath(path), (Supplier<String>) () -> Integer.toHexString(def.asARGB()));
+							MagicDebug.warn("Invalid value '%s' found for color option %s. Defaulting to '%s'.", value, resolvePath(config, path), (Supplier<String>) () -> Integer.toHexString(def.asARGB()));
 
 						return data -> def;
 					}
@@ -1585,9 +1588,9 @@ public class ConfigDataUtil {
 				ConfigurationSection section = config.getConfigurationSection(path);
 				if (section == null) {
 					if (def == null)
-						MagicDebug.warn("Invalid value found for color option %s.", MagicDebug.resolvePath(path));
+						MagicDebug.warn("Invalid value found for color option %s.", resolvePath(config, path));
 					else
-						MagicDebug.warn("Invalid value found for color option %s. Defaulting to '%s'.", MagicDebug.resolvePath(path), (Supplier<String>) () -> Integer.toHexString(def.asARGB()));
+						MagicDebug.warn("Invalid value found for color option %s. Defaulting to '%s'.", resolvePath(config, path), (Supplier<String>) () -> Integer.toHexString(def.asARGB()));
 
 					return data -> def;
 				}
@@ -1601,9 +1604,9 @@ public class ConfigDataUtil {
 					Integer a = alpha.get();
 					if (a < 0 || a > 255) {
 						if (def == null)
-							MagicDebug.warn("Invalid alpha value '%d' found for color option %s.", a, MagicDebug.resolvePath(path));
+							MagicDebug.warn("Invalid alpha value '%d' found for color option %s.", a, resolvePath(config, path));
 						else
-							MagicDebug.warn("Invalid value red value '%d' found for color option %s. Defaulting to '%s'.", a, MagicDebug.resolvePath(path), (Supplier<String>) () -> Integer.toHexString(def.asARGB()));
+							MagicDebug.warn("Invalid value red value '%d' found for color option %s. Defaulting to '%s'.", a, resolvePath(config, path), (Supplier<String>) () -> Integer.toHexString(def.asARGB()));
 
 						return data -> def;
 					}
@@ -1611,9 +1614,9 @@ public class ConfigDataUtil {
 					int r = red.get();
 					if (r < 0 || r > 255) {
 						if (def == null)
-							MagicDebug.warn("Invalid red value '%d' found for color option %s.", r, MagicDebug.resolvePath(path));
+							MagicDebug.warn("Invalid red value '%d' found for color option %s.", r, resolvePath(config, path));
 						else
-							MagicDebug.warn("Invalid value red value '%d' found for color option %s. Defaulting to '%s'.", r, MagicDebug.resolvePath(path), (Supplier<String>) () -> Integer.toHexString(def.asARGB()));
+							MagicDebug.warn("Invalid value red value '%d' found for color option %s. Defaulting to '%s'.", r, resolvePath(config, path), (Supplier<String>) () -> Integer.toHexString(def.asARGB()));
 
 						return data -> def;
 					}
@@ -1621,9 +1624,9 @@ public class ConfigDataUtil {
 					int g = green.get();
 					if (g < 0 || g > 255) {
 						if (def == null)
-							MagicDebug.warn("Invalid green value '%d' found for color option %s.", g, MagicDebug.resolvePath(path));
+							MagicDebug.warn("Invalid green value '%d' found for color option %s.", g, resolvePath(config, path));
 						else
-							MagicDebug.warn("Invalid value green value '%d' found for color option %s. Defaulting to '%s'.", g, MagicDebug.resolvePath(path), (Supplier<String>) () -> Integer.toHexString(def.asARGB()));
+							MagicDebug.warn("Invalid value green value '%d' found for color option %s. Defaulting to '%s'.", g, resolvePath(config, path), (Supplier<String>) () -> Integer.toHexString(def.asARGB()));
 
 						return data -> def;
 					}
@@ -1631,9 +1634,9 @@ public class ConfigDataUtil {
 					int b = blue.get();
 					if (b < 0 || b > 255) {
 						if (def == null)
-							MagicDebug.warn("Invalid blue value '%d' found for color option %s.", b, MagicDebug.resolvePath(path));
+							MagicDebug.warn("Invalid blue value '%d' found for color option %s.", b, resolvePath(config, path));
 						else
-							MagicDebug.warn("Invalid blue red value '%d' found for color option %s. Defaulting to '%s'.", b, MagicDebug.resolvePath(path), (Supplier<String>) () -> Integer.toHexString(def.asARGB()));
+							MagicDebug.warn("Invalid blue red value '%d' found for color option %s. Defaulting to '%s'.", b, resolvePath(config, path), (Supplier<String>) () -> Integer.toHexString(def.asARGB()));
 
 						return data -> def;
 					}
@@ -1659,8 +1662,8 @@ public class ConfigDataUtil {
 			}
 
 			if (config.isSet(path)) {
-				if (def == null) MagicDebug.warn("Invalid value '%s' found for color option %s.", config.getString(path), MagicDebug.resolvePath(path));
-				else MagicDebug.warn("Invalid value '%s' found for color option %s. Defaulting to value '%s'.", config.getString(path), MagicDebug.resolvePath(path), (Supplier<String>) () -> Integer.toHexString(def.asARGB()));
+				if (def == null) MagicDebug.warn("Invalid value '%s' found for color option %s.", config.getString(path), resolvePath(config, path));
+				else MagicDebug.warn("Invalid value '%s' found for color option %s. Defaulting to value '%s'.", config.getString(path), resolvePath(config, path), (Supplier<String>) () -> Integer.toHexString(def.asARGB()));
 			} else {
 				if (def == null) MagicDebug.info("No value found.");
 				else MagicDebug.info("No value found. Defaulting to value '%s'.", (Supplier<String>) () -> Integer.toHexString(def.asARGB()));
@@ -1735,15 +1738,6 @@ public class ConfigDataUtil {
 			if (s == null) return def;
 
 			return new DustTransition(c, tc, s);
-		};
-	}
-
-	private static Supplier<String> getShortPath(String option) {
-		return () -> {
-			int index = option.lastIndexOf('.');
-			if (index == -1) return option;
-
-			return option.substring(index + 1);
 		};
 	}
 

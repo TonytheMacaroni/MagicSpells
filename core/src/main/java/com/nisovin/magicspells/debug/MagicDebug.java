@@ -4,7 +4,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.intellij.lang.annotations.PrintFormat;
 
-import java.util.Objects;
 import java.util.Iterator;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -21,6 +20,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.ansi.ANSIComponentSerializer;
 
 import org.bukkit.Keyed;
+import org.bukkit.configuration.ConfigurationSection;
 
 import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.util.config.ConfigData;
@@ -60,6 +60,11 @@ public class MagicDebug {
 	@NotNull
 	public static Section section(@NotNull DebugCategory category, @Nullable DebugConfig config, @NotNull @PrintFormat String message, @Nullable Object @NotNull ... args) {
 		return new Section.Builder().category(category).config(config).message(message, args).build();
+	}
+
+	@NotNull
+	public static Section suppressWarnings() {
+		return new Section.Builder().suppressWarnings(true).build();
 	}
 
 	public static void info(@NotNull @PrintFormat String message, @Nullable Object @NotNull ... args) {
@@ -182,113 +187,219 @@ public class MagicDebug {
 		return section.config();
 	}
 
-	public static void pushPath(String node, String text) {
-		Preconditions.checkArgument(node != null || text != null, "The node and text cannot both be null.");
-		section.path.addFirst(new Path(node, text));
+	public static DebugPath pushPath(@NotNull String node, @NotNull DebugPath.Type type) {
+		return pushPath(node, type, type != DebugPath.Type.FILE);
 	}
 
-	public static void popPath(@Nullable String node) {
-		Path path = section.path.getFirst();
-		Preconditions.checkArgument(Objects.equals(path.node, node), "Attempted to pop path with a non-matching node.");
-		section.path.removeFirst();
+	public static DebugPath pushPath(@NotNull String node, @NotNull DebugPath.Type type, boolean concrete) {
+		DebugPath path = new DebugPath(node, type, concrete);
+		MagicDebug.pushPath(section.paths, path);
+		return path;
 	}
 
-	@NotNull
-	public static Supplier<String> resolvePath() {
-		return () -> {
-			StringBuilder builder = new StringBuilder();
+	public static void pushPath(@NotNull DebugPath path) {
+		MagicDebug.pushPath(section.paths, path);
+	}
 
-			boolean prev = false;
-			for (Path path : section.path) {
-				if (path.text == null) continue;
+	private static void pushPath(@NotNull ArrayDeque<DebugPath> paths, @NotNull DebugPath path) {
+		Preconditions.checkNotNull(path, "Path cannot be null");
 
-				if (prev) builder.append(" ");
-				else prev = true;
+		DebugPath prev = paths.isEmpty() ? null : paths.getLast();
+		if (prev != null && !path.concrete() && prev.concrete())
+			throw new IllegalArgumentException("Cannot append a non-concrete path to a concrete path: '%s' was appended to '%s'".formatted(path, prev));
 
-				builder.append(path.text);
+		switch (path.type()) {
+			case FILE -> {
+				if (prev != null)
+					throw new IllegalArgumentException("Cannot append a file path to another path: '%s' was appended to '%s'".formatted(path, prev));
 			}
+			case SECTION -> {
+				if (prev != null && prev.type() == DebugPath.Type.LIST)
+					throw new IllegalArgumentException("Cannot append a section path to a list path: '%s' was appended to '%s'".formatted(path, prev));
+			}
+			case LIST -> {
+				if (prev != null && prev.type() == DebugPath.Type.LIST)
+					throw new IllegalArgumentException("Cannot append a list path to a list path: '%s' was appended to '%s'".formatted(path, prev));
+			}
+			case LIST_ENTRY -> {
+				if (prev == null || prev.type() != DebugPath.Type.LIST)
+					throw new IllegalArgumentException("Cannot append a list entry path to a non-list path: '%s' was appended to '%s'".formatted(path, prev));
+			}
+		}
 
-			return builder.toString();
-		};
+		paths.addLast(path);
 	}
 
-	@NotNull
-	public static Supplier<String> resolvePath(@NotNull String subPath) {
+	public static void popPath(@NotNull DebugPath path) {
+		popPath(section.paths, path);
+	}
+
+	private static void popPath(@NotNull ArrayDeque<DebugPath> paths, @NotNull DebugPath path) {
+		DebugPath last = paths.getLast();
+		Preconditions.checkArgument(last.equals(path), "Found mismatch while popping path: path '%s' differs from current path '%s'", path, last);
+		paths.removeLast();
+	}
+
+	public static Supplier<String> resolveShortPath(@NotNull String subPath) {
+		return resolveShortPath(null, subPath);
+	}
+
+	public static Supplier<String> resolveShortPath(@Nullable ConfigurationSection config, @NotNull String subPath) {
 		return () -> {
-			StringBuilder builder = new StringBuilder("' ");
-
-			boolean prev = false;
-			for (Path path : section.path) {
-				if (path.text == null) continue;
-
-				if (prev) builder.append(" ");
-				else prev = true;
-
-				builder.append(path.text);
-			}
+			if (section.paths.isEmpty())
+				return subPath;
 
 			String currentPath = subPath;
 
-			int separator = currentPath.indexOf('.');
-			if (separator != -1) {
-				int start = 0;
-
-				Iterator<Path> it = section.path.descendingIterator();
-				while (it.hasNext() && separator != -1) {
-					Path path = it.next();
-
-					if (path.node != null && currentPath.regionMatches(start, path.node, 0, separator - start)) {
-						start = separator + 1;
-						separator = currentPath.indexOf('.', start);
-					} else if (start != 0) break;
-				}
-
-				currentPath = currentPath.substring(start);
+			if (config != null) {
+				String path = config.getCurrentPath();
+				if (path != null && !path.isEmpty()) currentPath = path + "." + currentPath;
 			}
 
-			return "'" + currentPath + builder;
+			int start = 0, initialEnd = currentPath.indexOf('.'), end = initialEnd;
+			if (end != -1) {
+				Iterator<DebugPath> it = section.paths.iterator();
+
+				do {
+					DebugPath path = it.next();
+					if (path.type() != DebugPath.Type.SECTION) {
+						start = 0;
+						end = initialEnd;
+						continue;
+					}
+
+					int length = end - start;
+					if (length == path.node().length() && currentPath.regionMatches(start, path.node(), 0, length)) {
+						start = end + 1;
+						end = currentPath.indexOf('.', start);
+					} else if (start != 0) {
+						if (it.hasNext()) start = 0;
+						break;
+					}
+				} while (end != -1 && it.hasNext());
+			}
+
+			return currentPath.substring(start);
 		};
 	}
 
 	@NotNull
-	private static String getIndent(@Nullable DebugConfig config, int depth) {
-		if (config == null) {
-			config = MagicSpells.getDebugConfig();
-			if (config == null) return "";
-		}
+	public static Supplier<String> resolveFullPath() {
+		return resolveFullPath("");
+	}
 
-		int indent = config.getIndent();
-		indent *= section.depth + depth;
+	@NotNull
+	public static Supplier<String> resolveFullPath(@NotNull String subPath) {
+		return () -> {
+			if (section.paths.isEmpty())
+				return "";
 
-		return config.getIndentCharacter().repeat(indent);
+			StringBuilder builder = new StringBuilder();
+
+			boolean prev = false;
+			for (DebugPath path : section.paths) {
+				if (!path.concrete()) continue;
+
+				switch (path.type()) {
+					case SECTION, LIST -> {
+						if (prev) builder.append('.');
+
+						builder.append(path.node());
+					}
+					case LIST_ENTRY -> builder.append('[').append(path.node()).append(']');
+				}
+
+				prev = true;
+			}
+
+			if (!subPath.isEmpty())
+				builder.append(".").append(subPath);
+
+			DebugPath first = section.paths.getFirst();
+			if (first.type() == DebugPath.Type.FILE) {
+				String file = "in '" + first.node() + "'";
+				if (!prev) return file;
+
+				builder.append("' ").append(file);
+			} else {
+				if (!prev) return "";
+
+				builder.append("'");
+			}
+
+			return "at '" + builder;
+		};
+	}
+
+	@NotNull
+	public static Supplier<String> resolvePath(@Nullable ConfigurationSection config, @NotNull String subPath) {
+		return () -> {
+			String currentPath = subPath;
+
+			if (config != null) {
+				String path = config.getCurrentPath();
+				if (path != null && !path.isEmpty()) currentPath = path + "." + currentPath;
+			}
+
+			String shortPath = resolveShortPath(currentPath).get();
+			String extra = "";
+
+			if (shortPath.length() != currentPath.length()) {
+				int index = shortPath.lastIndexOf('.');
+
+				if (index != -1) {
+					extra = shortPath.substring(0, index);
+					shortPath = shortPath.substring(index + 1);
+				}
+			}
+
+			String fullPath = resolveFullPath(extra).get();
+			if (fullPath.isEmpty()) return "'" + shortPath + "' ";
+
+			return "'" + shortPath + "' " + fullPath;
+		};
 	}
 
 	private static Object[] replaceArguments(Object[] args) {
 		for (int i = 0; i < args.length; i++) {
 			Object arg = args[i];
-			if (arg instanceof ConfigData<?> data && data.isConstant()) args[i] = data.get();
-			else if (arg instanceof Supplier<?> supp) args[i] = supp.get();
-			else if (arg instanceof Component comp) args[i] = ANSIComponentSerializer.ansi().serialize(comp);
+			if (arg instanceof ConfigData<?> data && data.isConstant()) {
+				args[i] = data.get();
+				i--;
+			} else if (arg instanceof Supplier<?> supp) {
+				args[i] = supp.get();
+				i--;
+			} else if (arg instanceof Component comp) args[i] = ANSIComponentSerializer.ansi().serialize(comp);
 			else if (arg instanceof Keyed keyed) args[i] = keyed.getKey().asMinimalString();
 		}
 
 		return args;
 	}
 
-	private record Path(@Nullable String node, @Nullable String text) {
-
-	}
-
 	public record Section(@Nullable Section previous, @Nullable DebugConfig config, @NotNull DebugCategory category,
-						  @NotNull ArrayDeque<Path> path, int depth, boolean all, boolean suppressWarnings) implements AutoCloseable {
+						  @NotNull ArrayDeque<DebugPath> paths, int depth, boolean all, boolean suppressWarnings) implements AutoCloseable {
 
 		public DebugConfig config() {
 			return config == null ? MagicSpells.getDebugConfig() : config;
 		}
 
-		public Section path(@Nullable String node, @Nullable String text) {
-			Preconditions.checkArgument(node != null || text != null, "The node and text cannot both be null.");
-			path.addFirst(new Path(node, text));
+		public Section pushPath(@NotNull String node, @NotNull DebugPath.Type type) {
+			MagicDebug.pushPath(paths, new DebugPath(node, type, type != DebugPath.Type.FILE));
+			return this;
+		}
+
+		public Section pushPath(@NotNull String node, @NotNull DebugPath.Type type, boolean concrete) {
+			MagicDebug.pushPath(paths, new DebugPath(node, type, concrete));
+			return this;
+		}
+
+		public Section pushPath(@NotNull DebugPath path) {
+			MagicDebug.pushPath(paths, path);
+			return this;
+		}
+
+		public Section popPath(@NotNull DebugPath path) {
+			MagicDebug.popPath(paths, path);
 			return this;
 		}
 
@@ -299,7 +410,7 @@ public class MagicDebug {
 
 		public static class Builder {
 
-			private final ArrayDeque<Path> path;
+			private final ArrayDeque<DebugPath> paths;
 			private boolean suppressWarnings;
 			private DebugCategory category;
 			private DebugConfig config;
@@ -311,7 +422,7 @@ public class MagicDebug {
 				suppressWarnings = section.suppressWarnings;
 				category = section.category;
 				config = section.config;
-				path = new ArrayDeque<>(section.path);
+				paths = new ArrayDeque<>(section.paths);
 			}
 
 			public Builder category(@NotNull DebugCategory category) {
@@ -325,9 +436,13 @@ public class MagicDebug {
 				return this;
 			}
 
-			public Builder path(@Nullable String node, @Nullable String text) {
-				Preconditions.checkArgument(node != null || text != null, "The node and text cannot both be null.");
-				path.addFirst(new Path(node, text));
+			public Builder path(@NotNull String node, @NotNull DebugPath.Type type) {
+				MagicDebug.pushPath(paths, new DebugPath(node, type, type != DebugPath.Type.FILE));
+				return this;
+			}
+
+			public Builder path(@NotNull String node, @NotNull DebugPath.Type type, boolean concrete) {
+				MagicDebug.pushPath(paths, new DebugPath(node, type, concrete));
 				return this;
 			}
 
@@ -348,7 +463,7 @@ public class MagicDebug {
 				boolean all = section.all || MagicDebug.isEnhanced(config, category);
 				int depth = section.depth;
 
-				if (message == null) return section = new Section(section, config, category, path, depth, all, suppressWarnings);
+				if (message == null) return section = new Section(section, config, category, paths, depth, all, suppressWarnings);
 
 				boolean enabled = all || isEnabled(config, category);
 				if (enabled) {
@@ -370,7 +485,7 @@ public class MagicDebug {
 					logger.info(indentation + message.formatted(replaceArguments(args)));
 				}
 
-				return section = new Section(section, config, category, path, depth, all, suppressWarnings);
+				return section = new Section(section, config, category, paths, depth, all, suppressWarnings);
 			}
 
 		}

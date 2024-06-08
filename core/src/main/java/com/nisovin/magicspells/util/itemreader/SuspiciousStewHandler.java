@@ -69,7 +69,7 @@ public class SuspiciousStewHandler extends ItemHandler {
 
 		PotionEffectType type = PotionEffectHandler.getPotionEffectType(data[0]);
 		if (type == null) {
-			MagicDebug.warn("Invalid potion type '%s' for potion effect '%s' %s.", data[0], effectString, MagicDebug.resolvePath());
+			MagicDebug.warn("Invalid potion type '%s' for potion effect '%s' %s.", data[0], effectString, MagicDebug.resolveFullPath());
 			return null;
 		}
 
@@ -78,7 +78,7 @@ public class SuspiciousStewHandler extends ItemHandler {
 			try {
 				duration = Integer.parseInt(data[1]);
 			} catch (NumberFormatException ex) {
-				MagicDebug.warn("Invalid duration '%s' for potion effect '%s' %s.", data[1], effectString, MagicDebug.resolvePath());
+				MagicDebug.warn("Invalid duration '%s' for potion effect '%s' %s.", data[1], effectString, MagicDebug.resolveFullPath());
 				return null;
 			}
 		}

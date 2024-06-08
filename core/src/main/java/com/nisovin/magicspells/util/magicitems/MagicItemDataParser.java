@@ -53,7 +53,7 @@ public class MagicItemDataParser {
 		if (args.length < 2) {
 			Material type = Util.getMaterial(str);
 			if (type == null) {
-				MagicDebug.warn("Invalid item type '%s' %s.", str, MagicDebug.resolvePath());
+				MagicDebug.warn("Invalid item type '%s' %s.", str, MagicDebug.resolveFullPath());
 				return null;
 			}
 
@@ -71,7 +71,7 @@ public class MagicItemDataParser {
 		Material type = Util.getMaterial(base);
 		if (type != null) {
 			if (!type.isItem()) {
-				MagicDebug.warn("Invalid item type '%s' %s.", base, MagicDebug.resolvePath());
+				MagicDebug.warn("Invalid item type '%s' %s.", base, MagicDebug.resolveFullPath());
 				return null;
 			}
 
@@ -80,7 +80,7 @@ public class MagicItemDataParser {
 		} else {
 			MagicItem magicItem = MagicItems.getMagicItems().get(base);
 			if (magicItem == null) {
-				MagicDebug.warn("Invalid item type or magic item '%s' %s.", base, MagicDebug.resolvePath());
+				MagicDebug.warn("Invalid item type or magic item '%s' %s.", base, MagicDebug.resolveFullPath());
 				return null;
 			}
 
@@ -151,7 +151,7 @@ public class MagicItemDataParser {
 
 							MagicItemAttribute<?> attribute = MagicItemAttribute.fromString(attributeString);
 							if (attribute == null) {
-								MagicDebug.warn("Invalid blacklisted attribute '%s' %s.", attributeString, MagicDebug.resolvePath());
+								MagicDebug.warn("Invalid blacklisted attribute '%s' %s.", attributeString, MagicDebug.resolveFullPath());
 								return null;
 							}
 
@@ -162,7 +162,7 @@ public class MagicItemDataParser {
 						String colorString = value.getAsString();
 						Color color = ColorUtil.getColorFromHexString(colorString, false);
 						if (color == null) {
-							MagicDebug.warn("Invalid color '%s' %s.", colorString, MagicDebug.resolvePath());
+							MagicDebug.warn("Invalid color '%s' %s.", colorString, MagicDebug.resolveFullPath());
 							return null;
 						}
 
@@ -176,7 +176,7 @@ public class MagicItemDataParser {
 							Enchantment enchantment = EnchantmentHandler.getEnchantment(enchantString);
 
 							if (enchantment == null) {
-								MagicDebug.warn("Invalid enchantment '%s' %s.", enchantString, MagicDebug.resolvePath());
+								MagicDebug.warn("Invalid enchantment '%s' %s.", enchantString, MagicDebug.resolveFullPath());
 								return null;
 							}
 
@@ -206,7 +206,7 @@ public class MagicItemDataParser {
 
 						String[] values = effectString.split(" ");
 						if (values.length < 3 || values.length > 5) {
-							MagicDebug.warn("Invalid firework effect '%s' %s - missing or too many values.", effectString, MagicDebug.resolvePath());
+							MagicDebug.warn("Invalid firework effect '%s' %s - missing or too many values.", effectString, MagicDebug.resolveFullPath());
 							return null;
 						}
 
@@ -239,7 +239,7 @@ public class MagicItemDataParser {
 
 							String[] values = effectString.split(" ");
 							if (values.length != 4 && values.length != 5) {
-								MagicDebug.warn("Invalid firework effect '%s' %s - missing or too many values.", effectString, MagicDebug.resolvePath());
+								MagicDebug.warn("Invalid firework effect '%s' %s - missing or too many values.", effectString, MagicDebug.resolveFullPath());
 								return null;
 							}
 
@@ -275,7 +275,7 @@ public class MagicItemDataParser {
 
 							MagicItemAttribute<?> attribute = MagicItemAttribute.fromString(attributeString);
 							if (attribute == null) {
-								MagicDebug.warn("Invalid ignored attribute '%s' %s.", attributeString, MagicDebug.resolvePath());
+								MagicDebug.warn("Invalid ignored attribute '%s' %s.", attributeString, MagicDebug.resolveFullPath());
 								return null;
 							}
 
@@ -307,7 +307,7 @@ public class MagicItemDataParser {
 							String[] pattern = patternString.split(" ");
 
 							if (pattern.length != 2) {
-								MagicDebug.warn("Invalid pattern '%s' %s - missing or too many values.", patternString, MagicDebug.resolvePath());
+								MagicDebug.warn("Invalid pattern '%s' %s - missing or too many values.", patternString, MagicDebug.resolveFullPath());
 								return null;
 							}
 
@@ -339,7 +339,7 @@ public class MagicItemDataParser {
 
 						PotionType potionType = PotionHandler.getPotionType(potionTypeString);
 						if (potionType == null) {
-							MagicDebug.warn("Invalid potion type '%s' %s.", potionTypeString, MagicDebug.resolvePath());
+							MagicDebug.warn("Invalid potion type '%s' %s.", potionTypeString, MagicDebug.resolveFullPath());
 							return null;
 						}
 
@@ -348,8 +348,8 @@ public class MagicItemDataParser {
 				}
 			}
 		} catch (Exception e) {
-			if (key == null) MagicDebug.warn(e, "Encountered error while reading value %s:", MagicDebug.resolvePath());
-			else MagicDebug.warn(e, "Encountered error while reading option '%s' %s:", key, MagicDebug.resolvePath());
+			if (key == null) MagicDebug.warn(e, "Encountered error while reading value %s:", MagicDebug.resolveFullPath());
+			else MagicDebug.warn(e, "Encountered error while reading option '%s' %s:", key, MagicDebug.resolveFullPath());
 
 			return null;
 		}

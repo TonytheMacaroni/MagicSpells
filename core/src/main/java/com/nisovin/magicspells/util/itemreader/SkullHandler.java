@@ -36,7 +36,7 @@ public class SkullHandler extends ItemHandler {
 			try {
 				uuid = UUID.fromString(uuidString);
 			} catch (IllegalArgumentException e) {
-				MagicDebug.warn("Invalid 'uuid' value '%s' %s.", uuidString, MagicDebug.resolvePath());
+				MagicDebug.warn("Invalid 'uuid' value '%s' %s.", uuidString, MagicDebug.resolveFullPath());
 				return false;
 			}
 
@@ -60,7 +60,7 @@ public class SkullHandler extends ItemHandler {
 
 		if (uuid == null && skullOwner == null) {
 			if (texture != null) {
-				MagicDebug.warn("Cannot set 'textures' %s - 'uuid' and/or 'skull-owner' must be specified.", MagicDebug.resolvePath());
+				MagicDebug.warn("Cannot set 'textures' %s - 'uuid' and/or 'skull-owner' must be specified.", MagicDebug.resolveFullPath());
 				return false;
 			}
 

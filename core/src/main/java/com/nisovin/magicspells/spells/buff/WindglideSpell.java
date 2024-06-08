@@ -69,8 +69,8 @@ public class WindglideSpell extends BuffSpell {
 	public void initialize() {
 		super.initialize();
 
-		glideSpell = initSubspell(glideSpellName, true, "for 'spell'");
-		collisionSpell = initSubspell(collisionSpellName, true, "for 'collision-spell'");
+		glideSpell = initSubspell(glideSpellName, true, "spell");
+		collisionSpell = initSubspell(collisionSpellName, true, "collision-spell");
 
 		glideSpellName = null;
 		collisionSpellName = null;
