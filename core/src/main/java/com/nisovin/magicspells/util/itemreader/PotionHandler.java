@@ -51,7 +51,7 @@ public class PotionHandler extends ItemHandler {
 
 			Color color = ColorUtil.getColorFromHexString(colorString, false);
 			if (color == null) {
-				MagicDebug.warn("Invalid 'color' value '%s' %s.", colorString, MagicDebug.resolvePath());
+				MagicDebug.warn("Invalid 'color' value '%s' %s.", colorString, MagicDebug.resolveFullPath());
 				return false;
 			}
 
@@ -64,7 +64,7 @@ public class PotionHandler extends ItemHandler {
 
 			PotionType potionType = getPotionType(potionTypeString);
 			if (potionType == null) {
-				MagicDebug.warn("Invalid 'potion-type' value '%s' %s.", potionTypeString, MagicDebug.resolvePath());
+				MagicDebug.warn("Invalid 'potion-type' value '%s' %s.", potionTypeString, MagicDebug.resolveFullPath());
 				return false;
 			}
 
@@ -140,7 +140,7 @@ public class PotionHandler extends ItemHandler {
 
 		PotionEffectType t = PotionEffectHandler.getPotionEffectType(data[0]);
 		if (t == null) {
-			MagicDebug.warn("Invalid potion effect type '%s' for potion effect '%s' %s.", data[0], effectString, MagicDebug.resolvePath());
+			MagicDebug.warn("Invalid potion effect type '%s' for potion effect '%s' %s.", data[0], effectString, MagicDebug.resolveFullPath());
 			return null;
 		}
 
@@ -149,7 +149,7 @@ public class PotionHandler extends ItemHandler {
 			try {
 				level = Integer.parseInt(data[1]);
 			} catch (NumberFormatException ex) {
-				MagicDebug.warn("Invalid level '%s' for potion effect '%s' %s.", data[1], effectString, MagicDebug.resolvePath());
+				MagicDebug.warn("Invalid level '%s' for potion effect '%s' %s.", data[1], effectString, MagicDebug.resolveFullPath());
 				return null;
 			}
 		}
@@ -159,7 +159,7 @@ public class PotionHandler extends ItemHandler {
 			try {
 				duration = Integer.parseInt(data[2]);
 			} catch (NumberFormatException ex) {
-				MagicDebug.warn("Invalid duration '%s' for potion effect '%s' %s.", data[2], effectString, MagicDebug.resolvePath());
+				MagicDebug.warn("Invalid duration '%s' for potion effect '%s' %s.", data[2], effectString, MagicDebug.resolveFullPath());
 				return null;
 			}
 		}

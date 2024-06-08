@@ -56,7 +56,7 @@ public class FireworkEffectHandler extends ItemHandler {
 		try {
 			type = FireworkEffect.Type.valueOf(typeString);
 		} catch (IllegalArgumentException e) {
-			MagicDebug.warn("Invalid 'firework-type' value '%s' %s.", typeString, MagicDebug.resolvePath());
+			MagicDebug.warn("Invalid 'firework-type' value '%s' %s.", typeString, MagicDebug.resolveFullPath());
 			return false;
 		}
 
@@ -95,7 +95,7 @@ public class FireworkEffectHandler extends ItemHandler {
 	public static List<Color> getColorsFromString(String input, String name, boolean required) {
 		if (input == null || input.isEmpty()) {
 			if (required) {
-				MagicDebug.warn("Invalid value '%s' for %s %s - firework effect color(s) not specified.", input, name, MagicDebug.resolvePath());
+				MagicDebug.warn("Invalid value '%s' for %s %s - firework effect color(s) not specified.", input, name, MagicDebug.resolveFullPath());
 				return null;
 			}
 
@@ -110,7 +110,7 @@ public class FireworkEffectHandler extends ItemHandler {
 				int c = Integer.parseInt(colorString.trim(), 16);
 				colors.add(Color.fromRGB(c));
 			} catch (IllegalArgumentException e) {
-				MagicDebug.warn("Invalid color '%s' for %s %s.", colorString, name, MagicDebug.resolvePath());
+				MagicDebug.warn("Invalid color '%s' for %s %s.", colorString, name, MagicDebug.resolveFullPath());
 				return null;
 			}
 		}
