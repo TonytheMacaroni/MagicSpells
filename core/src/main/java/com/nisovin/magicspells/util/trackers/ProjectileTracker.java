@@ -276,7 +276,7 @@ public class ProjectileTracker implements Runnable, Tracker {
 
 		SpellData data = this.data.location(location);
 
-		for (LivingEntity entity : projectile.getLocation().getNearbyLivingEntities(hitRadius, verticalHitRadius, hitRadius)) {
+		for (LivingEntity entity : location.getNearbyLivingEntities(hitRadius, verticalHitRadius, hitRadius)) {
 			if (!targetList.canTarget(data.caster(), entity)) continue;
 
 			SpellTargetEvent event = new SpellTargetEvent(spell, data, entity);
