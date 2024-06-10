@@ -242,6 +242,7 @@ public class EntityData {
 
 		// Phantom
 		addInteger(transformers, config, "size", 0, Phantom.class, Phantom::setSize, forceOptional);
+		addOptBoolean(transformers, config, "should-burn-in-day", Phantom.class, Phantom::setShouldBurnInDay);
 
 		// Puffer Fish
 		size = addInteger(transformers, config, "size", 0, PufferFish.class, PufferFish::setPuffState, forceOptional);
@@ -255,6 +256,9 @@ public class EntityData {
 
 		// Shulker
 		addOptEnum(transformers, config, "color", Shulker.class, DyeColor.class, Shulker::setColor);
+
+		// Skeleton
+		addOptBoolean(transformers, config, "should-burn-in-day", Skeleton.class, Skeleton::setShouldBurnInDay);
 
 		// Slime
 		addInteger(transformers, config, "size", 0, Slime.class, Slime::setSize, forceOptional);
@@ -273,6 +277,9 @@ public class EntityData {
 		// Wolf
 		addBoolean(transformers, config, "angry", false, Wolf.class, Wolf::setAngry, forceOptional);
 		addOptEnum(transformers, config, "color", Wolf.class, DyeColor.class, Wolf::setCollarColor);
+
+		// Zombie
+		addOptBoolean(transformers, config, "should-burn-in-day", Zombie.class, Zombie::setShouldBurnInDay);
 
 		// Display
 		ConfigData<Quaternionf> leftRotation = getQuaternion(config, "transformation.left-rotation");
