@@ -144,6 +144,18 @@ public record SpellData(LivingEntity caster, LivingEntity target, Location locat
 		return args != null && args.length > 0;
 	}
 
+	@Override
+	public String toString() {
+		return "SpellData{" +
+			"caster=" + caster +
+			", target=" + target +
+			", location=" + location +
+			", recipient=" + recipient +
+			", power=" + power +
+			", args=" + Arrays.toString(args) +
+			'}';
+	}
+
 	public static class Builder {
 
 		private LivingEntity caster;

@@ -33,6 +33,7 @@ import io.papermc.paper.command.brigadier.CommandSourceStack;
 
 import com.nisovin.magicspells.Perm;
 import com.nisovin.magicspells.MagicSpells;
+import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.mana.ManaHandler;
 import com.nisovin.magicspells.mana.ManaChangeReason;
 import com.nisovin.magicspells.commands.exceptions.InvalidCommandArgumentException;
@@ -164,7 +165,9 @@ public class ManaCommands {
 		int amount = context.get(AMOUNT_KEY);
 
 		ManaHandler handler = MagicSpells.getManaHandler();
-		players.forEach(player -> handler.addMana(player, amount, ManaChangeReason.OTHER));
+		try (var ignored = MagicDebug.section("Adding %d mana to the selected players.", amount)) {
+			players.forEach(player -> handler.addMana(player, amount, ManaChangeReason.OTHER));
+		}
 
 		context.sender().getSender().sendMessage(
 			Component.text(getName(players) + "mana was modified by " + amount + ".", MagicSpells.getTextColor())
@@ -176,7 +179,9 @@ public class ManaCommands {
 		int amount = context.get(AMOUNT_KEY);
 
 		ManaHandler handler = MagicSpells.getManaHandler();
-		players.forEach(player -> handler.setMana(player, amount, ManaChangeReason.OTHER));
+		try (var ignored = MagicDebug.section("Setting mana to %d for the selected players.", amount)) {
+			players.forEach(player -> handler.setMana(player, amount, ManaChangeReason.OTHER));
+		}
 
 		context.sender().getSender().sendMessage(
 			Component.text(getName(players) + "mana was set to " + amount + ".", MagicSpells.getTextColor())
@@ -188,8 +193,9 @@ public class ManaCommands {
 		int amount = context.get(AMOUNT_KEY);
 
 		ManaHandler handler = MagicSpells.getManaHandler();
-		players.forEach(player -> handler.setMaxMana(player, amount));
-
+		try (var ignored = MagicDebug.section("Setting max mana to %d for the selected players.", amount)) {
+			players.forEach(player -> handler.setMaxMana(player, amount));
+		}
 		context.sender().getSender().sendMessage(
 			Component.text(getName(players) + "max mana was set to " + amount + ".", MagicSpells.getTextColor())
 		);
@@ -199,7 +205,9 @@ public class ManaCommands {
 		Collection<Player> players = context.get(PLAYERS_KEY);
 
 		ManaHandler handler = MagicSpells.getManaHandler();
-		players.forEach(handler::createManaBar);
+		try (var ignored = MagicDebug.section("Resetting mana for the selected players.")) {
+			players.forEach(handler::createManaBar);
+		}
 
 		context.sender().getSender().sendMessage(
 			Component.text(getName(players) + "mana was reset.", MagicSpells.getTextColor())
@@ -210,7 +218,10 @@ public class ManaCommands {
 		Collection<Player> players = context.get(PLAYERS_KEY);
 
 		ManaHandler handler = MagicSpells.getManaHandler();
-		boolean updated = players.stream().anyMatch(handler::updateManaRankIfNecessary);
+		boolean updated;
+		try (var ignored = MagicDebug.section("Updating mana rank for the selected players.")) {
+			updated = players.stream().anyMatch(handler::updateManaRankIfNecessary);
+		}
 
 		if (!updated) {
 			context.sender().getSender().sendMessage(
