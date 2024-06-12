@@ -23,11 +23,14 @@ import org.bukkit.command.CommandSender;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 
 import com.nisovin.magicspells.Perm;
+import com.nisovin.magicspells.util.Name;
 import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.util.SpellData;
+import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.util.VariableMod;
 import com.nisovin.magicspells.variables.Variable;
 import com.nisovin.magicspells.util.managers.VariableManager;
+import com.nisovin.magicspells.variables.variabletypes.MetaVariable;
 import com.nisovin.magicspells.variables.variabletypes.GlobalVariable;
 import com.nisovin.magicspells.variables.variabletypes.GlobalStringVariable;
 import com.nisovin.magicspells.commands.exceptions.InvalidCommandArgumentException;
@@ -97,63 +100,96 @@ public class VariableCommands {
 
 	private static void show(CommandContext<CommandSourceStack> context) {
 		String variableName = context.get(VARIABLE_KEY);
-		Variable variable = MagicSpells.getVariableManager().getVariable(variableName);
-		if (variable == null)
-			throw new InvalidCommandArgumentException("No matching variable found: '" + variableName + "'");
 
-		SinglePlayerSelector selector = context.getOrDefault(TARGET_PLAYER_KEY, null);
-		Player player = selector == null ? null : selector.single();
+		try (var ignored = MagicDebug.section("Showing variable '%s'.", variableName)) {
+			Variable variable = MagicSpells.getVariableManager().getVariable(variableName);
+			if (variable == null) {
+				MagicDebug.info("No variable with matching internal name '%s'.", variableName);
+				throw new InvalidCommandArgumentException("No matching variable found: '" + variableName + "'");
+			}
 
-		if (player == null && !(variable instanceof GlobalVariable || variable instanceof GlobalStringVariable)) {
-			CommandSourceStack stack = context.sender();
-			CommandSender executor = Objects.requireNonNullElse(stack.getExecutor(), stack.getSender());
-			if (!(executor instanceof Player sender))
-				throw new InvalidCommandArgumentException("Player must be specified for non-global variables");
+			MagicDebug.info("Variable type of '%s'.", getVariableType(variable));
 
-			player = sender;
+			SinglePlayerSelector selector = context.getOrDefault(TARGET_PLAYER_KEY, null);
+			Player player = selector == null ? null : selector.single();
+
+			if (player == null && !(variable instanceof GlobalVariable || variable instanceof GlobalStringVariable)) {
+				CommandSourceStack stack = context.sender();
+				CommandSender executor = Objects.requireNonNullElse(stack.getExecutor(), stack.getSender());
+				if (!(executor instanceof Player sender)) {
+					MagicDebug.info("No player was specified, but the variable is non-global - show failed.");
+					throw new InvalidCommandArgumentException("Player must be specified for non-global variables");
+				}
+
+				player = sender;
+			}
+
+			String name = player == null ? null : player.getName();
+			if (name != null) MagicDebug.info("Showing variable value for player '%s'.", name);
+
+			String currentValue = variable.getStringValue(name);
+			MagicDebug.info("Current value is '%s'.", currentValue);
+
+			String message = (player == null ? "Variable" : name + "'s variable") + " value for " + variableName + " is: " + currentValue;
+			context.sender().getSender().sendMessage(Component.text(message, MagicSpells.getTextColor()));
 		}
-
-		String name = player == null ? null : player.getName();
-
-		String message = (player == null ? "Variable" : name + "'s variable") + " value for " + variableName + " is: "
-			+ variable.getStringValue(name);
-
-		context.sender().getSender().sendMessage(Component.text(message, MagicSpells.getTextColor()));
 	}
 
 	private static void modify(CommandContext<CommandSourceStack> context) {
 		VariableManager variableManager = MagicSpells.getVariableManager();
-
 		String variableName = context.get(VARIABLE_KEY);
-		Variable variable = variableManager.getVariable(variableName);
-		if (variable == null)
-			throw new InvalidCommandArgumentException("No matching variable found: '" + variableName + "'");
 
-		SinglePlayerSelector selector = context.getOrDefault(TARGET_PLAYER_KEY, null);
-		Player player = selector == null ? null : selector.single();
+		try (var ignored = MagicDebug.section("Modifying variable '%s'.", variableName)) {
+			Variable variable = variableManager.getVariable(variableName);
+			if (variable == null) {
+				MagicDebug.info("No variable with matching internal name '%s'.", variableName);
+				throw new InvalidCommandArgumentException("No matching variable found: '" + variableName + "'");
+			}
 
-		if (player == null && !(variable instanceof GlobalVariable || variable instanceof GlobalStringVariable))
-			throw new InvalidCommandArgumentException("Player must be specified for non-global variables");
+			MagicDebug.info("Variable type of '%s'.", getVariableType(variable));
 
-		String name = player == null ? null : player.getName();
+			SinglePlayerSelector selector = context.getOrDefault(TARGET_PLAYER_KEY, null);
+			Player player = selector == null ? null : selector.single();
 
-		String variableModString = context.get(VARIABLE_MOD_KEY);
-		VariableMod variableMod;
-		try {
-			variableMod = new VariableMod(variableModString);
-		} catch (Exception e) {
-			throw new InvalidCommandArgumentException("Invalid variable mod: '" + variableModString + "'", e);
+			if (player == null && !(variable instanceof GlobalVariable || variable instanceof GlobalStringVariable)) {
+				MagicDebug.info("No player was specified, but the variable is non-global - modify failed.");
+				throw new InvalidCommandArgumentException("Player must be specified for non-global variables");
+			}
+
+			String name = player == null ? null : player.getName();
+			if (name != null) MagicDebug.info("Modifying variable value for player '%s'.", name);
+
+			String variableModString = context.get(VARIABLE_MOD_KEY);
+			VariableMod variableMod;
+			try (var ignored1 = MagicDebug.section("Resolving variable mod '%s'.", variableModString)) {
+				variableMod = new VariableMod(variableModString);
+			} catch (Exception e) {
+				MagicDebug.info("Invalid variable mod '%s'.", variableModString);
+				throw new InvalidCommandArgumentException("Invalid variable mod: '" + variableModString + "'", e);
+			}
+
+			String oldValue = variable.getStringValue(name);
+			MagicDebug.info("Old value: %s", oldValue);
+
+			variableManager.processVariableMods(variable, variableMod, player, new SpellData(player));
+
+			String newValue = variable.getStringValue(name);
+			MagicDebug.info("New value: %s", newValue);
+
+			String message = (player == null ? "Variable" : name + "'s variable") + " value for " + variableName +
+				" was modified from '" + oldValue + "' to '" + newValue + "'.";
+
+			context.sender().getSender().sendMessage(Component.text(message, MagicSpells.getTextColor()));
 		}
+	}
 
-		String oldValue = variable.getStringValue(name);
+	private static String getVariableType(Variable variable) {
+		if (variable instanceof MetaVariable) return "meta";
 
-		variableManager.processVariableMods(variable, variableMod, player, new SpellData(player));
-		String newValue = variable.getStringValue(name);
+		Name name = variable.getClass().getAnnotation(Name.class);
+		if (name == null) return "unknown";
 
-		String message = (player == null ? "Variable" : name + "'s variable") + " value for " + variableName +
-			" was modified from '" + oldValue + "' to '" + newValue + "'.";
-
-		context.sender().getSender().sendMessage(Component.text(message, MagicSpells.getTextColor()));
+		return name.value();
 	}
 
 }

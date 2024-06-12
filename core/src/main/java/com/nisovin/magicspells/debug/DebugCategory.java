@@ -3,7 +3,10 @@ package com.nisovin.magicspells.debug;
 public enum DebugCategory {
 
 	DEFAULT,
+	LOAD,
+	UNLOAD,
 	CAST_LISTENERS,
+	COMMANDS,
 	CONDITIONS,
 	MAGIC_ITEMS,
 	PASSIVE,
@@ -17,6 +20,5 @@ public enum DebugCategory {
 	VARIABLES,
 	MANA,
 	XP_SYSTEM;
-
 
 }

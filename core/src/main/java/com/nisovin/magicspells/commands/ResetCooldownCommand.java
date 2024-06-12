@@ -28,6 +28,7 @@ import com.nisovin.magicspells.Perm;
 import com.nisovin.magicspells.Spell;
 import com.nisovin.magicspells.util.Util;
 import com.nisovin.magicspells.MagicSpells;
+import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.commands.parsers.SpellParser;
 import com.nisovin.magicspells.commands.exceptions.InvalidCommandArgumentException;
 
@@ -96,14 +97,16 @@ public class ResetCooldownCommand {
 			.map(Collections::singletonList)
 			.orElse(MagicSpells.getSpellsOrdered());
 
-		for (Spell spell : spells) {
-			if (entities == null) {
-				spell.getCooldowns().clear();
-				continue;
-			}
+		try (var ignored = MagicDebug.section("Resetting the cooldowns for the targeted entities.")) {
+			for (Spell spell : spells) {
+				if (entities == null) {
+					spell.getCooldowns().clear();
+					continue;
+				}
 
-			for (LivingEntity entity : entities)
-				spell.setCooldown(entity, 0, false);
+				for (LivingEntity entity : entities)
+					spell.setCooldown(entity, 0, false);
+			}
 		}
 
 		ComponentLike cooldown;

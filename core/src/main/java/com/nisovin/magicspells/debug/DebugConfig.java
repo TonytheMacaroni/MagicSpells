@@ -1,13 +1,17 @@
 package com.nisovin.magicspells.debug;
 
-import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
-import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.Map;
+import java.util.EnumMap;
+import java.util.Objects;
 
 import org.bukkit.configuration.ConfigurationSection;
 
 public class DebugConfig {
 
-	private final Object2ObjectMap<DebugCategory, DebugLevel> levels;
+	private final EnumMap<DebugCategory, DebugLevel> overrides;
+	private final DebugLevel defaultLevel;
 	private final String indentCharacter;
 	private final int indent;
 
@@ -27,31 +31,35 @@ public class DebugConfig {
 		this.indent = indent;
 
 		if (config.isBoolean("debug-test")) {
-			levels = new Object2ObjectArrayMap<>();
-			levels.defaultReturnValue(config.getBoolean("debug-test") ? DebugLevel.ALL : DebugLevel.NONE);
+			overrides = new EnumMap<>(DebugCategory.class);
+			defaultLevel = config.getBoolean("debug-test") ? DebugLevel.ALL : DebugLevel.NONE;
 			return;
 		}
 
 		if (config.isString("debug-test")) {
-			levels = new Object2ObjectArrayMap<>();
+			overrides = new EnumMap<>(DebugCategory.class);
 
 			String levelString = config.getString("debug-test", "");
-			DebugLevel level;
+			DebugLevel defaultLevel;
 			try {
-				level = DebugLevel.valueOf(levelString.toUpperCase());
+				defaultLevel = DebugLevel.valueOf(levelString.toUpperCase());
 			} catch (IllegalArgumentException e) {
 				MagicDebug.warn("Invalid debug level of '%s' for 'debug-test' %s. Defaulting to 'WARNING'.", levelString, MagicDebug.resolveFullPath());
-				level = DebugLevel.WARNING;
+				defaultLevel = DebugLevel.WARNING;
 			}
-			levels.defaultReturnValue(level);
+			this.defaultLevel = defaultLevel;
 
 			return;
 		}
 
 		ConfigurationSection section = config.getConfigurationSection("debug-test");
 		if (section == null) {
-			levels = new Object2ObjectArrayMap<>();
-			levels.defaultReturnValue(DebugLevel.WARNING);
+			overrides = new EnumMap<>(DebugCategory.class);
+			overrides.put(DebugCategory.LOAD, DebugLevel.INFO);
+			overrides.put(DebugCategory.UNLOAD, DebugLevel.INFO);
+
+			defaultLevel = DebugLevel.WARNING;
+
 			return;
 		}
 
@@ -64,8 +72,8 @@ public class DebugConfig {
 			defaultLevel = DebugLevel.WARNING;
 		}
 
-		levels = new Object2ObjectArrayMap<>();
-		levels.defaultReturnValue(defaultLevel);
+		overrides = new EnumMap<>(DebugCategory.class);
+		this.defaultLevel = defaultLevel;
 
 		ConfigurationSection overrides = section.getConfigurationSection("overrides");
 		if (overrides == null) return;
@@ -75,7 +83,7 @@ public class DebugConfig {
 			try {
 				category = DebugCategory.valueOf(override.toUpperCase().replace("-", "_"));
 			} catch (IllegalArgumentException e) {
-				MagicDebug.warn("Invalid debug category '%s' for 'debug.overrides' %s.", override, MagicDebug.resolveFullPath());
+				MagicDebug.warn("Invalid debug category '%s' %s.", override, MagicDebug.resolveFullPath("debug.overrides"));
 				continue;
 			}
 
@@ -84,12 +92,19 @@ public class DebugConfig {
 			try {
 				level = DebugLevel.valueOf(levelString.toUpperCase());
 			} catch (IllegalArgumentException e) {
-				MagicDebug.warn("Invalid debug level of '%s' for category '%s' for 'debug.overrides' %s.", levelString, override, MagicDebug.resolveFullPath());
+				MagicDebug.warn("Invalid debug level of '%s' for category '%s' %s.", levelString, override, MagicDebug.resolveFullPath("debug.overrides"));
 				continue;
 			}
 
-			levels.put(category, level);
+			this.overrides.put(category, level);
 		}
+	}
+
+	public DebugConfig(DebugLevel defaultLevel, EnumMap<DebugCategory, DebugLevel> overrides, int indent, String indentCharacter) {
+		this.defaultLevel = defaultLevel;
+		this.overrides = overrides;
+		this.indent = indent;
+		this.indentCharacter = indentCharacter;
 	}
 
 	public static DebugConfig fromConfig(ConfigurationSection config) {
@@ -104,16 +119,42 @@ public class DebugConfig {
 		return indentCharacter;
 	}
 
+	public DebugLevel getDefaultLevel() {
+		return defaultLevel;
+	}
+
+	public EnumMap<DebugCategory, DebugLevel> getOverrides() {
+		return overrides;
+	}
+
 	public boolean suppressDebug(DebugCategory category, DebugLevel level) {
-		return category != DebugCategory.DEFAULT && levels.get(category).ordinal() < level.ordinal();
+		return overrides.getOrDefault(category, defaultLevel).ordinal() < level.ordinal();
 	}
 
 	public boolean isEnabled(DebugCategory category) {
-		return category == DebugCategory.DEFAULT || levels.get(category).ordinal() >= DebugLevel.INFO.ordinal();
+		return overrides.getOrDefault(category, defaultLevel).ordinal() >= DebugLevel.INFO.ordinal();
 	}
 
 	public boolean isEnhanced(DebugCategory category) {
-		return levels.get(category) == DebugLevel.ALL;
+		return overrides.getOrDefault(category, defaultLevel) == DebugLevel.ALL;
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+
+		DebugConfig config = (DebugConfig) o;
+		return indent == config.indent && Objects.equals(overrides, config.overrides) && defaultLevel == config.defaultLevel && Objects.equals(indentCharacter, config.indentCharacter);
+	}
+
+	@Override
+	public int hashCode() {
+		int result = Objects.hashCode(overrides);
+		result = 31 * result + Objects.hashCode(defaultLevel);
+		result = 31 * result + Objects.hashCode(indentCharacter);
+		result = 31 * result + indent;
+		return result;
 	}
 
 }

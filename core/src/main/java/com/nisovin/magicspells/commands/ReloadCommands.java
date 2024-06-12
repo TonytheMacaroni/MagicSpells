@@ -23,6 +23,7 @@ import io.papermc.paper.command.brigadier.CommandSourceStack;
 import com.nisovin.magicspells.Perm;
 import com.nisovin.magicspells.Spellbook;
 import com.nisovin.magicspells.MagicSpells;
+import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.events.SpellbookReloadEvent;
 
 @SuppressWarnings("UnstableApiUsage")
@@ -60,23 +61,37 @@ public class ReloadCommands {
 	}
 
 	private static void reload(CommandContext<CommandSourceStack> context) {
-		MagicSpells plugin = MagicSpells.getInstance();
-		plugin.unload();
-		plugin.load();
+		try (var ignored = MagicDebug.section("Reloading plugin.")) {
+			MagicSpells plugin = MagicSpells.getInstance();
 
-		context.sender().getSender().sendMessage(Component.text("MagicSpells plugin reloaded.", MagicSpells.getTextColor()));
+			try (var ignored1 = MagicDebug.section("Unloading plugin.")) {
+				plugin.unload();
+			}
+
+			MagicSpells.plugin = plugin;
+
+			try (var ignored1 = MagicDebug.section("Loading plugin.")) {
+				plugin.load();
+			}
+
+			MagicDebug.info("Plugin reloaded.");
+
+			context.sender().getSender().sendMessage(Component.text("MagicSpells plugin reloaded.", MagicSpells.getTextColor()));
+		}
 	}
 
 	private static void reloadSpellbook(CommandContext<CommandSourceStack> context) {
 		MultiplePlayerSelector selector = context.get(TARGET_PLAYERS_KEY);
 		Collection<Player> players = selector.values();
 
-		players.forEach(player -> {
-			Spellbook spellbook = MagicSpells.getSpellbook(player);
-			spellbook.reload();
+		try (var ignored = MagicDebug.section("Reloading spellbooks for the selected players.")) {
+			players.forEach(player -> {
+				Spellbook spellbook = MagicSpells.getSpellbook(player);
+				spellbook.reload();
 
-			new SpellbookReloadEvent(player, spellbook).callEvent();
-		});
+				new SpellbookReloadEvent(player, spellbook).callEvent();
+			});
+		}
 
 		if (players.size() == 1) {
 			context.sender().getSender().sendMessage(Component.text(

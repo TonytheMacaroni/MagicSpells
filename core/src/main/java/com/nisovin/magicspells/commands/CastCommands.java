@@ -2,8 +2,10 @@ package com.nisovin.magicspells.commands;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import io.leangen.geantyref.TypeToken;
 
@@ -30,6 +32,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
+import org.bukkit.entity.Player;
 
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 
@@ -39,7 +42,9 @@ import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.util.Rotation;
 import com.nisovin.magicspells.util.SpellData;
 import com.nisovin.magicspells.util.CastResult;
+import com.nisovin.magicspells.debug.MagicDebug;
 import org.incendo.cloud.component.CommandComponent;
+import com.nisovin.magicspells.Spell.SpellCastResult;
 import com.nisovin.magicspells.spells.TargetedEntitySpell;
 import com.nisovin.magicspells.commands.parsers.SpellParser;
 import com.nisovin.magicspells.spells.TargetedLocationSpell;
@@ -173,21 +178,38 @@ public class CastCommands {
 		CommandSender sender = stack.getSender();
 		CommandSender executor = Objects.requireNonNullElse(stack.getExecutor(), sender);
 
-		if (executor instanceof LivingEntity caster) {
-			spell.hardCast(new SpellData(caster, power, arguments));
-			return;
+		try (var ignored = MagicDebug.section(spell.getDebugConfig(), "Self-casting spell '%s'.", spell.getInternalName())) {
+			MagicDebug.info("Power: %s", power);
+			MagicDebug.info("Cast arguments: %s", argsToString(arguments));
+
+			if (executor instanceof LivingEntity caster) {
+				MagicDebug.info("Casting as %s %s.", caster instanceof Player ? "player" : "entity", caster);
+
+				SpellCastResult result = spell.hardCast(new SpellData(caster, power, arguments));
+				MagicDebug.info("Spell casted with state '%s'.", result.state);
+				MagicDebug.info("Post cast action was '%s'.", result.action);
+				MagicDebug.info("Final spell data was '%s'.", result.data);
+
+				return;
+			}
+
+			if (executor instanceof ConsoleCommandSender console) {
+				MagicDebug.info("Casting from console.");
+
+				if (spell.castFromConsole(console, arguments)) {
+					MagicDebug.info("Spell cast succeeded.");
+					sender.sendMessage("Spell casted!");
+				} else {
+					MagicDebug.info("Spell cast failed.");
+					sender.sendMessage("Spell cast failed.");
+				}
+
+				return;
+			}
+
+			MagicDebug.info("Spell failed to cast - invalid command sender.");
+			throw new GenericCommandException("Cannot cast spell.");
 		}
-
-		if (executor instanceof ConsoleCommandSender console) {
-			boolean casted = spell.castFromConsole(console, arguments);
-
-			if (casted) sender.sendMessage("Spell casted!");
-			else sender.sendMessage("Spell failed to cast.");
-
-			return;
-		}
-
-		throw new GenericCommandException("Cannot cast spell.");
 	}
 
 	private static void onCastAs(CommandContext<CommandSourceStack> context) {
@@ -197,10 +219,21 @@ public class CastCommands {
 		Spell spell = context.get(SPELL_KEY);
 
 		Entity entity = selector.single();
-		if (!(entity instanceof LivingEntity caster))
+		if (!(entity instanceof LivingEntity caster)) {
+			MagicDebug.info("Spell failed to cast - target is not a living entity.");
 			throw new InvalidCommandArgumentException("Target is not a living entity");
+		}
 
-		spell.hardCast(new SpellData(caster, power, arguments));
+		try (var ignored = MagicDebug.section(spell.getDebugConfig(), "Casting spell '%s' as '%s'.", spell.getInternalName(), caster)) {
+			MagicDebug.info("Power: %s", power);
+			MagicDebug.info("Cast arguments: %s", argsToString(arguments));
+			MagicDebug.info("Casting as %s %s.", caster instanceof Player ? "player" : "entity", caster);
+
+			SpellCastResult result = spell.hardCast(new SpellData(caster, power, arguments));
+			MagicDebug.info("Spell casted with state '%s'.", result.state);
+			MagicDebug.info("Post cast action was '%s'.", result.action);
+			MagicDebug.info("Final spell data was '%s'.", result.data);
+		}
 	}
 
 	private static void onCastOn(CommandContext<CommandSourceStack> context) {
@@ -216,42 +249,77 @@ public class CastCommands {
 		LivingEntity caster = executor instanceof LivingEntity le ? le : null;
 
 		Entity entity = selector.single();
-		if (!(entity instanceof LivingEntity target))
+		if (!(entity instanceof LivingEntity target)) {
+			MagicDebug.info("Spell failed to cast - target is not a living entity.");
 			throw new InvalidCommandArgumentException("Target is not a living entity");
+		}
 
-		if (!(spell instanceof TargetedEntitySpell targetedEntitySpell))
+		if (!(spell instanceof TargetedEntitySpell targetedEntitySpell)) {
+			MagicDebug.info("Spell failed to cast - spell is not a targeted entity spell.");
 			throw new InvalidCommandArgumentException("Spell is not a targeted entity spell");
+		}
 
-		CastResult result = targetedEntitySpell.castAtEntity(new SpellData(caster, target, power, arguments));
-		if (result.action() == Spell.PostCastAction.ALREADY_HANDLED)
-			sender.sendMessage(Component.text("Spell cast failed.", MagicSpells.getTextColor()));
+		try (var ignored = MagicDebug.section(spell.getDebugConfig(), "Casting spell '%s' on '%s'.", spell.getInternalName(), target)) {
+			MagicDebug.info("Power: %s", power);
+			MagicDebug.info("Cast arguments: %s", argsToString(arguments));
+
+			if (caster != null) MagicDebug.info("Casting as %s %s.", caster instanceof Player ? "player" : "entity", caster);
+			else MagicDebug.info("Casting without a caster.");
+
+			MagicDebug.info("Casting on %s %s.", caster instanceof Player ? "player" : "entity", target);
+
+			CastResult result = targetedEntitySpell.castAtEntity(new SpellData(caster, target, power, arguments));
+			MagicDebug.info("Post cast action was '%s'.", result.action());
+			MagicDebug.info("Final spell data was '%s'.", result.data());
+
+			if (result.action() == Spell.PostCastAction.ALREADY_HANDLED)
+				sender.sendMessage(Component.text("Spell cast failed.", MagicSpells.getTextColor()));
+		}
 	}
 
 	private static void onCastAt(CommandContext<CommandSourceStack> context) {
+		String[] arguments = context.getOrDefault(SPELL_CAST_ARGUMENTS_KEY, new String[0]);
+		float power = context.flags().getValue(POWER_FLAG).orElse(1f);
+		Spell spell = context.get(SPELL_KEY);
+
+		World world = context.get(WORLD_KEY).primaryOrMapFallback(Function.identity());
+		Location location = context.get(TARGET_LOCATION_KEY);
+		location.setWorld(world);
+
+		Rotation rotation = context.getOrDefault(TARGET_ROTATION_KEY, null);
+		if (rotation != null) rotation.apply(location);
+
 		CommandSourceStack stack = context.sender();
 		CommandSender sender = stack.getSender();
 		CommandSender executor = Objects.requireNonNullElse(stack.getExecutor(), sender);
 
 		LivingEntity caster = executor instanceof LivingEntity le ? le : null;
 
-		Location location = context.get(TARGET_LOCATION_KEY);
-
-		World world = context.get(WORLD_KEY).primaryOrMapFallback(Function.identity());
-		location.setWorld(world);
-
-		Rotation rotation = context.getOrDefault(TARGET_ROTATION_KEY, null);
-		if (rotation != null) rotation.apply(location);
-
-		Spell spell = context.get(SPELL_KEY);
-		if (!(spell instanceof TargetedLocationSpell targetedLocationSpell))
+		if (!(spell instanceof TargetedLocationSpell targetedLocationSpell)) {
+			MagicDebug.info("Spell failed to cast - spell is not a targeted location spell.");
 			throw new InvalidCommandArgumentException("Spell is not a targeted location spell");
+		}
 
-		String[] arguments = context.getOrDefault(SPELL_CAST_ARGUMENTS_KEY, new String[0]);
-		float power = context.flags().getValue(POWER_FLAG).orElse(1f);
+		try (var ignored = MagicDebug.section(spell.getDebugConfig(), "Casting spell '%s' at '%s'.", spell.getInternalName(), location)) {
+			MagicDebug.info("Power: %s", power);
+			MagicDebug.info("Cast arguments: %s", argsToString(arguments));
 
-		CastResult result = targetedLocationSpell.castAtLocation(new SpellData(caster, location, power, arguments));
-		if (result.action() == Spell.PostCastAction.ALREADY_HANDLED)
-			sender.sendMessage(Component.text("Spell cast failed.", MagicSpells.getTextColor()));
+			if (caster != null) MagicDebug.info("Casting as %s %s.", caster instanceof Player ? "player" : "entity", caster);
+			else MagicDebug.info("Casting without a caster.");
+
+			MagicDebug.info("Casting at '%s'.", location);
+
+			CastResult result = targetedLocationSpell.castAtLocation(new SpellData(caster, location, power, arguments));
+			MagicDebug.info("Post cast action was '%s'.", result.action());
+			MagicDebug.info("Final spell data was '%s'.", result.data());
+
+			if (result.action() == Spell.PostCastAction.ALREADY_HANDLED)
+				sender.sendMessage(Component.text("Spell cast failed.", MagicSpells.getTextColor()));
+		}
+	}
+
+	private static Supplier<String> argsToString(String[] args) {
+		return () -> Arrays.toString(args);
 	}
 
 }
