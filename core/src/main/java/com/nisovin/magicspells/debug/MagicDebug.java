@@ -20,6 +20,9 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.ansi.ANSIComponentSerializer;
 
 import org.bukkit.Keyed;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.Player;
+import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
 
 import com.nisovin.magicspells.MagicSpells;
@@ -27,11 +30,15 @@ import com.nisovin.magicspells.util.config.ConfigData;
 
 public class MagicDebug {
 
-	private static Section section = new Section(null, null, DebugCategory.DEFAULT, new ArrayDeque<>(), 0, false, false);
+	private static Section section = new Section(null, null, DebugCategory.DEFAULT, new ArrayDeque<>(), 0, false, false, false);
 
 	@NotNull
 	public static Section.Builder section() {
 		return new Section.Builder();
+	}
+
+	public static Section section(@NotNull DebugCategory category) {
+		return new Section.Builder().category(category).build();
 	}
 
 	@NotNull
@@ -129,8 +136,12 @@ public class MagicDebug {
 
 		String indentation;
 		if (config != null) {
+			int depth = section.depth();
+			if (depth > 0 && section.logged && !isEnabled(section)) depth++;
+
 			int adjustment = level == DebugLevel.ERROR ? -1 : 0;
-			int indent = Math.max(section.depth() * config.getIndent() + adjustment, 0);
+			int indent = Math.max(depth * config.getIndent() + adjustment, 0);
+
 			indentation = config.getIndentCharacter().repeat(indent);
 		} else indentation = "";
 
@@ -292,7 +303,7 @@ public class MagicDebug {
 	public static Supplier<String> resolveFullPath(@NotNull String subPath) {
 		return () -> {
 			if (section.paths.isEmpty())
-				return "";
+				return subPath.isEmpty() ? "" : "at '" + subPath + "'";
 
 			StringBuilder builder = new StringBuilder();
 
@@ -371,13 +382,18 @@ public class MagicDebug {
 				i--;
 			} else if (arg instanceof Component comp) args[i] = ANSIComponentSerializer.ansi().serialize(comp);
 			else if (arg instanceof Keyed keyed) args[i] = keyed.getKey().asMinimalString();
+			else if (arg instanceof Player player) args[i] = player.getName();
+			else if (arg instanceof Entity entity) args[i] = entity.getUniqueId();
+			else if (arg instanceof CommandSender sender) args[i] = sender.getName();
 		}
 
 		return args;
 	}
 
-	public record Section(@Nullable Section previous, @Nullable DebugConfig config, @NotNull DebugCategory category,
-						  @NotNull ArrayDeque<DebugPath> paths, int depth, boolean all, boolean suppressWarnings) implements AutoCloseable {
+	public record Section(
+		@Nullable Section previous, @Nullable DebugConfig config, @NotNull DebugCategory category, @NotNull ArrayDeque<DebugPath> paths,
+		int depth, boolean all, boolean suppressWarnings, boolean logged
+	) implements AutoCloseable {
 
 		public DebugConfig config() {
 			return config == null ? MagicSpells.getDebugConfig() : config;
@@ -405,6 +421,7 @@ public class MagicDebug {
 
 		@Override
 		public void close() {
+			Preconditions.checkState(section == this, "Section mis-match");
 			section = previous;
 		}
 
@@ -461,23 +478,28 @@ public class MagicDebug {
 
 			public Section build() {
 				boolean all = section.all || MagicDebug.isEnhanced(config, category);
+				boolean logged = section.logged;
 				int depth = section.depth;
 
-				if (message == null) return section = new Section(section, config, category, paths, depth, all, suppressWarnings);
+				if (message == null) return section = new Section(section, config, category, paths, depth, all, suppressWarnings, logged);
 
 				boolean enabled = all || isEnabled(config, category);
 				if (enabled) {
-					if (!isEnabled(section)) depth++;
+					if (logged && !isEnabled(section))
+						depth++;
+
 					depth++;
 				}
 
-				if (enabled || section.category != DebugCategory.DEFAULT && !suppressLog(DebugLevel.INFO)) {
+				if (enabled || !suppressLog(DebugLevel.INFO)) {
+					logged = true;
+
 					DebugConfig debugConfig = config;
 					if (debugConfig == null) debugConfig = MagicSpells.getDebugConfig();
 
 					String indentation;
 					if (debugConfig != null) {
-						int indent = Math.max((depth - 1) * debugConfig.getIndent(), 0);
+						int indent = Math.max((enabled ? depth - 1 : depth) * debugConfig.getIndent(), 0);
 						indentation = debugConfig.getIndentCharacter().repeat(indent);
 					} else indentation = "";
 
@@ -485,7 +507,7 @@ public class MagicDebug {
 					logger.info(indentation + message.formatted(replaceArguments(args)));
 				}
 
-				return section = new Section(section, config, category, paths, depth, all, suppressWarnings);
+				return section = new Section(section, config, category, paths, depth, all, suppressWarnings, logged);
 			}
 
 		}
