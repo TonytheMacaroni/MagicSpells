@@ -2,7 +2,7 @@ package com.nisovin.magicspells.commands;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Map;
+import java.util.List;
 
 import org.incendo.cloud.key.CloudKey;
 import org.incendo.cloud.context.CommandContext;
@@ -15,13 +15,12 @@ import org.incendo.cloud.suggestion.SuggestionProvider;
 import org.incendo.cloud.bukkit.data.MultiplePlayerSelector;
 import org.incendo.cloud.bukkit.parser.selector.MultiplePlayerSelectorParser;
 
-import org.bukkit.World;
-import org.bukkit.Location;
 import org.bukkit.inventory.ItemStack;
 
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 
 import com.nisovin.magicspells.Perm;
+import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.util.magicitems.MagicItem;
 import com.nisovin.magicspells.util.magicitems.MagicItems;
 import com.nisovin.magicspells.commands.exceptions.InvalidCommandArgumentException;
@@ -54,7 +53,7 @@ public class MagicItemCommand {
 			)
 			.optional(
 				AMOUNT_KEY,
-				IntegerParser.integerParser(),
+				IntegerParser.integerParser(1, 99),
 				Description.of("The amount of the magic item to give.")
 			)
 			.flag(DROP_LEFTOVER_FLAG)
@@ -65,28 +64,37 @@ public class MagicItemCommand {
 	}
 
 	private static void magicItem(CommandContext<CommandSourceStack> context) {
-		String magicItemString = context.get(MAGIC_ITEM_KEY);
+		String internalName = context.get(MAGIC_ITEM_KEY);
 
-		MagicItem magicItem = MagicItems.getMagicItemByInternalName(magicItemString);
-		if (magicItem == null)
-			throw new InvalidCommandArgumentException("No matching magic item: '" + magicItemString + "'");
-
-		boolean dropLeftOver = context.flags().isPresent(DROP_LEFTOVER_FLAG);
-		Integer amount = context.getOrDefault(AMOUNT_KEY, null);
-
-		MultiplePlayerSelector players = context.get(TARGET_PLAYERS_KEY);
-		players.values().forEach(player -> {
-			ItemStack item = magicItem.getItemStack().clone();
-			if (amount != null) item.setAmount(amount);
-
-			Map<Integer, ItemStack> leftover = player.getInventory().addItem(item);
-			if (dropLeftOver && !leftover.isEmpty()) {
-				Location location = player.getLocation();
-				World world = location.getWorld();
-
-				leftover.values().forEach(i -> world.dropItem(location, i));
+		try (var ignored = MagicDebug.section("Dropping magic item '%s'.", internalName)) {
+			MagicItem magicItem = MagicItems.getMagicItemByInternalName(internalName);
+			if (magicItem == null) {
+				MagicDebug.info("No magic item with matching internal name '%s'.", internalName);
+				throw new InvalidCommandArgumentException("No such magic item: '" + internalName + "'");
 			}
-		});
+
+			boolean dropLeftOver = context.flags().isPresent(DROP_LEFTOVER_FLAG);
+			MagicDebug.info("Drop leftover? %b.", dropLeftOver);
+
+			Integer amount = context.getOrDefault(AMOUNT_KEY, null);
+			MagicDebug.info("Amount? %s.", amount == null ? "Default" : amount);
+
+			if (amount != null && amount > magicItem.getItemStack().getMaxStackSize()) {
+				MagicDebug.info("Amount '%s' exceeds the item's max stack size.", amount);
+				throw new InvalidCommandArgumentException("Stack size too large: '" + amount + "'");
+			}
+
+			try (var ignored1 = MagicDebug.section("Giving items...")) {
+				context.get(TARGET_PLAYERS_KEY).values().forEach(player -> {
+					MagicDebug.info("Giving item to player '%s'.", player.getName());
+
+					ItemStack item = magicItem.getItemStack().clone();
+					if (amount != null) item.setAmount(amount);
+
+					player.give(List.of(item), dropLeftOver);
+				});
+			}
+		}
 	}
 
 }
