@@ -1,19 +1,19 @@
 package com.nisovin.magicspells.util;
 
 import java.io.File;
-import java.nio.file.Path;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.List;
+import java.util.HashMap;
+import java.nio.file.Path;
 import java.io.FilenameFilter;
-
-import com.nisovin.magicspells.MagicSpells;
-import com.nisovin.magicspells.Spell;
-import com.nisovin.magicspells.debug.MagicDebug;
 
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
+
+import com.nisovin.magicspells.Spell;
+import com.nisovin.magicspells.MagicSpells;
+import com.nisovin.magicspells.debug.MagicDebug;
 
 public class MagicConfig {
 
@@ -51,13 +51,27 @@ public class MagicConfig {
 				YamlConfiguration generalConfig = new YamlConfiguration();
 				try {
 					generalConfig.load(generalConfigFile);
-					Set<String> keys = generalConfig.getKeys(true);
+
+					Set<String> keys = generalConfig.getKeys(false);
+
 					for (String key : keys) {
-						mainConfig.set("general." + key, generalConfig.get(key));
+					    Category category = switch (key) {
+							case "magic-items" -> Category.MAGIC_ITEMS;
+							case "modifiers" -> Category.MODIFIERS;
+							case "recipes" -> Category.RECIPES;
+							case "variables" -> Category.VARIABLES;
+							default -> null;
+						};
+
+						if (category != null) {
+							initSection(category, generalConfig, "general.yml");
+							continue;
+						}
+
+						setOrCreateSection(generalConfig, mainConfig, key, "general." + key);
 					}
 				} catch (Exception e) {
-					MagicSpells.error("Error loading config file general.yml");
-					MagicSpells.handleException(e);
+					MagicDebug.error(e, "Encountered an exception while loading 'general.yml'.");
 				}
 			}
 
@@ -65,15 +79,14 @@ public class MagicConfig {
 			File manaConfigFile = new File(folder, "mana.yml");
 			if (manaConfigFile.exists()) {
 				YamlConfiguration manaConfig = new YamlConfiguration();
+
 				try {
 					manaConfig.load(manaConfigFile);
-					Set<String> keys = manaConfig.getKeys(true);
-					for (String key : keys) {
-						mainConfig.set("mana." + key, manaConfig.get(key));
-					}
+
+					for (String key : manaConfig.getKeys(false))
+						setOrCreateSection(manaConfig, mainConfig, key, "mana." + key);
 				} catch (Exception e) {
-					MagicSpells.error("Error loading config file mana.yml");
-					MagicSpells.handleException(e);
+					MagicDebug.error(e, "Encountered an exception while loading 'mana.yml'.");
 				}
 			}
 
@@ -81,15 +94,14 @@ public class MagicConfig {
 			File zonesConfigFile = new File(folder, "zones.yml");
 			if (zonesConfigFile.exists()) {
 				YamlConfiguration zonesConfig = new YamlConfiguration();
+
 				try {
 					zonesConfig.load(zonesConfigFile);
-					Set<String> keys = zonesConfig.getKeys(true);
-					for (String key : keys) {
-						mainConfig.set("no-magic-zones." + key, zonesConfig.get(key));
-					}
+
+					for (String key : zonesConfig.getKeys(false))
+						setOrCreateSection(zonesConfig, mainConfig, key, "no-magic-zones." + key);
 				} catch (Exception e) {
-					MagicSpells.error("Error loading config file zones.yml");
-					MagicSpells.handleException(e);
+					MagicDebug.error(e, "Encountered an exception while loading 'zones.yml'.");
 				}
 			}
 
@@ -101,8 +113,7 @@ public class MagicConfig {
 				try {
 					defaultSpellConfig.load(defaultsConfigFile);
 				} catch (Exception e) {
-					MagicSpells.error("Error loading config file defaults.yml");
-					MagicSpells.handleException(e);
+					MagicDebug.error(e, "Encountered an exception while loading 'defaults.yml'.");
 				}
 			}
 
@@ -123,7 +134,7 @@ public class MagicConfig {
 			File spellConfigsFolder = new File(folder, "spellconfigs");
 			if (spellConfigsFolder.exists()) loadSpellConfigs(spellConfigsFolder);
 		} catch (Exception ex) {
-			MagicSpells.handleException(ex);
+			MagicDebug.error(ex, "Encountered an exception while loading config files.");
 		}
 	}
 
@@ -172,7 +183,7 @@ public class MagicConfig {
 				continue;
 			}
 
-			general.set(internalName, section.get(internalName));
+			setOrCreateSection(section, general, internalName, internalName);
 			setFile(category, internalName, fileName);
 		}
 	}
@@ -200,13 +211,23 @@ public class MagicConfig {
 				config.load(file);
 
 				ConfigurationSection section = mainConfig.createSection(name);
-				for (String key : config.getKeys(false)) section.set(key, config.get(key));
+				for (String key : config.getKeys(false))
+					setOrCreateSection(config, section, key, key);
 
 				spellFiles.put(name, path);
 			} catch (Exception e) {
 				MagicDebug.error(e, "Encountered error while reading spell config file '%s'.", path);
 			}
 		}
+	}
+
+	private void setOrCreateSection(ConfigurationSection source, ConfigurationSection destination, String sourcePath, String destinationPath) {
+		Object value = source.get(sourcePath);
+
+		if (value instanceof ConfigurationSection section)
+			destination.createSection(destinationPath, section.getValues(true));
+		else
+			destination.set(destinationPath, value);
 	}
 
 	public YamlConfiguration getMainConfig() {
