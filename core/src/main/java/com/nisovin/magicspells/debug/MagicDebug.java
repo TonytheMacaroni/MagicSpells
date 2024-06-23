@@ -25,6 +25,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
 
+import com.nisovin.magicspells.Spell;
 import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.util.config.ConfigData;
 
@@ -385,6 +386,7 @@ public class MagicDebug {
 			else if (arg instanceof Player player) args[i] = player.getName();
 			else if (arg instanceof Entity entity) args[i] = entity.getUniqueId();
 			else if (arg instanceof CommandSender sender) args[i] = sender.getName();
+			else if (arg instanceof Spell spell) args[i] = spell.getInternalName();
 		}
 
 		return args;

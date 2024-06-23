@@ -51,6 +51,7 @@ import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.mana.ManaHandler;
 import com.nisovin.magicspells.spells.BuffSpell;
 import com.nisovin.magicspells.debug.DebugConfig;
+import com.nisovin.magicspells.debug.DebugCategory;
 import com.nisovin.magicspells.spells.PassiveSpell;
 import com.nisovin.magicspells.util.magicitems.MagicItem;
 import com.nisovin.magicspells.castmodifiers.ModifierSet;
@@ -1067,73 +1068,92 @@ public abstract class Spell implements Comparable<Spell>, Listener {
 
 	@NotNull
 	public SpellCastResult hardCast(@NotNull SpellData data) {
-		data = data.noTargeting();
+		try (var ignored = MagicDebug.section(DebugCategory.SPELLS, debugConfig, "Hard casting spell '%s'.", internalName)) {
+			data = data.noTargeting();
+			MagicDebug.info("Spell data: %s", data);
 
-		SpellCastEvent castEvent = preCast(data);
-		if (castEvent.isCancelled()) {
-			postCast(castEvent, PostCastAction.HANDLE_NORMALLY);
-			return new SpellCastResult(castEvent.getSpellCastState(), PostCastAction.HANDLE_NORMALLY, data);
+			SpellCastEvent castEvent = preCast(data);
+			if (castEvent.isCancelled()) {
+				MagicDebug.info("Spell cast cancelled.");
+				postCast(castEvent, PostCastAction.HANDLE_NORMALLY);
+				return new SpellCastResult(castEvent.getSpellCastState(), PostCastAction.HANDLE_NORMALLY, data);
+			}
+
+			SpellCastState state = castEvent.getSpellCastState();
+			int castTime = castEvent.getCastTime();
+			data = castEvent.getSpellData();
+
+			if (castTime <= 0 || state != SpellCastState.NORMAL) {
+				CastResult result = onCast(castEvent);
+				return new SpellCastResult(state, result.action(), result.data());
+			}
+
+			if (!preCastTimeCheck(data.caster(), data.args())) {
+				MagicDebug.info("Failed pre-cast time check.");
+				postCast(castEvent, PostCastAction.ALREADY_HANDLED);
+				return new SpellCastResult(SpellCastState.NORMAL, PostCastAction.ALREADY_HANDLED, data);
+			}
+
+			MagicDebug.info("Casting with a delay.");
+
+			if (MagicSpells.useExpBarAsCastTimeBar()) new DelayedSpellCastWithBar(castEvent);
+			else new DelayedSpellCast(castEvent);
+
+			sendMessage(strCastStart, data.caster(), data);
+			playSpellEffects(EffectPosition.START_CAST, data.caster(), data);
+
+			return new SpellCastResult(SpellCastState.NORMAL, PostCastAction.DELAYED, data);
 		}
-
-		SpellCastState state = castEvent.getSpellCastState();
-		int castTime = castEvent.getCastTime();
-		data = castEvent.getSpellData();
-
-		if (castTime <= 0 || state != SpellCastState.NORMAL) {
-			CastResult result = onCast(castEvent);
-			return new SpellCastResult(state, result.action(), result.data());
-		}
-
-		if (!preCastTimeCheck(data.caster(), data.args())) {
-			postCast(castEvent, PostCastAction.ALREADY_HANDLED);
-			return new SpellCastResult(SpellCastState.NORMAL, PostCastAction.ALREADY_HANDLED, data);
-		}
-
-		if (MagicSpells.useExpBarAsCastTimeBar()) new DelayedSpellCastWithBar(castEvent);
-		else new DelayedSpellCast(castEvent);
-
-		sendMessage(strCastStart, data.caster(), data);
-		playSpellEffects(EffectPosition.START_CAST, data.caster(), data);
-
-		return new SpellCastResult(SpellCastState.NORMAL, PostCastAction.DELAYED, data);
 	}
 
 	@NotNull
 	public SpellCastEvent preCast(@NotNull SpellData data) {
-		SpellCastState state = getCastState(data.caster());
-		debug(2, "    Spell cast state: " + state);
+		try (var ignored = MagicDebug.section(DebugCategory.SPELLS, debugConfig, "Checking pre-cast.")) {
+			SpellCastState state = getCastState(data.caster());
+			MagicDebug.info("Spell cast state: %s", state);
 
-		SpellCastEvent castEvent = new SpellCastEvent(this, state, data, cooldown, reagents.clone(), castTime.get(data));
-		if (!castEvent.callEvent()) {
-			debug(2, "    Spell cancelled");
+			SpellCastEvent castEvent = new SpellCastEvent(this, state, data, cooldown, reagents.clone(), castTime.get(data));
+			try (var ignored1 = MagicDebug.section("Firing cast event.")) {
+				MagicDebug.info("Starting cooldown: %s", castEvent.getCooldown());
+				MagicDebug.info("Starting reagents: %s", castEvent.getReagents());
+				MagicDebug.info("Starting cast time: %s", castEvent.getCastTime());
+				MagicDebug.info("Starting power: %s", castEvent.getPower());
+
+				if (!castEvent.callEvent()) {
+					MagicDebug.info("Cast event cancelled.");
+					return castEvent;
+				}
+			}
+
+			MagicDebug.info("Post-fire cooldown: %s", castEvent.getCooldown());
+			MagicDebug.info("Post-fire reagents: %s", castEvent.getReagents());
+			MagicDebug.info("Post-fire cast time: %s", castEvent.getCastTime());
+			MagicDebug.info("Post-fire power: %s", castEvent.getPower());
+
+			if (castEvent.haveReagentsChanged()) {
+				boolean hasReagents = hasReagents(data.caster(), castEvent.getReagents());
+				if (!hasReagents && state != SpellCastState.MISSING_REAGENTS)
+					castEvent.setSpellCastState(SpellCastState.MISSING_REAGENTS);
+				else if (hasReagents && state == SpellCastState.MISSING_REAGENTS)
+					castEvent.setSpellCastState(state = SpellCastState.NORMAL);
+			}
+
+			if (castEvent.hasSpellCastStateChanged())
+				MagicDebug.info("Spell cast state changed: %s", castEvent.getSpellCastState());
+
+			if (Perm.NO_CAST_TIME.has(data.caster())) {
+				MagicDebug.info("Caster has permission 'magicspells.nocasttime' - cast time set to 0.");
+				castEvent.setCastTime(0);
+			}
+
 			return castEvent;
 		}
-
-		if (castEvent.haveReagentsChanged()) {
-			boolean hasReagents = hasReagents(data.caster(), castEvent.getReagents());
-			if (!hasReagents && state != SpellCastState.MISSING_REAGENTS) {
-				castEvent.setSpellCastState(SpellCastState.MISSING_REAGENTS);
-				debug(2, "    Spell cast state changed: " + state);
-			} else if (hasReagents && state == SpellCastState.MISSING_REAGENTS) {
-				castEvent.setSpellCastState(state = SpellCastState.NORMAL);
-				debug(2, "    Spell cast state changed: " + state);
-			}
-		}
-
-		if (castEvent.hasSpellCastStateChanged()) debug(2, "    Spell cast state changed: " + state);
-		if (Perm.NO_CAST_TIME.has(data.caster())) castEvent.setCastTime(0);
-
-		return castEvent;
 	}
 
 	@NotNull
 	public CastResult onCast(@NotNull SpellCastEvent castEvent) {
 		SpellData data = castEvent.getSpellData();
 		long start = System.nanoTime();
-
-		debug(3, "    Power: " + data.power());
-		debug(3, "    Cooldown: " + castEvent.getCooldown());
-		if (MagicSpells.isDebug() && data.hasArgs()) debug(3, "    Args: {" + Util.arrayJoin(data.args(), ',') + '}');
 
 		CastResult result = cast(castEvent.getSpellCastState(), data);
 		if (MagicSpells.hasProfilingEnabled()) {
