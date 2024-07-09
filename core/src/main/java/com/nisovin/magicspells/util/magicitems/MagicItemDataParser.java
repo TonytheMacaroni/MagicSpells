@@ -445,6 +445,11 @@ public class MagicItemDataParser {
 						case "strict_enchant_level":
 							data.setStrictEnchantLevel(value.getAsBoolean());
 							break;
+						case "strictcomponentcomparison":
+						case "strict-component-comparison":
+						case "strict_component_comparison":
+							data.setStrictComponentComparison(value.getAsBoolean());
+							break;
 					}
 				}
 
