@@ -3,7 +3,6 @@ package com.nisovin.magicspells.util;
 import java.util.Map;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -16,7 +15,9 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.enchantments.Enchantment;
 
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import net.kyori.adventure.text.format.Style;
+import net.kyori.adventure.text.format.TextDecoration;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 
 import com.nisovin.magicspells.MagicSpells;
@@ -26,12 +27,15 @@ import com.nisovin.magicspells.util.itemreader.PotionHandler;
 import com.nisovin.magicspells.util.itemreader.DurabilityHandler;
 import com.nisovin.magicspells.util.itemreader.WrittenBookHandler;
 import com.nisovin.magicspells.util.itemreader.LeatherArmorHandler;
+
 import static com.nisovin.magicspells.util.magicitems.MagicItemData.MagicItemAttribute.*;
 
 public class CastItem {
 
 	private Material type = null;
-	private String name = null;
+
+	private Component name = null;
+	private String plainName = null;
 
 	private int amount = 0;
 	private int durability = -1;
@@ -40,11 +44,11 @@ public class CastItem {
 
 	private Color color = null;
 	private PotionType potionType = null;
-	private String title = null;
-	private String author = null;
+	private Component title = null;
+	private Component author = null;
 
 	private Map<Enchantment, Integer> enchants = null;
-	private List<String> lore = null;
+	private List<Component> lore = null;
 
 	public CastItem() {
 
@@ -57,10 +61,12 @@ public class CastItem {
 		type = item.getType();
 		if (isTypeValid()) {
 			if (!MagicSpells.ignoreCastItemNames()) {
-				if (MagicSpells.ignoreCastItemNameColors())
-					name = PlainTextComponentSerializer.plainText().serializeOrNull(meta.displayName());
-				else
-					name = LegacyComponentSerializer.legacySection().serializeOrNull(meta.displayName());
+				name = meta.displayName();
+
+				if (MagicSpells.ignoreCastItemNameColors()) {
+					plainName = PlainTextComponentSerializer.plainText().serializeOrNull(name);
+					name = null;
+				}
 			}
 			if (!MagicSpells.ignoreCastItemAmount()) amount = item.getAmount();
 			if (!MagicSpells.ignoreCastItemDurability(type) && type.getMaxDurability() > 0) durability = DurabilityHandler.getDurability(meta);
@@ -68,13 +74,10 @@ public class CastItem {
 			if (!MagicSpells.ignoreCastItemBreakability()) unbreakable = meta.isUnbreakable();
 			if (!MagicSpells.ignoreCastItemColor()) color = LeatherArmorHandler.getColor(meta);
 			if (!MagicSpells.ignoreCastItemPotionType()) potionType = PotionHandler.getPotionType(meta);
-			if (!MagicSpells.ignoreCastItemTitle()) title = LegacyComponentSerializer.legacySection().serializeOrNull(WrittenBookHandler.getTitle(meta));
-			if (!MagicSpells.ignoreCastItemAuthor()) author = LegacyComponentSerializer.legacySection().serializeOrNull(WrittenBookHandler.getAuthor(meta));
+			if (!MagicSpells.ignoreCastItemTitle()) title = WrittenBookHandler.getTitle(meta);
+			if (!MagicSpells.ignoreCastItemAuthor()) author = WrittenBookHandler.getAuthor(meta);
 			if (!MagicSpells.ignoreCastItemEnchants()) enchants = meta.getEnchants();
-			if (!MagicSpells.ignoreCastItemLore() && meta.hasLore()) {
-				List<Component> itemLore = meta.lore();
-				lore = itemLore.stream().map(LegacyComponentSerializer.legacySection()::serialize).collect(Collectors.toList());
-			}
+			if (!MagicSpells.ignoreCastItemLore() && meta.hasLore()) lore = meta.lore();
 		}
 	}
 
@@ -84,10 +87,12 @@ public class CastItem {
 			type = (Material) data.getAttribute(TYPE);
 			if (isTypeValid()) {
 				if (!MagicSpells.ignoreCastItemNames() && data.hasAttribute(NAME)) {
-					if (MagicSpells.ignoreCastItemNameColors())
-						name = PlainTextComponentSerializer.plainText().serialize((Component) data.getAttribute(NAME));
-					else
-						name = LegacyComponentSerializer.legacySection().serialize((Component) data.getAttribute(NAME));
+					name = (Component) data.getAttribute(NAME);
+
+					if (MagicSpells.ignoreCastItemNameColors()) {
+						plainName = PlainTextComponentSerializer.plainText().serialize(name);
+						name = null;
+					}
 				}
 
 				if (!MagicSpells.ignoreCastItemAmount() && data.hasAttribute(AMOUNT))
@@ -109,18 +114,16 @@ public class CastItem {
 					potionType = (PotionType) data.getAttribute(POTION_TYPE);
 
 				if (!MagicSpells.ignoreCastItemTitle() && data.hasAttribute(TITLE))
-					title = LegacyComponentSerializer.legacySection().serialize((Component) data.getAttribute(TITLE));
+					title = (Component) data.getAttribute(TITLE);
 
 				if (!MagicSpells.ignoreCastItemAuthor() && data.hasAttribute(AUTHOR))
-					author = LegacyComponentSerializer.legacySection().serialize((Component) data.getAttribute(AUTHOR));
+					author = (Component) data.getAttribute(AUTHOR);
 
 				if (!MagicSpells.ignoreCastItemEnchants() && data.hasAttribute(ENCHANTS))
 					enchants = (Map<Enchantment, Integer>) data.getAttribute(ENCHANTS);
 
-				if (!MagicSpells.ignoreCastItemLore() && data.hasAttribute(LORE)) {
-					List<Component> itemLore = (List<Component>) data.getAttribute(LORE);
-					lore = itemLore.stream().map(LegacyComponentSerializer.legacySection()::serialize).collect(Collectors.toList());
-				}
+				if (!MagicSpells.ignoreCastItemLore() && data.hasAttribute(LORE))
+					lore = (List<Component>) data.getAttribute(LORE);
 			}
 		}
 	}
@@ -146,15 +149,16 @@ public class CastItem {
 		return type == i.type
 			&& (MagicSpells.ignoreCastItemDurability(type) || durability == i.durability)
 			&& (MagicSpells.ignoreCastItemAmount() || amount == i.amount)
-			&& (MagicSpells.ignoreCastItemNames() || Objects.equals(name, i.name))
+			&& (MagicSpells.ignoreCastItemNames() || MagicSpells.ignoreCastItemNameColors() ?
+			Objects.equals(plainName, i.plainName) : ComponentUtil.visualCompare(name, i.name, ComponentUtil.DISPLAY_NAME_STYLE))
 			&& (MagicSpells.ignoreCastItemCustomModelData() || customModelData == i.customModelData)
 			&& (MagicSpells.ignoreCastItemBreakability() || unbreakable == i.unbreakable)
 			&& (MagicSpells.ignoreCastItemColor() || Objects.equals(color, i.color))
 			&& (MagicSpells.ignoreCastItemPotionType() || Objects.equals(potionType, i.potionType))
-			&& (MagicSpells.ignoreCastItemTitle() || Objects.equals(title, i.title))
-			&& (MagicSpells.ignoreCastItemAuthor() || Objects.equals(author, i.author))
+			&& (MagicSpells.ignoreCastItemTitle() || ComponentUtil.visualCompare(title, i.title, Style.empty()))
+			&& (MagicSpells.ignoreCastItemAuthor() || ComponentUtil.visualCompare(author, i.author, Style.empty()))
 			&& (MagicSpells.ignoreCastItemEnchants() || Objects.equals(enchants, i.enchants))
-			&& (MagicSpells.ignoreCastItemLore() || Objects.equals(lore, i.lore));
+			&& (MagicSpells.ignoreCastItemLore() || ComponentUtil.visualCompare(lore, i.lore, ComponentUtil.LORE_STYLE));
 	}
 
 	@Override
@@ -169,7 +173,7 @@ public class CastItem {
 		JsonObject castItem = new JsonObject();
 
 		if (!MagicSpells.ignoreCastItemNames() && name != null)
-			castItem.addProperty("name", name);
+			castItem.addProperty("name", MiniMessage.miniMessage().serialize(name.decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.TRUE)));
 
 		if (!MagicSpells.ignoreCastItemAmount())
 			castItem.addProperty("amount", amount);
@@ -192,10 +196,10 @@ public class CastItem {
 		}
 
 		if (!MagicSpells.ignoreCastItemTitle() && title != null)
-			castItem.addProperty("title", title);
+			castItem.addProperty("title", MiniMessage.miniMessage().serialize(title));
 
 		if (!MagicSpells.ignoreCastItemAuthor() && author != null)
-			castItem.addProperty("author", author);
+			castItem.addProperty("author", MiniMessage.miniMessage().serialize(author));
 
 		if (!MagicSpells.ignoreCastItemEnchants() && enchants != null) {
 			JsonObject enchantsObject = new JsonObject();
@@ -207,7 +211,7 @@ public class CastItem {
 
 		if (!MagicSpells.ignoreCastItemLore() && lore != null) {
 			JsonArray loreArray = new JsonArray(lore.size());
-			for (String line : lore) loreArray.add(line);
+			for (Component line : lore) loreArray.add(MiniMessage.miniMessage().serialize(line));
 
 			castItem.add("lore", loreArray);
 		}

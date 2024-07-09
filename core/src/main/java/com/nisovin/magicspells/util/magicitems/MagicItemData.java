@@ -14,6 +14,7 @@ import com.google.common.collect.Iterables;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.Style;
 
 import org.bukkit.*;
 import org.bukkit.potion.PotionType;
@@ -25,7 +26,7 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.attribute.AttributeModifier;
 
 import com.nisovin.magicspells.util.Util;
-import com.nisovin.magicspells.util.AttributeUtil;
+import com.nisovin.magicspells.util.ComponentUtil;
 
 public class MagicItemData {
 
@@ -33,6 +34,7 @@ public class MagicItemData {
 	private final Set<MagicItemAttribute> blacklistedAttributes = EnumSet.noneOf(MagicItemAttribute.class);
 	private final Set<MagicItemAttribute> ignoredAttributes = EnumSet.noneOf(MagicItemAttribute.class);
 
+	private boolean strictComponentComparison = false;
 	private boolean strictEnchantLevel = true;
 	private boolean strictDurability = true;
 	private boolean strictBlockData = true;
@@ -97,6 +99,14 @@ public class MagicItemData {
 		this.strictEnchants = strictEnchants;
 	}
 
+	public boolean isStrictComponentComparison() {
+		return strictComponentComparison;
+	}
+
+	public void setStrictComponentComparison(boolean strictComponentComparison) {
+		this.strictComponentComparison = strictComponentComparison;
+	}
+
 	public boolean matches(MagicItemData data) {
 		if (this == data) return true;
 
@@ -123,10 +133,16 @@ public class MagicItemData {
 					if (!Iterables.elementsEqual(self.entries(), other.entries())) return false;
 				}
 				case AUTHOR, NAME, TITLE -> {
-					String legacySelf = Util.getLegacyFromComponent((Component) itemAttributes.get(attr));
-					String legacyOther = Util.getLegacyFromComponent((Component) data.itemAttributes.get(attr));
+					Component self = (Component) itemAttributes.get(attr);
+					Component other = (Component) data.itemAttributes.get(attr);
 
-					if (!legacySelf.equals(legacyOther)) return false;
+					if (strictComponentComparison) {
+						if (!self.equals(other)) return false;
+						continue;
+					}
+
+					Style defaultStyle = attr == MagicItemAttribute.NAME ? ComponentUtil.DISPLAY_NAME_STYLE : Style.empty();
+					if (!ComponentUtil.visualCompare(self, other, defaultStyle)) return false;
 				}
 				case BLOCK_DATA -> {
 					BlockData blockDataSelf = (BlockData) itemAttributes.get(attr);
@@ -172,16 +188,17 @@ public class MagicItemData {
 					}
 				}
 				case LORE, PAGES -> {
-					List<Component> componentsSelf = (List<Component>) itemAttributes.get(attr);
-					List<Component> componentsOther = (List<Component>) data.itemAttributes.get(attr);
-					if (componentsSelf.size() != componentsOther.size()) return false;
+					List<Component> self = (List<Component>) itemAttributes.get(attr);
+					List<Component> other = (List<Component>) data.itemAttributes.get(attr);
+					if (self.size() != other.size()) return false;
 
-					for (int i = 0; i < componentsSelf.size(); i++) {
-						String legacySelf = Util.getLegacyFromComponent(componentsSelf.get(i));
-						String legacyOther = Util.getLegacyFromComponent(componentsOther.get(i));
-
-						if (!legacySelf.equals(legacyOther)) return false;
+					if (strictComponentComparison) {
+						if (!self.equals(other)) return false;
+						continue;
 					}
+
+					Style defaultStyle = attr == MagicItemAttribute.LORE ? ComponentUtil.LORE_STYLE : Style.empty();
+					if (!ComponentUtil.visualCompare(self, other, defaultStyle)) return false;
 				}
 				default -> {
 					if (!itemAttributes.get(attr).equals(data.itemAttributes.get(attr))) return false;

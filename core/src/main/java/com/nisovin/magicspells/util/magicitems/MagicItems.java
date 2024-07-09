@@ -330,6 +330,9 @@ public class MagicItems {
 				if (section.isBoolean("strict-enchant-level"))
 					magicItem.getMagicItemData().setStrictEnchantLevel(section.getBoolean("strict-enchant-level"));
 
+				if (section.isBoolean("strict-component-comparison"))
+					magicItem.getMagicItemData().setStrictComponentComparison(section.getBoolean("strict-component-comparison"));
+
 				return magicItem;
 			}
 
@@ -521,6 +524,9 @@ public class MagicItems {
 
 			if (section.isBoolean("strict-enchant-level"))
 				itemData.setStrictEnchantLevel(section.getBoolean("strict-enchant-level"));
+
+			if (section.isBoolean("strict-component-comparison"))
+				itemData.setStrictComponentComparison(section.getBoolean("strict-component-comparison"));
 
 			return new MagicItem(item, itemData);
 		} catch (Exception e) {
