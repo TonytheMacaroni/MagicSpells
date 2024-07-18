@@ -8,10 +8,7 @@ import org.jetbrains.annotations.Nullable;
 
 import net.kyori.adventure.text.Component;
 
-import org.bukkit.Color;
-import org.bukkit.Bukkit;
-import org.bukkit.Material;
-import org.bukkit.Particle;
+import org.bukkit.*;
 import org.bukkit.util.Vector;
 import org.bukkit.util.EulerAngle;
 import org.bukkit.entity.EntityType;
@@ -676,6 +673,41 @@ public class ConfigDataUtil {
 
 			};
 		}
+	}
+
+	public static <T extends Keyed> ConfigData<T> getRegistryValue(@NotNull ConfigurationSection config, @NotNull String path, @NotNull Registry<T> registry, @Nullable T def) {
+		String value = config.getString(path);
+		if (value == null) return data -> def;
+
+		NamespacedKey key = NamespacedKey.fromString(value);
+		if (key != null) {
+			T val = registry.get(key);
+			if (val != null) return data -> val;
+		}
+
+		ConfigData<String> supplier = getString(value);
+		if (supplier.isConstant()) return data -> def;
+
+		return new ConfigData<>() {
+
+			@Override
+			public T get(@NotNull SpellData data) {
+				String val = supplier.get(data);
+				if (val == null) return def;
+
+				NamespacedKey key = NamespacedKey.fromString(val);
+				if (key == null) return def;
+
+				T value = registry.get(key);
+				return value == null ? def : value;
+			}
+
+			@Override
+			public boolean isConstant() {
+				return false;
+			}
+
+		};
 	}
 
 	public static ConfigData<Angle> getAngle(@NotNull ConfigurationSection config, @NotNull String path, @Nullable Angle def) {

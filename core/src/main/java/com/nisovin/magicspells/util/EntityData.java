@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.BiConsumer;
 
 import org.joml.Vector3f;
@@ -19,10 +20,7 @@ import com.google.common.collect.MultimapBuilder;
 
 import net.kyori.adventure.text.Component;
 
-import org.bukkit.Color;
-import org.bukkit.DyeColor;
-import org.bukkit.Location;
-import org.bukkit.Material;
+import org.bukkit.*;
 import org.bukkit.entity.*;
 import org.bukkit.util.Vector;
 import org.bukkit.util.EulerAngle;
@@ -33,6 +31,8 @@ import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.configuration.ConfigurationSection;
 
+import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 
 import com.nisovin.magicspells.MagicSpells;
@@ -190,7 +190,7 @@ public class EntityData {
 		addOptEnum(transformers, config, "type", Axolotl.class, Axolotl.Variant.class, Axolotl::setVariant);
 
 		// Cat
-		addOptEnum(transformers, config, "type", Cat.class, Cat.Type.class, Cat::setCatType);
+		addOptRegistryValue(transformers, config, "type", Cat.class, Registry.CAT_VARIANT, Cat::setCatType);
 
 		// ChestedHorse
 		chested = addBoolean(transformers, config, "chested", false, ChestedHorse.class, ChestedHorse::setCarryingChest, forceOptional);
@@ -208,7 +208,7 @@ public class EntityData {
 		addOptEnum(transformers, config, "type", Fox.class, Fox.Type.class, Fox::setFoxType);
 
 		// Frog
-		addOptEnum(transformers, config, "type", Frog.class, Frog.Variant.class, Frog::setVariant);
+		addOptRegistryValue(transformers, config, "type", Frog.class, Registry.FROG_VARIANT, Frog::setVariant);
 
 		// Horse
 		horseColor = addOptEnum(transformers, config, "color", Horse.class, Horse.Color.class, Horse::setColor);
@@ -272,11 +272,16 @@ public class EntityData {
 		tropicalFishPattern = addOptEnum(transformers, config, "type", TropicalFish.class, TropicalFish.Pattern.class, TropicalFish::setPattern);
 
 		// Villager
-		profession = addOptEnum(transformers, config, "type", Villager.class, Villager.Profession.class, Villager::setProfession);
+		profession = fallback(
+			key -> addOptRegistryValue(transformers, config, key, Villager.class, Registry.VILLAGER_PROFESSION, Villager::setProfession),
+			"villager-profession", "type"
+		);
+		addOptRegistryValue(transformers, config, "villager-type", Villager.class, Registry.VILLAGER_TYPE, Villager::setVillagerType);
 
 		// Wolf
 		addBoolean(transformers, config, "angry", false, Wolf.class, Wolf::setAngry, forceOptional);
 		addOptEnum(transformers, config, "color", Wolf.class, DyeColor.class, Wolf::setCollarColor);
+		addOptRegistryValue(transformers, config, "wolf-variant", Wolf.class, RegistryKey.WOLF_VARIANT, Wolf::setVariant);
 
 		// Zombie
 		addOptBoolean(transformers, config, "should-burn-in-day", Zombie.class, Zombie::setShouldBurnInDay);
@@ -619,6 +624,26 @@ public class EntityData {
 			EntityEquipment equipment = entity.getEquipment();
 			equipment.setDropChance(slot, chance);
 		});
+	}
+
+	private <T, R extends Keyed> void addOptRegistryValue(Multimap<Class<?>, Transformer<?>> transformers, ConfigurationSection config, String name, Class<T> type, RegistryKey<R> key, BiConsumer<T, R> setter) {
+		addOptRegistryValue(transformers, config, name, type, RegistryAccess.registryAccess().getRegistry(key), setter);
+	}
+
+	private <T, R extends Keyed> ConfigData<R> addOptRegistryValue(Multimap<Class<?>, Transformer<?>> transformers, ConfigurationSection config, String name, Class<T> type, Registry<R> registry, BiConsumer<T, R> setter) {
+		ConfigData<R> supplier = ConfigDataUtil.getRegistryValue(config, name, registry, null);
+		transformers.put(type, new TransformerImpl<>(supplier, setter, true));
+
+		return supplier;
+	}
+
+	private <T> ConfigData<T> fallback(Function<String, ConfigData<T>> function, String... keys) {
+		for (String key : keys) {
+		    ConfigData<T> data = function.apply(key);
+			if (checkNull(data)) return data;
+		}
+
+		return data -> null;
 	}
 
 	public ConfigData<Vector3f> getVector(ConfigurationSection config, String path) {
