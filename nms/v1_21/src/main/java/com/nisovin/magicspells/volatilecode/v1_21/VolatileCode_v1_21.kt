@@ -1,6 +1,7 @@
 package com.nisovin.magicspells.volatilecode.v1_21
 
 import java.util.*
+import java.lang.reflect.Method
 
 import org.bukkit.Bukkit
 import org.bukkit.entity.*
@@ -25,30 +26,32 @@ import io.papermc.paper.util.MCUtil
 import io.papermc.paper.adventure.PaperAdventure
 import io.papermc.paper.advancement.AdvancementDisplay
 
+import net.minecraft.core.BlockPos
 import net.minecraft.advancements.*
+import net.minecraft.util.FastColor
 import net.minecraft.world.phys.Vec3
 import net.minecraft.world.entity.EntityType
 import net.minecraft.network.protocol.game.*
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.entity.item.PrimedTnt
+import net.minecraft.core.particles.ParticleTypes
+import net.minecraft.core.particles.ParticleOptions
+import net.minecraft.core.particles.ColorParticleOption
+import net.minecraft.network.syncher.EntityDataAccessor
+import net.minecraft.network.syncher.EntityDataSerializers
 import net.minecraft.advancements.critereon.ImpossibleTrigger
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon
 import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket
 import net.minecraft.network.protocol.common.custom.GameTestAddMarkerDebugPayload
 import net.minecraft.network.protocol.common.custom.GameTestClearMarkersDebugPayload
 
+import com.nisovin.magicspells.util.glow.GlowManager
 import com.nisovin.magicspells.volatilecode.VolatileCodeHandle
 import com.nisovin.magicspells.volatilecode.VolatileCodeHelper
-import net.minecraft.core.BlockPos
-import net.minecraft.core.particles.ColorParticleOption
-import net.minecraft.core.particles.ParticleOptions
-import net.minecraft.core.particles.ParticleTypes
-import net.minecraft.network.syncher.EntityDataAccessor
-import net.minecraft.util.FastColor
-import java.lang.reflect.Method
 
 class VolatileCode_v1_21(helper: VolatileCodeHelper) : VolatileCodeHandle(helper) {
 
+    private val DATA_SHARED_FLAGS_ID = EntityDataAccessor(0, EntityDataSerializers.BYTE)
     private val toastKey = ResourceLocation.fromNamespaceAndPath("magicspells", "toast_effect")
 
     private var DATA_EFFECT_PARTICLES: EntityDataAccessor<List<ParticleOptions>>? = null
@@ -215,6 +218,14 @@ class VolatileCode_v1_21(helper: VolatileCodeHelper) : VolatileCodeHandle(helper
     override fun clearGameTestMarkers(player: Player) {
         val payload = GameTestClearMarkersDebugPayload()
         (player as CraftPlayer).handle.connection.send(ClientboundCustomPayloadPacket(payload))
+    }
+
+    override fun getEntityMetadata(entity: Entity): Byte {
+        return (entity as CraftEntity).handle.entityData.get(DATA_SHARED_FLAGS_ID)
+    }
+
+    override fun getGlowManager(): GlowManager {
+        return GlowManager_v1_21(helper)
     }
 
 }

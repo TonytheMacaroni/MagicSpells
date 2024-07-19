@@ -1,6 +1,7 @@
 package com.nisovin.magicspells.volatilecode
 
 import org.bukkit.Bukkit
+import org.bukkit.event.Listener
 
 import com.nisovin.magicspells.MagicSpells
 
@@ -13,6 +14,14 @@ object ManagerVolatile {
 
         override fun scheduleDelayedTask(task: Runnable?, delay: Long): Int {
             return MagicSpells.scheduleDelayedTask(task, delay)
+        }
+
+        override fun cancelTask(id: Int) {
+            MagicSpells.cancelTask(id)
+        }
+
+        override fun registerEvents(listener: Listener?) {
+            MagicSpells.registerEvents(listener)
         }
     }
 

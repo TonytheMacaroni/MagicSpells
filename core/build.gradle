@@ -14,6 +14,7 @@ dependencies {
     shadow(project(path: ":nms:shared", configuration: "apiElements"))
     shadow(project(path: ":nms:v1_21")) { transitive = false }
 
+    implementation(group: "com.github.retrooper", name: "packetevents-spigot", version: "2.4.0")
     implementation(group: "com.comphenix.protocol", name: "ProtocolLib", version: "5.1.0") { transitive = false }
     implementation(group: "com.github.libraryaddict", name: "LibsDisguises", version: "v10.0.25") { transitive = false }
     implementation(group: "com.github.MilkBowl", name: "VaultAPI", version: "master-SNAPSHOT") { transitive = false }
@@ -64,6 +65,7 @@ shadowJar {
     relocate("co.aikar.commands", "com.nisovin.magicspells.shaded.acf")
     relocate("co.aikar.locales", "com.nisovin.magicspells.shaded.locales")
     relocate("org.bstats", "com.nisovin.magicspells.shaded.bstats")
+
     archiveClassifier.set("")
 }
 

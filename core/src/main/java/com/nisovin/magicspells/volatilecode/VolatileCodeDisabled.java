@@ -14,6 +14,8 @@ import net.kyori.adventure.text.Component;
 
 import io.papermc.paper.advancement.AdvancementDisplay.Frame;
 
+import com.nisovin.magicspells.util.glow.GlowManager;
+
 public class VolatileCodeDisabled extends VolatileCodeHandle {
 
 	public VolatileCodeDisabled() {
@@ -78,6 +80,16 @@ public class VolatileCodeDisabled extends VolatileCodeHandle {
 	@Override
 	public void clearGameTestMarkers(Player player) {
 
+	}
+
+	@Override
+	public byte getEntityMetadata(Entity entity) {
+		return 0;
+	}
+
+	@Override
+	public GlowManager getGlowManager() {
+		return null;
 	}
 
 }

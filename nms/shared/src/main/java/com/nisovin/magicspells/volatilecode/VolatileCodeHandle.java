@@ -14,6 +14,8 @@ import net.kyori.adventure.text.Component;
 
 import io.papermc.paper.advancement.AdvancementDisplay.Frame;
 
+import com.nisovin.magicspells.util.glow.GlowManager;
+
 public abstract class VolatileCodeHandle {
 
 	protected final VolatileCodeHelper helper;
@@ -52,5 +54,9 @@ public abstract class VolatileCodeHandle {
 	public abstract void addGameTestMarker(Player player, Location location, int color, String name, int lifetime);
 
 	public abstract void clearGameTestMarkers(Player player);
+
+	public abstract byte getEntityMetadata(Entity entity);
+
+	public abstract GlowManager getGlowManager();
 
 }
