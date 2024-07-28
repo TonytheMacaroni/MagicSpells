@@ -7,6 +7,9 @@ import org.bukkit.Location;
 import org.bukkit.entity.LivingEntity;
 
 import com.nisovin.magicspells.Spell;
+import com.nisovin.magicspells.debug.DebugCategory;
+import com.nisovin.magicspells.debug.DebugPath;
+import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.events.*;
 import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.util.SpellData;
@@ -44,28 +47,30 @@ public class ModifierSet {
 
 	private ModifierSet(List<String> data, Spell spell, boolean isFromManaSystem) {
 		modifiers = new ArrayList<>();
-		for (String s : data) {
-			Modifier m = new Modifier();
-			m.process(s);
 
-			if (!m.isInitialized()) {
-				String extra = "";
-				if (m.getCustomActionData() != null) extra = ": " + m.getCustomActionData().getInvalidText();
+		for (int i = 0; i < data.size(); i++) {
+			String modifierString = data.get(i);
 
-				if (isFromManaSystem) MagicSpells.error("Mana system has a problem with modifier '" + s + "'" + extra);
-				else if (spell != null) MagicSpells.error("Spell '" + spell.getInternalName() + "' has a problem with modifier '" + s + "'" + extra);
-				else MagicSpells.error("Problem with modifier: " + s + "'" + extra);
-				continue;
+			// TODO: This breaks if the constructor is called without setting up the list path properly
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Initializing modifier '%s'.", modifierString)
+				.pushPath(String.valueOf(i), DebugPath.Type.LIST_ENTRY)
+			) {
+				Modifier modifier = new Modifier();
+
+				if (!modifier.process(modifierString)) {
+					String extra = "";
+					if (modifier.getCustomActionData() != null)
+						extra = ": " + modifier.getCustomActionData().getInvalidText();
+
+					MagicDebug.warn("Invalid modifier '%s' %s%s", modifierString, MagicDebug.resolveFullPath(), extra);
+					continue;
+				}
+
+				if (modifier.getStrModifierFailed() == null && spell != null)
+					modifier.setStrModifierFailed(spell.getStrModifierFailed());
+
+				modifiers.add(modifier);
 			}
-
-			if (m.getStrModifierFailed() == null && spell != null)
-				m.setStrModifierFailed(spell.getStrModifierFailed());
-
-			modifiers.add(m);
-
-			if (isFromManaSystem) MagicSpells.debug(3, "    Modifier added for mana system: " + s);
-			else if (spell != null) MagicSpells.debug(3, "    Modifier added for spell '" + spell.getInternalName() + "': " + s);
-			else MagicSpells.debug(3, "    Modifier added: " + s);
 		}
 	}
 

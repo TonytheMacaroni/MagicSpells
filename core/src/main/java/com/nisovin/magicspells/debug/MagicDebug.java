@@ -25,6 +25,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
 
+import com.nisovin.magicspells.Spell;
 import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.util.config.ConfigData;
 
@@ -47,6 +48,22 @@ public class MagicDebug {
 		consumer.accept(builder);
 
 		return builder.build();
+	}
+
+	@NotNull
+	public static Section section(@NotNull Consumer<Section.Builder> consumer, @NotNull @PrintFormat String message, @Nullable Object @NotNull ... args) {
+		Section.Builder builder = new Section.Builder();
+		consumer.accept(builder);
+
+		return builder.message(message, args).build();
+	}
+
+	@NotNull
+	public static Section section(@NotNull DebugCategory category, @NotNull Consumer<Section.Builder> consumer, @NotNull @PrintFormat String message, @Nullable Object @NotNull ... args) {
+		Section.Builder builder = new Section.Builder();
+		consumer.accept(builder);
+
+		return builder.category(category).message(message, args).build();
 	}
 
 	@NotNull
@@ -385,6 +402,7 @@ public class MagicDebug {
 			else if (arg instanceof Player player) args[i] = player.getName();
 			else if (arg instanceof Entity entity) args[i] = entity.getUniqueId();
 			else if (arg instanceof CommandSender sender) args[i] = sender.getName();
+			else if (arg instanceof Spell spell) args[i] = spell.getInternalName();
 		}
 
 		return args;
@@ -473,6 +491,11 @@ public class MagicDebug {
 
 			public Builder suppressWarnings(boolean suppressWarnings) {
 				this.suppressWarnings = suppressWarnings;
+				return this;
+			}
+
+			public Builder configure(Consumer<Builder> consumer) {
+				consumer.accept(this);
 				return this;
 			}
 

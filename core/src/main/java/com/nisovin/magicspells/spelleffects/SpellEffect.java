@@ -14,6 +14,8 @@ import org.bukkit.configuration.ConfigurationSection;
 import de.slikey.effectlib.Effect;
 
 import com.nisovin.magicspells.Spell;
+import com.nisovin.magicspells.debug.DebugPath;
+import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.util.*;
 import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.util.config.ConfigData;
@@ -34,6 +36,8 @@ import com.nisovin.magicspells.spelleffects.trackers.OrbitEffectlibTracker;
 public abstract class SpellEffect {
 
 	protected final Random random = ThreadLocalRandom.current();
+
+	private String name;
 
 	private ConfigData<Integer> delay;
 
@@ -84,6 +88,8 @@ public abstract class SpellEffect {
 	private ModifierSet locationModifiers;
 
 	public final void loadFromConfiguration(ConfigurationSection config) {
+		name = config.getName();
+
 		delay = ConfigDataUtil.getInteger(config, "delay", 0);
 		chance = ConfigDataUtil.getDouble(config, "chance", -1);
 		zOffset = ConfigDataUtil.getDouble(config, "z-offset", 0);
@@ -129,24 +135,40 @@ public abstract class SpellEffect {
 	}
 
 	public void initializeModifiers(Spell spell) {
-		if (modifiersList != null) {
-			modifiers = new ModifierSet(modifiersList, spell);
-			modifiersList = null;
+		if (modifiersList != null && !modifiersList.isEmpty()) {
+			try (var ignored = MagicDebug.section("Initializing 'modifiers'...")
+				.pushPath("modifiers", DebugPath.Type.LIST)
+			) {
+				modifiers = new ModifierSet(modifiersList, spell);
+				modifiersList = null;
+			}
 		}
 
-		if (casterModifiersList != null) {
-			casterModifiers = new ModifierSet(casterModifiersList, spell);
-			casterModifiersList = null;
+		if (casterModifiersList != null && !casterModifiersList.isEmpty()) {
+			try (var ignored = MagicDebug.section("Initializing 'caster-modifiers'...")
+				.pushPath("caster-modifiers", DebugPath.Type.LIST)
+			) {
+				casterModifiers = new ModifierSet(casterModifiersList, spell);
+				casterModifiersList = null;
+			}
 		}
 
-		if (targetModifiersList != null) {
-			targetModifiers = new ModifierSet(targetModifiersList, spell);
-			targetModifiersList = null;
+		if (targetModifiersList != null && !targetModifiersList.isEmpty()) {
+			try (var ignored = MagicDebug.section("Initializing 'target-modifiers'...")
+				.pushPath("target-modifiers", DebugPath.Type.LIST)
+			) {
+				targetModifiers = new ModifierSet(targetModifiersList, spell);
+				targetModifiersList = null;
+			}
 		}
 
-		if (locationModifiersList != null) {
-			locationModifiers = new ModifierSet(locationModifiersList, spell);
-			locationModifiersList = null;
+		if (locationModifiersList != null && !locationModifiersList.isEmpty()) {
+			try (var ignored = MagicDebug.section("Initializing 'location-modifiers'...")
+				.pushPath("location-modifiers", DebugPath.Type.LIST)
+			) {
+				locationModifiers = new ModifierSet(locationModifiersList, spell);
+				locationModifiersList = null;
+			}
 		}
 	}
 
@@ -535,6 +557,10 @@ public abstract class SpellEffect {
 	@FunctionalInterface
 	public interface SpellEffectActiveChecker {
 		boolean isActive(Entity entity);
+	}
+
+	public String getName() {
+		return name;
 	}
 
 	public ConfigData<Integer> getDelay() {
