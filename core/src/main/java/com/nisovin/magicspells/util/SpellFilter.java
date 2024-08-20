@@ -1,91 +1,123 @@
 package com.nisovin.magicspells.util;
 
-import java.util.Set;
-import java.util.List;
-import java.util.HashSet;
-import java.util.ArrayList;
+import java.util.*;
+import java.util.function.Predicate;
 
-import com.nisovin.magicspells.Spell;
+import com.google.common.collect.SetMultimap;
+import com.google.common.collect.ImmutableSet;
+
+import org.antlr.v4.runtime.*;
 
 import org.bukkit.configuration.ConfigurationSection;
 
+import com.nisovin.magicspells.Spell;
+import com.nisovin.magicspells.MagicSpells;
+import com.nisovin.magicspells.util.spellfilter.*;
+
 public class SpellFilter {
 
-	private Set<String> allowedSpells = null;
-	private Set<String> blacklistedSpells = null;
-	private Set<String> allowedTags = null;
-	private Set<String> disallowedTags = null;
-	
-	private final boolean defaultReturn;
-	private boolean emptyFilter = false;
+	private static final ANTLRErrorListener LEXER_LISTENER = new BaseErrorListener() {
+
+		@Override
+		public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol, int line, int charPositionInLine, String msg, RecognitionException e) {
+			throw new RuntimeException("Lexer error on line " + line + " position " + charPositionInLine + ": " + msg, e);
+		}
+
+	};
+
+	private static final ANTLRErrorListener PARSER_LISTENER = new BaseErrorListener() {
+
+		@Override
+		public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol, int line, int charPositionInLine, String msg, RecognitionException e) {
+			throw new RuntimeException("Parser error on line " + line + " position " + charPositionInLine + ": " + msg, e);
+		}
+
+	};
+
+	private final Set<Spell> spells;
 
 	private SpellFilter() {
-		defaultReturn = true;
-		emptyFilter = true;
+		spells = null;
 	}
-	
-	public SpellFilter(List<String> allowedSpells, List<String> blacklistedSpells, List<String> allowedTags, List<String> disallowedTags) {
-		
-		// Initialize the collections
-		if (allowedSpells != null && !allowedSpells.isEmpty()) this.allowedSpells = new HashSet<>(allowedSpells);
-		if (blacklistedSpells != null && !blacklistedSpells.isEmpty()) this.blacklistedSpells = new HashSet<>(blacklistedSpells);
-		if (allowedTags != null && !allowedTags.isEmpty()) this.allowedTags = new HashSet<>(allowedTags);
-		if (disallowedTags != null && !disallowedTags.isEmpty()) this.disallowedTags = new HashSet<>(disallowedTags);
 
-		// Determine the default outcome if nothing catches
-		defaultReturn = determineDefaultValue();
+	private SpellFilter(Set<Spell> spells) {
+		this.spells = ImmutableSet.copyOf(spells);
 	}
-	
-	private boolean determineDefaultValue() {
-		// This means there is a tag whitelist check
-		if (allowedTags != null) return false;
-		
-		// If there is a spell whitelist check
-		if (allowedSpells != null) return false;
-		
-		// This means there is a tag blacklist
-		if (disallowedTags != null) return true;
-		
-		// If there is a spell blacklist
-		if (blacklistedSpells != null) return true;
-		
-		// If all the collections are null, then there is no filter
-		emptyFilter = true;
-		return true;
-	}
-	
-	public boolean check(Spell spell) {
-		// Can't do anything if null anyway
-		if (spell == null) return false;
-		
-		// Quick check to exit early if possible
-		if (emptyFilter) return true;
-		
-		// Is it whitelisted explicitly?
-		if (allowedSpells != null && allowedSpells.contains(spell.getInternalName())) return true;
-		
-		// Is it blacklisted?
-		if (blacklistedSpells != null && blacklistedSpells.contains(spell.getInternalName())) return false;
-		
-		// Does it have a blacklisted tag?
-		if (disallowedTags != null) {
-			for (String tag : disallowedTags) {
-				if (spell.hasTag(tag)) return false;
-			}
+
+	public SpellFilter(List<String> allowedSpells, List<String> blacklistedSpells, List<String> allowedTags, List<String> disallowedTags) {
+		boolean hasAllowedSpells = allowedSpells != null && !allowedSpells.isEmpty();
+		boolean hasBlacklistedSpells = blacklistedSpells != null && !blacklistedSpells.isEmpty();
+		boolean hasAllowedTags = allowedTags != null && !allowedTags.isEmpty();
+		boolean hasDisallowedTags = disallowedTags != null && !disallowedTags.isEmpty();
+		if (!hasAllowedSpells && !hasBlacklistedSpells && !hasAllowedTags && !hasDisallowedTags) {
+			spells = null;
+			return;
 		}
-		
-		// Does it have a whitelisted tag?
-		if (allowedTags != null) {
+
+		Set<Spell> spells = hasAllowedSpells || hasAllowedTags ? new HashSet<>() : new HashSet<>(MagicSpells.getSpellsOrdered());
+		SetMultimap<String, Spell> spellsByTag = MagicSpells.getSpellsByTag();
+
+		if (hasAllowedTags) {
 			for (String tag : allowedTags) {
-				if (spell.hasTag(tag)) return true;
+				Set<Spell> taggedSpells = spellsByTag.get(tag);
+				if (taggedSpells.isEmpty()) {
+					MagicSpells.error("Unused tag '" + tag + "' found in spell filter.");
+					continue;
+				}
+
+				spells.addAll(taggedSpells);
 			}
 		}
-		
-		return defaultReturn;
+
+		if (hasDisallowedTags) {
+			for (String tag : disallowedTags) {
+				Set<Spell> taggedSpells = spellsByTag.get(tag);
+				if (taggedSpells.isEmpty()) {
+					MagicSpells.error("Unused tag '" + tag + "' found in spell filter.");
+					continue;
+				}
+
+				spells.removeAll(taggedSpells);
+			}
+		}
+
+		if (hasBlacklistedSpells) {
+			for (String spellName : blacklistedSpells) {
+			    Spell spell = MagicSpells.getSpellByInternalName(spellName);
+				if (spell == null) {
+					MagicSpells.error("Invalid spell '" + spellName + "' found in spell filter.");
+					continue;
+				}
+
+				spells.remove(spell);
+			}
+		}
+
+		if (hasAllowedSpells) {
+			for (String spellName : allowedSpells) {
+				Spell spell = MagicSpells.getSpellByInternalName(spellName);
+				if (spell == null) {
+					MagicSpells.error("Invalid spell '" + spellName + "' found in spell filter.");
+					continue;
+				}
+
+				spells.add(spell);
+			}
+		}
+
+		this.spells = ImmutableSet.copyOf(spells);
+	}
+
+	public boolean check(Spell spell) {
+		return spell != null && (spells == null || spells.contains(spell));
 	}
 
 	public boolean isEmpty() {
-		return emptyFilter;
+		return spells == null;
+	}
+
+	public Set<Spell> getMatchingSpells() {
+		return spells;
 	}
 
 	/**
@@ -133,8 +165,11 @@ public class SpellFilter {
 	 * Create a {@link SpellFilter} instance out of a formatted string.
 	 * @param string Follows format: allowedSpell, !disallowedSpell, tag:allowedTag, !tag:disallowedTag
 	 */
-	public static SpellFilter fromString(String string) {
-		if (string.equals("*")) return new SpellFilter();
+	public static SpellFilter fromLegacyString(String string) {
+		string = string.trim();
+
+		if (!string.contains(",") && !string.startsWith("tag:") && !string.startsWith("!tag:"))
+			return fromString(string);
 
 		List<String> spells = new ArrayList<>();
 		List<String> deniedSpells = new ArrayList<>();
@@ -165,6 +200,40 @@ public class SpellFilter {
 		}
 
 		return new SpellFilter(spells, deniedSpells, spellTags, deniedSpellTags);
+	}
+
+	public static SpellFilter fromString(String string) {
+		string = string.trim();
+
+		if (string.isEmpty() || string.equals("*")) return new SpellFilter();
+
+		try {
+			SpellFilterLexer lexer = new SpellFilterLexer(CharStreams.fromString(string));
+			lexer.removeErrorListeners();
+			lexer.addErrorListener(LEXER_LISTENER);
+
+			SpellFilterParser parser = new SpellFilterParser(new CommonTokenStream(lexer));
+			parser.removeErrorListeners();
+			parser.addErrorListener(PARSER_LISTENER);
+
+			SpellFilterVisitorImpl visitor = new SpellFilterVisitorImpl(string);
+			Predicate<Spell> predicate = visitor.visit(parser.parse());
+
+			Set<Spell> spells = MagicSpells.getSpellsOrdered()
+				.stream()
+				.filter(predicate)
+				.collect(ImmutableSet.toImmutableSet());
+
+			if (spells.isEmpty())
+				MagicSpells.error("Spell filter '" + string + "' matches no spells.");
+
+			return new SpellFilter(spells);
+		} catch (Exception e) {
+			MagicSpells.error("Encountered an error while parsing spell filter '" + string + "'");
+			e.printStackTrace();
+
+			return new SpellFilter();
+		}
 	}
 
 }
