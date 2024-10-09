@@ -14,6 +14,8 @@ import org.bukkit.configuration.ConfigurationSection;
 import de.slikey.effectlib.Effect;
 
 import com.nisovin.magicspells.Spell;
+import com.nisovin.magicspells.debug.DebugPath;
+import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.util.*;
 import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.util.config.ConfigData;
@@ -34,6 +36,8 @@ import com.nisovin.magicspells.spelleffects.trackers.OrbitEffectlibTracker;
 public abstract class SpellEffect {
 
 	protected final Random random = ThreadLocalRandom.current();
+
+	protected ConfigurationSection config;
 
 	private ConfigData<Integer> delay;
 
@@ -73,17 +77,14 @@ public abstract class SpellEffect {
 
 	private ConfigData<Boolean> counterClockwise;
 
-	private List<String> modifiersList;
-	private List<String> casterModifiersList;
-	private List<String> targetModifiersList;
-	private List<String> locationModifiersList;
-
 	private ModifierSet modifiers;
 	private ModifierSet casterModifiers;
 	private ModifierSet targetModifiers;
 	private ModifierSet locationModifiers;
 
 	public final void loadFromConfiguration(ConfigurationSection config) {
+		this.config = config;
+
 		delay = ConfigDataUtil.getInteger(config, "delay", 0);
 		chance = ConfigDataUtil.getDouble(config, "chance", -1);
 		zOffset = ConfigDataUtil.getDouble(config, "z-offset", 0);
@@ -120,34 +121,14 @@ public abstract class SpellEffect {
 
 		counterClockwise = ConfigDataUtil.getBoolean(config, path + "counter-clockwise", false);
 
-		modifiersList = config.getStringList("modifiers");
-		casterModifiersList = config.getStringList("caster-modifiers");
-		targetModifiersList = config.getStringList("target-modifiers");
-		locationModifiersList = config.getStringList("location-modifiers");
-
 		loadFromConfig(config);
 	}
 
 	public void initializeModifiers(Spell spell) {
-		if (modifiersList != null) {
-			modifiers = new ModifierSet(modifiersList, spell);
-			modifiersList = null;
-		}
-
-		if (casterModifiersList != null) {
-			casterModifiers = new ModifierSet(casterModifiersList, spell);
-			casterModifiersList = null;
-		}
-
-		if (targetModifiersList != null) {
-			targetModifiers = new ModifierSet(targetModifiersList, spell);
-			targetModifiersList = null;
-		}
-
-		if (locationModifiersList != null) {
-			locationModifiers = new ModifierSet(locationModifiersList, spell);
-			locationModifiersList = null;
-		}
+		modifiers = ModifierSet.fromConfig(config, "modifiers");
+		casterModifiers = ModifierSet.fromConfig(config, "caster-modifiers");
+		targetModifiers = ModifierSet.fromConfig(config, "target-modifiers");
+		locationModifiers = ModifierSet.fromConfig(config, "location-modifiers");
 	}
 
 	protected ModifierResult checkModifiers(SpellData data) {
@@ -535,6 +516,10 @@ public abstract class SpellEffect {
 	@FunctionalInterface
 	public interface SpellEffectActiveChecker {
 		boolean isActive(Entity entity);
+	}
+
+	public String getName() {
+		return config.getName();
 	}
 
 	public ConfigData<Integer> getDelay() {
