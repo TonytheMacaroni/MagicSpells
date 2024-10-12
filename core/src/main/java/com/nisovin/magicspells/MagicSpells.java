@@ -1638,7 +1638,7 @@ public class MagicSpells extends JavaPlugin {
 	}
 
 	private static final Pattern ARGUMENT_PATTERN = Pattern.compile("%arg:(\\d+):(\\w+)%", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
-	public static String doArgumentSubstitution(String string, String[] args) {
+	public static String doArgumentSubstitution(String string, String[] args) { 
 		if (string == null || string.isEmpty()) return string;
 
 		Matcher matcher = ARGUMENT_PATTERN.matcher(string);
@@ -2232,8 +2232,8 @@ public class MagicSpells extends JavaPlugin {
 		return getClassLoader();
 	}
 
-	public MagicConfig getMagicConfig() {
-		return config;
+	public static MagicConfig getMagicConfig() {
+		return plugin.config;
 	}
 
 }
