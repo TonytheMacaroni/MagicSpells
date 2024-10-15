@@ -19,6 +19,7 @@ import java.net.MalformedURLException;
 import java.nio.file.Path;
 import java.nio.file.Files;
 
+import com.google.common.collect.Multimap;
 import de.slikey.effectlib.EffectManager;
 
 import org.bstats.bukkit.Metrics;
@@ -887,13 +888,7 @@ public class MagicSpells extends JavaPlugin {
 			while (it.hasNext()) {
 				Spell spell = it.next();
 
-				try (var spellContext = MagicDebug.section(builder -> builder
-					.message("Initializing spell '%s'...", spell.getInternalName())
-					.config(spell.getDebugConfig())
-					.path(config.getSpellFile(spell), DebugPath.Type.FILE)
-					.path("spells", DebugPath.Type.SECTION, false)
-					.path(spell.getInternalName(), DebugPath.Type.SECTION)
-				)) {
+				try (var spellContext = MagicDebug.section(spell, "Initializing spell '%s'...", spell.getInternalName())) {
 					DependsOn dependsOn = spell.getClass().getAnnotation(DependsOn.class);
 					if (dependsOn != null) {
 						boolean missing = false;
@@ -977,12 +972,9 @@ public class MagicSpells extends JavaPlugin {
 			Bukkit.getPluginManager().callEvent(new SpellEffectsLoadingEvent(plugin, spellEffectManager));
 
 			for (Spell spell : spellsOrdered) {
-				try (var spellContext = MagicDebug.section(builder -> builder
+				try (var context1 = MagicDebug.section(builder -> builder
 					.message("Initializing spell effects for '%s'...", spell.getInternalName())
-					.config(spell.getDebugConfig())
-					.path(config.getSpellFile(spell), DebugPath.Type.FILE)
-					.path("spells", DebugPath.Type.SECTION, false)
-					.path(spell.getInternalName(), DebugPath.Type.SECTION)
+					.configure(spell)
 					.path("effects", DebugPath.Type.SECTION)
 				)) {
 					spell.initializeSpellEffects();
@@ -994,23 +986,30 @@ public class MagicSpells extends JavaPlugin {
 	}
 
 	private void loadConditions() {
-		try (var context = MagicDebug.section(DebugCategory.CONDITIONS, "Loading conditions...")) {
+		try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Loading conditions...")) {
 			conditionManager = new ConditionManager();
 			Bukkit.getPluginManager().callEvent(new ConditionsLoadingEvent(plugin, conditionManager));
 
-			for (Spell spell : spells.values()) {
-				spell.initializeModifiers();
+			for (Spell spell : spellsOrdered) {
+				try (var ignored1 = MagicDebug.section(spell, "Initializing modifiers for spell '%s'...", spell.getInternalName())) {
+					spell.initializeModifiers();
+				}
 			}
 
 			if (enableManaSystem) {
-				manaHandler.initialize();
-				Util.forEachPlayerOnline(p -> manaHandler.createManaBar(p));
+				try (var ignored1 = MagicDebug.section(DebugCategory.MANA, "Initializing mana system...")
+					.pushPath("mana.yml", DebugPath.Type.FILE)
+					.pushPath("mana", DebugPath.Type.SECTION, false)
+				) {
+					manaHandler.initialize();
+					Util.forEachPlayerOnline(p -> manaHandler.createManaBar(p));
+				}
 			}
 
 			ModifierSet.initializeModifierListeners();
 		}
 
-		MagicDebug.info(DebugCategory.CONDITIONS, "...conditions loaded: %d", conditionManager.getConditions().size());
+		MagicDebug.info(DebugCategory.MODIFIERS, "...conditions loaded: %d", conditionManager.getConditions().size());
 	}
 
 	private void loadPassiveListeners() {
@@ -2233,26 +2232,12 @@ public class MagicSpells extends JavaPlugin {
 
 			// Turn off spells and their spell effects
 			for (Spell spell : spells.values()) {
-				EffectPosition position;
-				List<SpellEffect> spellEffects;
-				Iterator<SpellEffect> iterator;
-				SpellEffect effect;
-				if (spell.getEffects() != null) {
-					for (Map.Entry<EffectPosition, List<SpellEffect>> entry : spell.getEffects().entrySet()) {
-						if (entry == null) continue;
-
-						position = entry.getKey();
-						spellEffects = entry.getValue();
-						if (position == null || spellEffects == null) continue;
-
-						iterator = spellEffects.iterator();
-						while (iterator.hasNext()) {
-							effect = iterator.next();
-							effect.turnOff();
-							iterator.remove();
-						}
-					}
+				Multimap<EffectPosition, SpellEffect> effects = spell.getEffects();
+				if (effects != null) {
+					effects.values().forEach(SpellEffect::turnOff);
+					effects.clear();
 				}
+
 				if (spell instanceof BuffSpell buffSpell) buffSpell.stopAllEffects();
 
 				spell.turnOff();
@@ -2410,8 +2395,8 @@ public class MagicSpells extends JavaPlugin {
 		return getClassLoader();
 	}
 
-	public MagicConfig getMagicConfig() {
-		return config;
+	public static MagicConfig getMagicConfig() {
+		return plugin.config;
 	}
 
 }

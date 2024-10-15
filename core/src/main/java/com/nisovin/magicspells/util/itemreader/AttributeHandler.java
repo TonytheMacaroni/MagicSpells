@@ -63,6 +63,7 @@ public class AttributeHandler extends ItemHandler {
 		return getAttributeModifiers(data, null);
 	}
 
+	// TODO: Fix debug for the ItemHandler classes, specifically the ones with lists/collections where they should use nesting
 	@Nullable
 	@SuppressWarnings("UnstableApiUsage")
 	public static LinkedHashMultimap<Attribute, AttributeModifier> getAttributeModifiers(@NotNull List<?> data, @Nullable String spellName) {

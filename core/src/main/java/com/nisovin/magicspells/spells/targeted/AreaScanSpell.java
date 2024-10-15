@@ -57,7 +57,6 @@ public class AreaScanSpell extends TargetedSpell implements TargetedLocationSpel
 	private String spellToCastName;
 	private Subspell spellToCast;
 
-	private List<String> scanModifierStrings;
 	private ModifierSet scanModifiers;
 
 	public AreaScanSpell(MagicConfig config, String spellName) {
@@ -124,8 +123,6 @@ public class AreaScanSpell extends TargetedSpell implements TargetedLocationSpel
 
 			if (deniedBlocks.isEmpty()) deniedBlocks = null;
 		}
-
-		scanModifierStrings = getConfigStringList("scan-modifiers", null);
 	}
 
 	@Override
@@ -140,10 +137,7 @@ public class AreaScanSpell extends TargetedSpell implements TargetedLocationSpel
 	protected void initializeModifiers() {
 		super.initializeModifiers();
 
-		if (scanModifierStrings != null && !scanModifierStrings.isEmpty())
-			scanModifiers = new ModifierSet(scanModifierStrings, this);
-
-		scanModifierStrings = null;
+		scanModifiers = initModifierSet("scan-modifiers");
 	}
 
 	@Override
