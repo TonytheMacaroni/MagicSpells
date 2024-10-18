@@ -249,10 +249,10 @@ public class RitualSpell extends InstantSpell {
 
 						CastResult result = spellToCast.cast(data);
 						if (!chargeReagentsImmediately && result.action().chargeReagents()) removeReagents(caster);
-						if (!setCooldownImmediately && result.action().setCooldown()) setCooldown(caster, cooldown);
+						if (!setCooldownImmediately && result.action().setCooldown()) setCooldown(caster, cooldown.get(data));
 						if (setCooldownForAll && result.action().setCooldown()) {
 							for (Player p : channelers.keySet()) {
-								setCooldown(p, cooldown);
+								setCooldown(p, cooldown.get(data.caster(p)));
 							}
 						}
 					} else stop(strRitualFailed);

@@ -193,11 +193,8 @@ public abstract class Spell implements Comparable<Spell>, Listener {
 	protected ConfigData<Integer> experience;
 	protected ConfigData<Integer> broadcastRange;
 
-	protected float cooldown;
+	protected ConfigData<Float> cooldown;
 	protected float serverCooldown;
-
-	protected float minCooldown = -1F;
-	protected float maxCooldown = -1F;
 
 	protected final String internalKey;
 
@@ -342,27 +339,23 @@ public abstract class Spell implements Comparable<Spell>, Listener {
 		spellNameOnFail = getConfigString("spell-on-fail", "");
 
 		// Cooldowns
-		String cooldownRange = config.getString(internalKey + "cooldown", "0");
-		try {
-			cooldown = Float.parseFloat(cooldownRange);
-		} catch (NumberFormatException e) {
-
-			// parse min max cooldowns
-			String[] cdRange = cooldownRange.split("-");
-
+		String cooldownString = config.getString(internalKey + "cooldown", null);
+		String[] cooldownRange = cooldownString == null ? null : cooldownString.split("-", 2);
+		if (cooldownRange != null && cooldownRange.length > 1) {
 			try {
-				float min = Float.parseFloat(cdRange[0]);
-				float max = Float.parseFloat(cdRange[1]);
-				if (min > max) {
-					minCooldown = max;
-					maxCooldown = min;
-				} else {
-					minCooldown = min;
-					maxCooldown = max;
-				}
+				float minCooldown = Float.parseFloat(cooldownRange[0]);
+				float maxCooldown = Float.parseFloat(cooldownRange[1]);
+
+				float min = Math.min(minCooldown, maxCooldown);
+				float max = Math.max(minCooldown, maxCooldown);
+
+				if (usePreciseCooldowns) cooldown = data -> min + (max - min) * random.nextFloat();
+				else cooldown = data -> min + random.nextInt((int) max - (int) min + 1);
 			} catch (NumberFormatException ignored) {
 			}
 		}
+
+		if (cooldown == null) cooldown = getConfigDataFloat("cooldown", 0);
 
 		serverCooldown = (float) config.getDouble(internalKey + "server-cooldown", 0);
 		rawSharedCooldowns = config.getStringList(internalKey + "shared-cooldowns", null);
@@ -992,7 +985,7 @@ public abstract class Spell implements Comparable<Spell>, Listener {
 		SpellCastState state = getCastState(data.caster());
 		debug(2, "    Spell cast state: " + state);
 
-		SpellCastEvent castEvent = new SpellCastEvent(this, state, data, cooldown, reagents.clone(), castTime.get(data));
+		SpellCastEvent castEvent = new SpellCastEvent(this, state, data, cooldown.get(data), reagents.clone(), castTime.get(data));
 		if (!castEvent.callEvent()) {
 			debug(2, "    Spell cancelled");
 			return castEvent;
@@ -1191,10 +1184,6 @@ public abstract class Spell implements Comparable<Spell>, Listener {
 		return next != null && next > System.currentTimeMillis();
 	}
 
-	public float getCooldown() {
-		return cooldown;
-	}
-
 	/**
 	 * Get how many seconds remain on the cooldown of this spell for the specified player
 	 *
@@ -1235,14 +1224,7 @@ public abstract class Spell implements Comparable<Spell>, Listener {
 	public void setCooldown(final LivingEntity livingEntity, float cooldown, boolean activateSharedCooldowns) {
 		final UUID uuid = livingEntity.getUniqueId();
 
-		if (cooldown > 0 || minCooldown > 0) {
-			float cd = cooldown;
-			// calculate random cooldown
-			if (minCooldown != -1F) {
-				if (usePreciseCooldowns) cd = minCooldown + (maxCooldown - minCooldown) * random.nextFloat();
-				else cd = minCooldown + random.nextInt((int) maxCooldown - (int) minCooldown + 1);
-			}
-
+		if (cooldown > 0) {
 			if (charges > 0) {
 				chargesConsumed.increment(uuid);
 				MagicSpells.scheduleDelayedTask(() -> {
@@ -1252,10 +1234,10 @@ public abstract class Spell implements Comparable<Spell>, Listener {
 					if (rechargeSound.isEmpty()) return;
 					if (livingEntity instanceof Player player)
 						player.playSound(livingEntity.getLocation(), rechargeSound, 1.0F, 1.0F);
-				}, Math.round(TimeUtil.TICKS_PER_SECOND * cd));
+				}, Math.round(TimeUtil.TICKS_PER_SECOND * cooldown));
 			}
 			if (charges <= 0 || chargesConsumed.get(uuid) >= charges) {
-				nextCast.put(uuid, System.currentTimeMillis() + (long) (cd * TimeUtil.MILLISECONDS_PER_SECOND));
+				nextCast.put(uuid, System.currentTimeMillis() + (long) (cooldown * TimeUtil.MILLISECONDS_PER_SECOND));
 			}
 
 		} else {
