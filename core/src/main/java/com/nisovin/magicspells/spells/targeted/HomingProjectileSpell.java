@@ -76,7 +76,6 @@ public class HomingProjectileSpell extends TargetedSpell implements TargetedEnti
 	private Subspell durationSpell;
 
 	private ModifierSet homingModifiers;
-	private List<String> homingModifiersStrings;
 
 	public HomingProjectileSpell(MagicConfig config, String spellName) {
 		super(config, spellName);
@@ -113,18 +112,13 @@ public class HomingProjectileSpell extends TargetedSpell implements TargetedEnti
 		groundSpellName = getConfigString("spell-on-hit-ground", "");
 		modifierSpellName = getConfigString("spell-on-modifier-fail", "");
 		durationSpellName = getConfigString("spell-after-duration", "");
-
-		homingModifiersStrings = getConfigStringList("homing-modifiers", null);
 	}
 
 	@Override
 	public void initializeModifiers() {
 		super.initializeModifiers();
 
-		if (homingModifiersStrings != null && !homingModifiersStrings.isEmpty()) {
-			homingModifiers = new ModifierSet(homingModifiersStrings, this);
-			homingModifiersStrings = null;
-		}
+		homingModifiers = initModifierSet("homing-modifiers");
 	}
 
 	@Override

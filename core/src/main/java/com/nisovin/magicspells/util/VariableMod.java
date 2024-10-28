@@ -67,8 +67,10 @@ public class VariableMod {
 	private boolean negate = false;
 	private String value;
 	private Operation op;
+	private String text;
 
 	public VariableMod(String data) {
+		text = data;
 		op = Operation.fromPrefix(data);
 		data = OPERATION_MATCHER.matcher(data).replaceFirst("");
 
@@ -148,4 +150,10 @@ public class VariableMod {
 	public VariableOwner getVariableOwner() {
 		return variableOwner;
 	}
+
+	@Override
+	public String toString() {
+		return text;
+	}
+
 }

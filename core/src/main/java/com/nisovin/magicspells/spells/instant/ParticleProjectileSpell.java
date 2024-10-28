@@ -96,7 +96,6 @@ public class ParticleProjectileSpell extends InstantSpell implements TargetedLoc
 	private ModifierSet projModifiers;
 	private final List<?> interactionData;
 	private List<Interaction> interactions;
-	private List<String> projModifiersStrings;
 
 	private Subspell airSpell;
 	private Subspell selfSpell;
@@ -217,7 +216,6 @@ public class ParticleProjectileSpell extends InstantSpell implements TargetedLoc
 		boolean hitNonPlayers = getConfigBoolean("hit-non-players", true);
 		validTargetList.enforce(ValidTargetList.TargetingElement.TARGET_NONPLAYERS, hitNonPlayers);
 
-		projModifiersStrings = getConfigStringList("projectile-modifiers", null);
 		interactionData = getConfigList("interactions", null);
 
 		// Compatibility
@@ -236,10 +234,7 @@ public class ParticleProjectileSpell extends InstantSpell implements TargetedLoc
 	public void initializeModifiers() {
 		super.initializeModifiers();
 
-		if (projModifiersStrings != null && !projModifiersStrings.isEmpty()) {
-			projModifiers = new ModifierSet(projModifiersStrings, this);
-			projModifiersStrings = null;
-		}
+		projModifiers = initModifierSet("projectile-modifiers");
 	}
 
 	@Override

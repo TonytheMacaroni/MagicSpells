@@ -95,7 +95,6 @@ public class ProjectileModifySpell extends TargetedSpell implements TargetedLoca
 	private String entityLocationSpellName;
 
 	private ModifierSet projModifiers;
-	private List<String> projModifiersStrings;
 
 	public ProjectileModifySpell(MagicConfig config, String spellName) {
 		super(config, spellName);
@@ -158,18 +157,13 @@ public class ProjectileModifySpell extends TargetedSpell implements TargetedLoca
 		durationSpellName = getConfigString("spell-on-duration-end", "");
 		modifierSpellName = getConfigString("spell-on-modifier-fail", "");
 		entityLocationSpellName = getConfigString("spell-on-entity-location", "");
-
-		projModifiersStrings = getConfigStringList("projectile-modifiers", null);
 	}
 
 	@Override
 	public void initializeModifiers() {
 		super.initializeModifiers();
 
-		if (projModifiersStrings != null && !projModifiersStrings.isEmpty()) {
-			projModifiers = new ModifierSet(projModifiersStrings, this);
-			projModifiersStrings = null;
-		}
+		projModifiers = initModifierSet("projectile-modifiers");
 	}
 
 	@Override

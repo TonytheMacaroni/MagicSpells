@@ -10,8 +10,11 @@ import org.bukkit.entity.LivingEntity;
 import com.nisovin.magicspells.Subspell;
 import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.util.SpellData;
+import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.util.VariableMod;
+import com.nisovin.magicspells.util.SpellReagents;
 import com.nisovin.magicspells.variables.Variable;
+import com.nisovin.magicspells.debug.DebugCategory;
 import com.nisovin.magicspells.util.ModifierResult;
 import com.nisovin.magicspells.events.SpellCastEvent;
 import com.nisovin.magicspells.events.ManaChangeEvent;
@@ -28,47 +31,92 @@ public enum ModifierType {
 
 		@Override
 		public boolean apply(SpellCastEvent event, boolean check, CustomData customData) {
-			if (!check) event.setCancelled(true);
-			return check;
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'required' modifier action.")) {
+				if (!check) {
+					MagicDebug.info("Condition failed - cancelling spell cast.");
+					event.setCancelled(true);
+				} else MagicDebug.info("Condition passed - continuing.");
+
+				return check;
+			}
 		}
 
 		@Override
 		public boolean apply(ManaChangeEvent event, boolean check, CustomData customData) {
-			if (!check) event.setNewAmount(event.getOldAmount());
-			return check;
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'required' modifier action.")) {
+				if (!check) {
+					MagicDebug.info("Condition failed - cancelling mana change.");
+					event.setNewAmount(event.getOldAmount());
+				} else MagicDebug.info("Condition passed - continuing.");
+
+				return check;
+			}
 		}
 
 		@Override
 		public boolean apply(SpellTargetEvent event, boolean check, CustomData customData) {
-			if (!check) event.setCancelled(true);
-			return check;
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'required' modifier action.")) {
+				if (!check) {
+					MagicDebug.info("Condition failed - cancelling entity targeting.");
+					event.setCancelled(true);
+				} else MagicDebug.info("Condition passed - continuing.");
+
+				return check;
+			}
 		}
 
 		@Override
 		public boolean apply(SpellTargetLocationEvent event, boolean check, CustomData customData) {
-			if (!check) event.setCancelled(true);
-			return check;
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'required' modifier action.")) {
+				if (!check) {
+					MagicDebug.info("Condition failed - cancelling location targeting.");
+					event.setCancelled(true);
+				} else MagicDebug.info("Condition passed - continuing.");
+
+				return check;
+			}
 		}
 
 		@Override
 		public boolean apply(MagicSpellsGenericPlayerEvent event, boolean check, CustomData customData) {
-			if (!check) event.setCancelled(true);
-			return check;
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'required' modifier action.")) {
+				if (!check) {
+					MagicDebug.info("Condition failed - cancelling.");
+					event.setCancelled(true);
+				} else MagicDebug.info("Condition passed - continuing.");
+
+				return check;
+			}
 		}
 
 		@Override
 		public ModifierResult apply(LivingEntity caster, ModifierResult result, CustomData customData) {
-			return result;
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'required' modifier action.")) {
+				if (result.check()) MagicDebug.info("Condition passed - continuing.");
+				else MagicDebug.info("Condition failed - stopping.");
+
+				return result;
+			}
 		}
 
 		@Override
 		public ModifierResult apply(LivingEntity caster, LivingEntity target, ModifierResult result, CustomData customData) {
-			return result;
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'required' modifier action.")) {
+				if (result.check()) MagicDebug.info("Condition passed - continuing.");
+				else MagicDebug.info("Condition failed - stopping.");
+
+				return result;
+			}
 		}
 
 		@Override
 		public ModifierResult apply(LivingEntity caster, Location target, ModifierResult result, CustomData customData) {
-			return result;
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'required' modifier action.")) {
+				if (result.check()) MagicDebug.info("Condition passed - continuing.");
+				else MagicDebug.info("Condition failed - stopping.");
+
+				return result;
+			}
 		}
 
 	},
@@ -77,47 +125,92 @@ public enum ModifierType {
 
 		@Override
 		public boolean apply(SpellCastEvent event, boolean check, CustomData customData) {
-			if (check) event.setCancelled(true);
-			return !check;
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'denied' modifier action.")) {
+				if (check) {
+					MagicDebug.info("Condition passed - cancelling spell cast.");
+					event.setCancelled(true);
+				} else MagicDebug.info("Condition failed - continuing.");
+
+				return !check;
+			}
 		}
 
 		@Override
 		public boolean apply(ManaChangeEvent event, boolean check, CustomData customData) {
-			if (check) event.setNewAmount(event.getOldAmount());
-			return !check;
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'denied' modifier action.")) {
+				if (check) {
+					MagicDebug.info("Condition passed - cancelling mana change.");
+					event.setNewAmount(event.getOldAmount());
+				} else MagicDebug.info("Condition failed - continuing.");
+
+				return !check;
+			}
 		}
 
 		@Override
 		public boolean apply(SpellTargetEvent event, boolean check, CustomData customData) {
-			if (check) event.setCancelled(true);
-			return !check;
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'denied' modifier action.")) {
+				if (check) {
+					MagicDebug.info("Condition passed - cancelling entity targeting.");
+					event.setCancelled(true);
+				} else MagicDebug.info("Condition failed - continuing.");
+
+				return !check;
+			}
 		}
 
 		@Override
 		public boolean apply(SpellTargetLocationEvent event, boolean check, CustomData customData) {
-			if (check) event.setCancelled(true);
-			return !check;
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'denied' modifier action.")) {
+				if (check) {
+					MagicDebug.info("Condition passed - cancelling location targeting.");
+					event.setCancelled(true);
+				} else MagicDebug.info("Condition failed - continuing.");
+
+				return !check;
+			}
 		}
 
 		@Override
 		public boolean apply(MagicSpellsGenericPlayerEvent event, boolean check, CustomData customData) {
-			if (check) event.setCancelled(true);
-			return !check;
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'denied' modifier action.")) {
+				if (check) {
+					MagicDebug.info("Condition passed - cancelling.");
+					event.setCancelled(true);
+				} else MagicDebug.info("Condition failed - continuing.");
+
+				return !check;
+			}
 		}
 
 		@Override
 		public ModifierResult apply(LivingEntity caster, ModifierResult result, CustomData customData) {
-			return new ModifierResult(result.data(), !result.check());
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'denied' modifier action.")) {
+				if (result.check()) MagicDebug.info("Condition passed - stopping.");
+				else MagicDebug.info("Condition failed - continuing.");
+
+				return new ModifierResult(result.data(), !result.check());
+			}
 		}
 
 		@Override
 		public ModifierResult apply(LivingEntity caster, LivingEntity target, ModifierResult result, CustomData customData) {
-			return new ModifierResult(result.data(), !result.check());
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'denied' modifier action.")) {
+				if (result.check()) MagicDebug.info("Condition passed - stopping.");
+				else MagicDebug.info("Condition failed - continuing.");
+
+				return new ModifierResult(result.data(), !result.check());
+			}
 		}
 
 		@Override
 		public ModifierResult apply(LivingEntity caster, Location target, ModifierResult result, CustomData customData) {
-			return new ModifierResult(result.data(), !result.check());
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'denied' modifier action.")) {
+				if (result.check()) MagicDebug.info("Condition passed - stopping.");
+				else MagicDebug.info("Condition failed - continuing.");
+
+				return new ModifierResult(result.data(), !result.check());
+			}
 		}
 
 	},
@@ -126,66 +219,117 @@ public enum ModifierType {
 
 		@Override
 		public boolean apply(SpellCastEvent event, boolean check, CustomData customData) {
-			if (check) event.increasePower((CustomDataFloat.from(customData, event)));
-			return true;
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'power' modifier action.")){
+				if (check) {
+					float oldPower = event.getPower();
+					event.increasePower((CustomDataFloat.from(customData, event)));
+					float newPower = event.getPower();
+
+					MagicDebug.info("Condition passed - changing power from %s to %s.", oldPower, newPower);
+				} else MagicDebug.info("Condition failed - continuing.");
+
+				return true;
+			}
 		}
 
 		@Override
 		public boolean apply(ManaChangeEvent event, boolean check, CustomData customData) {
-			if (check) {
-				int gain = event.getNewAmount() - event.getOldAmount();
-				gain = Math.round(gain * CustomDataFloat.from(customData, event));
-				int newAmt = event.getOldAmount() + gain;
-				if (newAmt > event.getMaxMana()) newAmt = event.getMaxMana();
-				event.setNewAmount(newAmt);
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'power' modifier action.")) {
+				if (check) {
+					int diff = event.getNewAmount() - event.getOldAmount();
+					diff = Math.round(diff * CustomDataFloat.from(customData, event));
+
+					int oldMana = event.getOldAmount();
+					int newMana = event.getNewAmount();
+					int modifiedMana = Math.clamp(oldMana + diff, 0, event.getMaxMana());
+
+					MagicDebug.info("Condition passed. Mana change modified from (%s -> %s) to (%s -> %s).", oldMana, newMana, oldMana, modifiedMana);
+					event.setNewAmount(modifiedMana);
+				} else MagicDebug.info("Condition failed - continuing.");
+
+				return true;
 			}
-			return true;
 		}
 
 		@Override
 		public boolean apply(SpellTargetEvent event, boolean check, CustomData customData) {
-			if (check) event.increasePower(CustomDataFloat.from(customData, event));
-			return true;
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'power' modifier action.")){
+				if (check) {
+					float oldPower = event.getPower();
+					event.increasePower((CustomDataFloat.from(customData, event)));
+					float newPower = event.getPower();
+
+					MagicDebug.info("Condition passed - changing power from %s to %s.", oldPower, newPower);
+				} else MagicDebug.info("Condition failed - continuing.");
+
+				return true;
+			}
 		}
 
 		@Override
 		public boolean apply(SpellTargetLocationEvent event, boolean check, CustomData customData) {
-			return true;
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'power' modifier action.")){
+				if (check) {
+					float oldPower = event.getPower();
+					event.increasePower((CustomDataFloat.from(customData, event)));
+					float newPower = event.getPower();
+
+					MagicDebug.info("Condition passed - changing power from %s to %s.", oldPower, newPower);
+				} else MagicDebug.info("Condition failed - continuing.");
+
+				return true;
+			}
 		}
 
 		@Override
 		public boolean apply(MagicSpellsGenericPlayerEvent event, boolean check, CustomData customData) {
+			MagicDebug.info(DebugCategory.MODIFIERS, "Attempted to perform invalid 'power' modifier action - continuing.");
 			return true;
 		}
 
 		@Override
 		public ModifierResult apply(LivingEntity caster, ModifierResult result, CustomData customData) {
-			if (result.check()) {
-				SpellData data = result.data();
-				return new ModifierResult(data.power(data.power() * CustomDataFloat.from(customData, data)), true);
-			}
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'power' modifier action.")) {
+				if (result.check()) {
+					SpellData data = result.data();
+					float newPower = data.power() * CustomDataFloat.from(customData, data);
 
-			return new ModifierResult(result.data(), true);
+					MagicDebug.info("Condition passed - changing power from %s to %s.", data.power(), newPower);
+					return new ModifierResult(data.power(newPower), true);
+				}
+
+				return result.check(true);
+			}
 		}
 
 		@Override
 		public ModifierResult apply(LivingEntity caster, LivingEntity target, ModifierResult result, CustomData customData) {
-			if (result.check()) {
-				SpellData data = result.data();
-				return new ModifierResult(data.power(data.power() * CustomDataFloat.from(customData, data)), true);
-			}
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'power' modifier action.")) {
+				if (result.check()) {
+					SpellData data = result.data();
+					float newPower = data.power() * CustomDataFloat.from(customData, data);
 
-			return new ModifierResult(result.data(), true);
+					MagicDebug.info("Condition passed - changing power from %s to %s.", data.power(), newPower);
+					return new ModifierResult(data.power(newPower), true);
+				}
+
+				return result.check(true);
+			}
 		}
 
 		@Override
 		public ModifierResult apply(LivingEntity caster, Location target, ModifierResult result, CustomData customData) {
-			if (result.check()) {
-				SpellData data = result.data();
-				return new ModifierResult(data.power(data.power() * CustomDataFloat.from(customData, data)), true);
-			}
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'power' modifier action.")) {
+				if (result.check()) {
+					SpellData data = result.data();
+					float newPower = data.power() * CustomDataFloat.from(customData, data);
 
-			return new ModifierResult(result.data(), true);
+					MagicDebug.info("Condition passed - changing power from %s to %s.", data.power(), newPower);
+					return new ModifierResult(data.power(newPower), true);
+				}
+
+				return result.check(true);
+			}
 		}
 
 		@Override
@@ -199,65 +343,114 @@ public enum ModifierType {
 
 		@Override
 		public boolean apply(SpellCastEvent event, boolean check, CustomData customData) {
-			if (check) event.setPower(event.getPower() + CustomDataFloat.from(customData, event));
-			return true;
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'addpower' modifier action.")){
+				if (check) {
+					float oldPower = event.getPower();
+					float newPower = oldPower + CustomDataFloat.from(customData, event);
+
+					MagicDebug.info("Condition passed - changing power from %s to %s.", oldPower, newPower);
+					event.setPower(newPower);
+				} else MagicDebug.info("Condition failed - continuing.");
+
+				return true;
+			}
 		}
 
 		@Override
 		public boolean apply(ManaChangeEvent event, boolean check, CustomData customData) {
-			if (check) {
-				int newAmt = event.getNewAmount() + (int) CustomDataFloat.from(customData, event);
-				if (newAmt > event.getMaxMana()) newAmt = event.getMaxMana();
-				if (newAmt < 0) newAmt = 0;
-				event.setNewAmount(newAmt);
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'addpower' modifier action.")) {
+				if (check) {
+					int oldMana = event.getOldAmount();
+					int newMana = event.getNewAmount();
+					int modifiedMana = Math.clamp(newMana + (int) CustomDataFloat.from(customData, event), 0, event.getMaxMana());
+
+					MagicDebug.info("Condition passed. Mana change modified from (%s -> %s) to (%s -> %s).", oldMana, newMana, oldMana, modifiedMana);
+					event.setNewAmount(modifiedMana);
+				} else MagicDebug.info("Condition failed - continuing.");
+
+				return true;
 			}
-			return true;
 		}
 
 		@Override
 		public boolean apply(SpellTargetEvent event, boolean check, CustomData customData) {
-			if (check) event.setPower(event.getPower() + CustomDataFloat.from(customData, event));
-			return true;
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'addpower' modifier action.")){
+				if (check) {
+					float oldPower = event.getPower();
+					float newPower = oldPower + CustomDataFloat.from(customData, event);
+
+					MagicDebug.info("Condition passed - changing power from %s to %s.", oldPower, newPower);
+					event.setPower(newPower);
+				} else MagicDebug.info("Condition failed - continuing.");
+
+				return true;
+			}
 		}
 
 		@Override
 		public boolean apply(SpellTargetLocationEvent event, boolean check, CustomData customData) {
-			return true;
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'addpower' modifier action.")){
+				if (check) {
+					float oldPower = event.getPower();
+					float newPower = oldPower + CustomDataFloat.from(customData, event);
+
+					MagicDebug.info("Condition passed - changing power from %s to %s.", oldPower, newPower);
+					event.setPower(newPower);
+				} else MagicDebug.info("Condition failed - continuing.");
+
+				return true;
+			}
 		}
 
 		@Override
 		public boolean apply(MagicSpellsGenericPlayerEvent event, boolean check, CustomData customData) {
+			MagicDebug.info(DebugCategory.MODIFIERS, "Attempted to perform invalid 'addpower' modifier action - continuing.");
 			return true;
 		}
 
 		@Override
 		public ModifierResult apply(LivingEntity caster, ModifierResult result, CustomData customData) {
-			if (result.check()) {
-				SpellData data = result.data();
-				return new ModifierResult(data.power(data.power() + CustomDataFloat.from(customData, data)), true);
-			}
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'addpower' modifier action.")) {
+				if (result.check()) {
+					SpellData data = result.data();
+					float newPower = data.power() + CustomDataFloat.from(customData, data);
 
-			return new ModifierResult(result.data(), true);
+					MagicDebug.info("Condition passed - changing power from %s to %s.", data.power(), newPower);
+					return new ModifierResult(data.power(newPower), true);
+				}
+
+				return result.check(true);
+			}
 		}
 
 		@Override
 		public ModifierResult apply(LivingEntity caster, LivingEntity target, ModifierResult result, CustomData customData) {
-			if (result.check()) {
-				SpellData data = result.data();
-				return new ModifierResult(data.power(data.power() + CustomDataFloat.from(customData, data)), true);
-			}
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'addpower' modifier action.")) {
+				if (result.check()) {
+					SpellData data = result.data();
+					float newPower = data.power() + CustomDataFloat.from(customData, data);
 
-			return new ModifierResult(result.data(), true);
+					MagicDebug.info("Condition passed - changing power from %s to %s.", data.power(), newPower);
+					return new ModifierResult(data.power(newPower), true);
+				}
+
+				return result.check(true);
+			}
 		}
 
 		@Override
 		public ModifierResult apply(LivingEntity caster, Location target, ModifierResult result, CustomData customData) {
-			if (result.check()) {
-				SpellData data = result.data();
-				return new ModifierResult(data.power(data.power() + CustomDataFloat.from(customData, data)), true);
-			}
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'addpower' modifier action.")) {
+				if (result.check()) {
+					SpellData data = result.data();
+					float newPower = data.power() + CustomDataFloat.from(customData, data);
 
-			return new ModifierResult(result.data(), true);
+					MagicDebug.info("Condition passed - changing power from %s to %s.", data.power(), newPower);
+					return new ModifierResult(data.power(newPower), true);
+				}
+
+				return result.check(true);
+			}
 		}
 
 		@Override
@@ -271,43 +464,59 @@ public enum ModifierType {
 
 		@Override
 		public boolean apply(SpellCastEvent event, boolean check, CustomData customData) {
-			if (check) event.setCooldown(CustomDataFloat.from(customData, event));
-			return true;
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'cooldown' modifier action.")) {
+				if (check) {
+					float oldCooldown = event.getCooldown();
+					float newCooldown = CustomDataFloat.from(customData, event);
+
+					MagicDebug.info("Condition passed - modifying cooldown from %s to %s.", oldCooldown, newCooldown);
+					event.setCooldown(newCooldown);
+				} else MagicDebug.info("Condition failed - continuing.");
+
+				return true;
+			}
 		}
 
 		@Override
 		public boolean apply(ManaChangeEvent event, boolean check, CustomData customData) {
+			MagicDebug.info(DebugCategory.MODIFIERS, "Attempted to perform invalid 'cooldown' modifier action - continuing.");
 			return true;
 		}
 
 		@Override
 		public boolean apply(SpellTargetEvent event, boolean check, CustomData customData) {
+			MagicDebug.info(DebugCategory.MODIFIERS, "Attempted to perform invalid 'cooldown' modifier action - continuing.");
 			return true;
 		}
 
 		@Override
 		public boolean apply(SpellTargetLocationEvent event, boolean check, CustomData customData) {
+			MagicDebug.info(DebugCategory.MODIFIERS, "Attempted to perform invalid 'cooldown' modifier action - continuing.");
 			return true;
 		}
 
 		@Override
 		public boolean apply(MagicSpellsGenericPlayerEvent event, boolean check, CustomData customData) {
+			MagicDebug.info(DebugCategory.MODIFIERS, "Attempted to perform invalid 'cooldown' modifier action - continuing.");
 			return true;
 		}
 
 		@Override
 		public ModifierResult apply(LivingEntity caster, ModifierResult result, CustomData customData) {
-			return result.check() ? result : new ModifierResult(result.data(), true);
+			MagicDebug.info(DebugCategory.MODIFIERS, "Attempted to perform invalid 'cooldown' modifier action - continuing.");
+			return result.check(true);
 		}
 
 		@Override
 		public ModifierResult apply(LivingEntity caster, LivingEntity target, ModifierResult result, CustomData customData) {
-			return result.check() ? result : new ModifierResult(result.data(), true);
+			MagicDebug.info(DebugCategory.MODIFIERS, "Attempted to perform invalid 'cooldown' modifier action - continuing.");
+			return result.check(true);
 		}
 
 		@Override
 		public ModifierResult apply(LivingEntity caster, Location target, ModifierResult result, CustomData customData) {
-			return result.check() ? result : new ModifierResult(result.data(), true);
+			MagicDebug.info(DebugCategory.MODIFIERS, "Attempted to perform invalid 'cooldown' modifier action - continuing.");
+			return result.check(true);
 		}
 
 		@Override
@@ -321,43 +530,62 @@ public enum ModifierType {
 
 		@Override
 		public boolean apply(SpellCastEvent event, boolean check, CustomData customData) {
-			if (check) event.setReagents(event.getReagents().multiply(CustomDataFloat.from(customData, event)));
-			return true;
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'reagents' modifier action.")) {
+				if (check) {
+					float multiplier = CustomDataFloat.from(customData, event);
+					MagicDebug.info("Condition passed - multiplying reagents by %s.", multiplier);
+
+					SpellReagents reagents = event.getReagents();
+					MagicDebug.info("Old reagents: %s.", reagents);
+
+					reagents.multiply(multiplier);
+					MagicDebug.info("New reagents: %s.", reagents);
+				} else MagicDebug.info("Condition failed - continuing.");
+
+				return true;
+			}
 		}
 
 		@Override
 		public boolean apply(ManaChangeEvent event, boolean check, CustomData customData) {
+			MagicDebug.info(DebugCategory.MODIFIERS, "Attempted to perform invalid 'reagents' modifier action - continuing.");
 			return true;
 		}
 
 		@Override
 		public boolean apply(SpellTargetEvent event, boolean check, CustomData customData) {
+			MagicDebug.info(DebugCategory.MODIFIERS, "Attempted to perform invalid 'reagents' modifier action - continuing.");
 			return true;
 		}
 
 		@Override
 		public boolean apply(SpellTargetLocationEvent event, boolean check, CustomData customData) {
+			MagicDebug.info(DebugCategory.MODIFIERS, "Attempted to perform invalid 'reagents' modifier action - continuing.");
 			return true;
 		}
 
 		@Override
 		public boolean apply(MagicSpellsGenericPlayerEvent event, boolean check, CustomData customData) {
+			MagicDebug.info(DebugCategory.MODIFIERS, "Attempted to perform invalid 'reagents' modifier action - continuing.");
 			return true;
 		}
 
 		@Override
 		public ModifierResult apply(LivingEntity caster, ModifierResult result, CustomData customData) {
-			return result.check() ? result : new ModifierResult(result.data(), true);
+			MagicDebug.info(DebugCategory.MODIFIERS, "Attempted to perform invalid 'reagents' modifier action - continuing.");
+			return result.check(true);
 		}
 
 		@Override
 		public ModifierResult apply(LivingEntity caster, LivingEntity target, ModifierResult result, CustomData customData) {
-			return result.check() ? result : new ModifierResult(result.data(), true);
+			MagicDebug.info(DebugCategory.MODIFIERS, "Attempted to perform invalid 'reagents' modifier action - continuing.");
+			return result.check(true);
 		}
 
 		@Override
 		public ModifierResult apply(LivingEntity caster, Location target, ModifierResult result, CustomData customData) {
-			return result.check() ? result : new ModifierResult(result.data(), true);
+			MagicDebug.info(DebugCategory.MODIFIERS, "Attempted to perform invalid 'reagents' modifier action - continuing.");
+			return result.check(true);
 		}
 
 		@Override
@@ -371,43 +599,59 @@ public enum ModifierType {
 
 		@Override
 		public boolean apply(SpellCastEvent event, boolean check, CustomData customData) {
-			if (check) event.setCastTime((int) CustomDataFloat.from(customData, event));
-			return true;
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'casttime' modifier action.")) {
+				if (check) {
+					int oldCastTime = event.getCastTime();
+					int newCastTime = (int) CustomDataFloat.from(customData, event);
+
+					MagicDebug.info("Condition passed - modifying cast time from %s to %s.", oldCastTime, newCastTime);
+					event.setCastTime(newCastTime);
+				} else MagicDebug.info("Condition failed - continuing.");
+
+				return true;
+			}
 		}
 
 		@Override
 		public boolean apply(ManaChangeEvent event, boolean check, CustomData customData) {
+			MagicDebug.info(DebugCategory.MODIFIERS, "Attempted to perform invalid 'casttime' modifier action - continuing.");
 			return true;
 		}
 
 		@Override
 		public boolean apply(SpellTargetEvent event, boolean check, CustomData customData) {
+			MagicDebug.info(DebugCategory.MODIFIERS, "Attempted to perform invalid 'casttime' modifier action - continuing.");
 			return true;
 		}
 
 		@Override
 		public boolean apply(SpellTargetLocationEvent event, boolean check, CustomData customData) {
+			MagicDebug.info(DebugCategory.MODIFIERS, "Attempted to perform invalid 'casttime' modifier action - continuing.");
 			return true;
 		}
 
 		@Override
 		public boolean apply(MagicSpellsGenericPlayerEvent event, boolean check, CustomData customData) {
+			MagicDebug.info(DebugCategory.MODIFIERS, "Attempted to perform invalid 'casttime' modifier action - continuing.");
 			return true;
 		}
 
 		@Override
 		public ModifierResult apply(LivingEntity caster, ModifierResult result, CustomData customData) {
-			return result.check() ? result : new ModifierResult(result.data(), true);
+			MagicDebug.info(DebugCategory.MODIFIERS, "Attempted to perform invalid 'casttime' modifier action - continuing.");
+			return result.check(true);
 		}
 
 		@Override
 		public ModifierResult apply(LivingEntity caster, LivingEntity target, ModifierResult result, CustomData customData) {
-			return result.check() ? result : new ModifierResult(result.data(), true);
+			MagicDebug.info(DebugCategory.MODIFIERS, "Attempted to perform invalid 'casttime' modifier action - continuing.");
+			return result.check(true);
 		}
 
 		@Override
 		public ModifierResult apply(LivingEntity caster, Location target, ModifierResult result, CustomData customData) {
-			return result.check() ? result : new ModifierResult(result.data(), true);
+			MagicDebug.info(DebugCategory.MODIFIERS, "Attempted to perform invalid 'casttime' modifier action - continuing.");
+			return result.check(true);
 		}
 
 		@Override
@@ -421,42 +665,82 @@ public enum ModifierType {
 
 		@Override
 		public boolean apply(SpellCastEvent event, boolean check, CustomData customData) {
-			return !check;
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'stop' modifier action.")) {
+				if (check) MagicDebug.info("Condition passed - stopping.");
+				else MagicDebug.info("Condition failed - continuing.");
+
+				return !check;
+			}
 		}
 
 		@Override
 		public boolean apply(ManaChangeEvent event, boolean check, CustomData customData) {
-			return !check;
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'stop' modifier action.")) {
+				if (check) MagicDebug.info("Condition passed - stopping.");
+				else MagicDebug.info("Condition failed - continuing.");
+
+				return !check;
+			}
 		}
 
 		@Override
 		public boolean apply(SpellTargetEvent event, boolean check, CustomData customData) {
-			return !check;
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'stop' modifier action.")) {
+				if (check) MagicDebug.info("Condition passed - stopping.");
+				else MagicDebug.info("Condition failed - continuing.");
+
+				return !check;
+			}
 		}
 
 		@Override
 		public boolean apply(SpellTargetLocationEvent event, boolean check, CustomData customData) {
-			return !check;
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'stop' modifier action.")) {
+				if (check) MagicDebug.info("Condition passed - stopping.");
+				else MagicDebug.info("Condition failed - continuing.");
+
+				return !check;
+			}
 		}
 
 		@Override
 		public boolean apply(MagicSpellsGenericPlayerEvent event, boolean check, CustomData customData) {
-			return !check;
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'stop' modifier action.")) {
+				if (check) MagicDebug.info("Condition passed - stopping.");
+				else MagicDebug.info("Condition failed - continuing.");
+
+				return !check;
+			}
 		}
 
 		@Override
 		public ModifierResult apply(LivingEntity caster, ModifierResult result, CustomData customData) {
-			return new ModifierResult(result.data(), !result.check());
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'stop' modifier action.")) {
+				if (result.check()) MagicDebug.info("Condition passed - stopping.");
+				else MagicDebug.info("Condition failed - continuing.");
+
+				return new ModifierResult(result.data(), !result.check());
+			}
 		}
 
 		@Override
 		public ModifierResult apply(LivingEntity caster, LivingEntity target, ModifierResult result, CustomData customData) {
-			return new ModifierResult(result.data(), !result.check());
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'stop' modifier action.")) {
+				if (result.check()) MagicDebug.info("Condition passed - stopping.");
+				else MagicDebug.info("Condition failed - continuing.");
+
+				return new ModifierResult(result.data(), !result.check());
+			}
 		}
 
 		@Override
 		public ModifierResult apply(LivingEntity caster, Location target, ModifierResult result, CustomData customData) {
-			return new ModifierResult(result.data(), !result.check());
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'stop' modifier action.")) {
+				if (result.check()) MagicDebug.info("Condition passed - stopping.");
+				else MagicDebug.info("Condition failed - continuing.");
+
+				return new ModifierResult(result.data(), !result.check());
+			}
 		}
 
 	},
@@ -465,42 +749,82 @@ public enum ModifierType {
 
 		@Override
 		public boolean apply(SpellCastEvent event, boolean check, CustomData customData) {
-			return check;
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'continue' modifier action.")) {
+				if (check) MagicDebug.info("Condition passed - continuing.");
+				else MagicDebug.info("Condition failed - stopping.");
+
+				return check;
+			}
 		}
 
 		@Override
 		public boolean apply(ManaChangeEvent event, boolean check, CustomData customData) {
-			return check;
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'continue' modifier action.")) {
+				if (check) MagicDebug.info("Condition passed - continuing.");
+				else MagicDebug.info("Condition failed - stopping.");
+
+				return check;
+			}
 		}
 
 		@Override
 		public boolean apply(SpellTargetEvent event, boolean check, CustomData customData) {
-			return check;
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'continue' modifier action.")) {
+				if (check) MagicDebug.info("Condition passed - continuing.");
+				else MagicDebug.info("Condition failed - stopping.");
+
+				return check;
+			}
 		}
 
 		@Override
 		public boolean apply(SpellTargetLocationEvent event, boolean check, CustomData customData) {
-			return check;
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'continue' modifier action.")) {
+				if (check) MagicDebug.info("Condition passed - continuing.");
+				else MagicDebug.info("Condition failed - stopping.");
+
+				return check;
+			}
 		}
 
 		@Override
 		public boolean apply(MagicSpellsGenericPlayerEvent event, boolean check, CustomData customData) {
-			return check;
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'continue' modifier action.")) {
+				if (check) MagicDebug.info("Condition passed - continuing.");
+				else MagicDebug.info("Condition failed - stopping.");
+
+				return check;
+			}
 		}
 
 		@Override
 		public ModifierResult apply(LivingEntity caster, ModifierResult result, CustomData customData) {
-			return result;
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'continue' modifier action.")) {
+				if (result.check()) MagicDebug.info("Condition passed - continuing.");
+				else MagicDebug.info("Condition failed - stopping.");
+
+				return result;
+			}
 		}
 
 		@Override
 		public ModifierResult apply(LivingEntity caster, LivingEntity target, ModifierResult result, CustomData customData) {
-			return result;
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'continue' modifier action.")) {
+				if (result.check()) MagicDebug.info("Condition passed - continuing.");
+				else MagicDebug.info("Condition failed - stopping.");
+
+				return result;
+			}
 		}
 
 		@Override
 		public ModifierResult apply(LivingEntity caster, Location target, ModifierResult result, CustomData customData) {
-			return result;
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'continue' modifier action.")) {
+				if (result.check()) MagicDebug.info("Condition passed - continuing.");
+				else MagicDebug.info("Condition failed - stopping.");
+
+				return result;
+			}
 		}
 
 	},
@@ -527,58 +851,114 @@ public enum ModifierType {
 
 		@Override
 		public boolean apply(SpellCastEvent event, boolean check, CustomData customData) {
-			CastData data = (CastData) customData;
-			if (check && data.isValid()) data.spell.subcast(event.getSpellData().noTargeting());
-			return true;
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'cast' modifier action.")) {
+				if (check) {
+					CastData data = (CastData) customData;
+
+					MagicDebug.info("Condition passed - casting spell.");
+					data.spell.subcast(event.getSpellData().noTargeting());
+				} else MagicDebug.info("Condition failed - continuing.");
+
+				return true;
+			}
 		}
 
 		@Override
 		public boolean apply(ManaChangeEvent event, boolean check, CustomData customData) {
-			CastData data = (CastData) customData;
-			if (check && data.isValid()) data.spell.subcast(new SpellData(event.getPlayer()));
-			return true;
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'cast' modifier action.")) {
+				if (check) {
+					CastData data = (CastData) customData;
+
+					MagicDebug.info("Condition passed - casting spell.");
+					data.spell.subcast(new SpellData(event.getPlayer()));
+				} else MagicDebug.info("Condition failed - continuing.");
+
+				return true;
+			}
 		}
 
 		@Override
 		public boolean apply(SpellTargetEvent event, boolean check, CustomData customData) {
-			CastData data = (CastData) customData;
-			if (check && data.isValid()) data.spell.subcast(event.getSpellData().noLocation());
-			return true;
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'cast' modifier action.")) {
+				if (check) {
+					CastData data = (CastData) customData;
+
+					MagicDebug.info("Condition passed - casting spell.");
+					data.spell.subcast(event.getSpellData().noLocation());
+				} else MagicDebug.info("Condition failed - continuing.");
+
+				return true;
+			}
 		}
 
 		@Override
 		public boolean apply(SpellTargetLocationEvent event, boolean check, CustomData customData) {
-			CastData data = (CastData) customData;
-			if (check && data.isValid()) data.spell.subcast(event.getSpellData().noTarget());
-			return true;
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'cast' modifier action.")) {
+				if (check) {
+					CastData data = (CastData) customData;
+
+					MagicDebug.info("Condition passed - casting spell.");
+					data.spell.subcast(event.getSpellData().noTarget());
+				} else MagicDebug.info("Condition failed - continuing.");
+
+				return true;
+			}
 		}
 
 		@Override
 		public boolean apply(MagicSpellsGenericPlayerEvent event, boolean check, CustomData customData) {
-			CastData data = (CastData) customData;
-			if (check && data.isValid()) data.spell.subcast(new SpellData(event.getPlayer()));
-			return true;
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'cast' modifier action.")) {
+				if (check) {
+					CastData data = (CastData) customData;
+
+					MagicDebug.info("Condition passed - casting spell.");
+					data.spell.subcast(new SpellData(event.getPlayer()));
+				} else MagicDebug.info("Condition failed - continuing.");
+
+				return true;
+			}
 		}
 
 		@Override
 		public ModifierResult apply(LivingEntity caster, ModifierResult result, CustomData customData) {
-			CastData data = (CastData) customData;
-			if (result.check() && data.isValid()) data.spell.subcast(result.data().noTargeting());
-			return result.check() ? result : new ModifierResult(result.data(), true);
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'cast' modifier action.")) {
+				if (result.check()) {
+					CastData data = (CastData) customData;
+
+					MagicDebug.info("Condition passed - casting spell.");
+					data.spell.subcast(result.data().noTargeting());
+				} else MagicDebug.info("Condition failed - continuing.");
+
+				return result.check(true);
+			}
 		}
 
 		@Override
 		public ModifierResult apply(LivingEntity caster, LivingEntity target, ModifierResult result, CustomData customData) {
-			CastData data = (CastData) customData;
-			if (result.check() && data.isValid()) data.spell.subcast(result.data().noLocation());
-			return result.check() ? result : new ModifierResult(result.data(), true);
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'cast' modifier action.")) {
+				if (result.check()) {
+					CastData data = (CastData) customData;
+
+					MagicDebug.info("Condition passed - casting spell.");
+					data.spell.subcast(result.data().noLocation());
+				} else MagicDebug.info("Condition failed - continuing.");
+
+				return result.check(true);
+			}
 		}
 
 		@Override
 		public ModifierResult apply(LivingEntity caster, Location target, ModifierResult result, CustomData customData) {
-			CastData data = (CastData) customData;
-			if (result.check() && data.isValid()) data.spell.subcast(result.data().noTarget());
-			return result.check() ? result : new ModifierResult(result.data(), true);
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'cast' modifier action.")) {
+				if (result.check()) {
+					CastData data = (CastData) customData;
+
+					MagicDebug.info("Condition passed - casting spell.");
+					data.spell.subcast(result.data().noTarget());
+				} else MagicDebug.info("Condition failed - continuing.");
+
+				return result.check(true);
+			}
 		}
 
 		@Override
@@ -600,7 +980,7 @@ public enum ModifierType {
 
 	CAST_INSTEAD(true, "castinstead") {
 
-		static class CustomInsteadData extends CustomData {
+		static class CastData extends CustomData {
 
 			public String invalidText;
 
@@ -620,72 +1000,124 @@ public enum ModifierType {
 
 		@Override
 		public boolean apply(SpellCastEvent event, boolean check, CustomData customData) {
-			CustomInsteadData data = (CustomInsteadData) customData;
-			if (check && data.isValid()) {
-				data.spell.subcast(event.getSpellData().noTargeting());
-				event.setCancelled(true);
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'castinstead' modifier action.")) {
+				if (check) {
+					CastData data = (CastData) customData;
+
+					MagicDebug.info("Condition passed - casting spell and cancelling spell cast.");
+					data.spell.subcast(event.getSpellData().noTargeting());
+					event.setCancelled(true);
+				} else MagicDebug.info("Condition failed - continuing.");
+
+				return !check;
 			}
-			return !check;
 		}
 
 		@Override
 		public boolean apply(ManaChangeEvent event, boolean check, CustomData customData) {
-			CustomInsteadData data = (CustomInsteadData) customData;
-			if (check && data.isValid()) data.spell.subcast(new SpellData(event.getPlayer()));
-			return !check;
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'castinstead' modifier action.")) {
+				if (check) {
+					CastData data = (CastData) customData;
+
+					MagicDebug.info("Condition passed - casting spell and cancelling mana change.");
+					data.spell.subcast(new SpellData(event.getPlayer()));
+					event.setNewAmount(event.getOldAmount());
+				} else MagicDebug.info("Condition failed - continuing.");
+
+				return !check;
+			}
 		}
 
 		@Override
 		public boolean apply(SpellTargetEvent event, boolean check, CustomData customData) {
-			CustomInsteadData data = (CustomInsteadData) customData;
-			if (check && data.isValid()) {
-				data.spell.subcast(event.getSpellData().noLocation());
-				event.setCastCancelled(true);
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'castinstead' modifier action.")) {
+				if (check) {
+					CastData data = (CastData) customData;
+
+					MagicDebug.info("Condition passed - casting spell, and cancelling entity targeting and spell cast.");
+					data.spell.subcast(event.getSpellData().noLocation());
+					event.setCancelled(true);
+				} else MagicDebug.info("Condition failed - continuing.");
+
+				return !check;
 			}
-			return !check;
 		}
 
 		@Override
 		public boolean apply(SpellTargetLocationEvent event, boolean check, CustomData customData) {
-			CustomInsteadData data = (CustomInsteadData) customData;
-			if (check && data.isValid()) {
-				data.spell.subcast(event.getSpellData().noTarget());
-				event.setCastCancelled(true);
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'castinstead' modifier action.")) {
+				if (check) {
+					CastData data = (CastData) customData;
+
+					MagicDebug.info("Condition passed - casting spell and cancelling location targeting.");
+					data.spell.subcast(event.getSpellData().noTarget());
+					event.setCancelled(true);
+				} else MagicDebug.info("Condition failed - continuing.");
+
+				return !check;
 			}
-			return !check;
 		}
 
 		@Override
 		public boolean apply(MagicSpellsGenericPlayerEvent event, boolean check, CustomData customData) {
-			CustomInsteadData data = (CustomInsteadData) customData;
-			if (check && data.isValid()) data.spell.subcast(new SpellData(event.getPlayer()));
-			return !check;
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'castinstead' modifier action.")) {
+				if (check) {
+					CastData data = (CastData) customData;
+
+					MagicDebug.info("Condition passed - casting spell and cancelling.");
+					data.spell.subcast(new SpellData(event.getPlayer()));
+					event.setCancelled(true);
+				} else MagicDebug.info("Condition failed - continuing.");
+
+				return !check;
+			}
 		}
 
 		@Override
 		public ModifierResult apply(LivingEntity caster, ModifierResult result, CustomData customData) {
-			CustomInsteadData data = (CustomInsteadData) customData;
-			if (result.check() && data.isValid()) data.spell.subcast(result.data().noTargeting());
-			return new ModifierResult(result.data(), !result.check());
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'castinstead' modifier action.")) {
+				if (result.check()) {
+					CastData data = (CastData) customData;
+
+					MagicDebug.info("Condition passed - casting spell and stopping.");
+					data.spell.subcast(result.data().noTargeting());
+				} else MagicDebug.info("Condition failed - continuing.");
+
+				return new ModifierResult(result.data(), !result.check());
+			}
 		}
 
 		@Override
 		public ModifierResult apply(LivingEntity caster, LivingEntity target, ModifierResult result, CustomData customData) {
-			CustomInsteadData data = (CustomInsteadData) customData;
-			if (result.check() && data.isValid()) data.spell.subcast(result.data().noLocation());
-			return new ModifierResult(result.data(), !result.check());
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'castinstead' modifier action.")) {
+				if (result.check()) {
+					CastData data = (CastData) customData;
+
+					MagicDebug.info("Condition passed - casting spell and stopping.");
+					data.spell.subcast(result.data().noLocation());
+				} else MagicDebug.info("Condition failed - continuing.");
+
+				return new ModifierResult(result.data(), !result.check());
+			}
 		}
 
 		@Override
 		public ModifierResult apply(LivingEntity caster, Location target, ModifierResult result, CustomData customData) {
-			CustomInsteadData data = (CustomInsteadData) customData;
-			if (result.check() && data.isValid()) data.spell.subcast(result.data().noTarget());
-			return new ModifierResult(result.data(), !result.check());
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'castinstead' modifier action.")) {
+				if (result.check()) {
+					CastData data = (CastData) customData;
+
+					MagicDebug.info("Condition passed - casting spell and stopping.");
+					data.spell.subcast(result.data().noTarget());
+				} else MagicDebug.info("Condition failed - continuing.");
+
+				return new ModifierResult(result.data(), !result.check());
+			}
 		}
 
 		@Override
 		public CustomData buildCustomActionData(String text) {
-			CustomInsteadData data = new CustomInsteadData();
+			CastData data = new CastData();
 			if (text == null) {
 				data.invalidText = "No spell defined.";
 				return data;
@@ -722,71 +1154,69 @@ public enum ModifierType {
 
 		}
 
-		private void modifyVariable(CustomData customData, SpellData spellData) {
-			if (!customData.isValid()) return;
-			VariableModData data = (VariableModData) customData;
+		private void modifyVariable(boolean check, CustomData customData, SpellData spellData) {
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'variable' modifier action.")) {
+				if (!check) {
+					MagicDebug.info("Condition failed - continuing.");
+					return;
+				}
 
-			LivingEntity owner = data.variableOwner == VariableOwner.CASTER ? spellData.caster() : spellData.target();
-			if (!(owner instanceof Player playerOwner)) return;
+				VariableModData data = (VariableModData) customData;
 
-			MagicSpells.getVariableManager().processVariableMods(data.variable, data.mod, playerOwner, spellData);
+				LivingEntity owner = data.variableOwner == VariableOwner.CASTER ? spellData.caster() : spellData.target();
+				if (!(owner instanceof Player playerOwner)) return;
+
+				MagicDebug.info("Condition passed - performing variable mod.");
+				MagicSpells.getVariableManager().processVariableMods(data.variable, data.mod, playerOwner, spellData);
+			}
 		}
 
 		@Override
 		public boolean apply(SpellCastEvent event, boolean check, CustomData customData) {
-			if (check) modifyVariable(customData, event.getSpellData());
+			modifyVariable(check, customData, event.getSpellData());
 			return true;
 		}
 
 		@Override
 		public boolean apply(ManaChangeEvent event, boolean check, CustomData customData) {
-			if (check) modifyVariable(customData, new SpellData(event.getPlayer()));
+			modifyVariable(check, customData, new SpellData(event.getPlayer()));
 			return true;
 		}
 
 		@Override
 		public boolean apply(SpellTargetEvent event, boolean check, CustomData customData) {
-			if (check) modifyVariable(customData, event.getSpellData());
+			modifyVariable(check, customData, event.getSpellData());
 			return true;
 		}
 
 		@Override
 		public boolean apply(SpellTargetLocationEvent event, boolean check, CustomData customData) {
-			if (check) modifyVariable(customData, event.getSpellData());
+			modifyVariable(check, customData, event.getSpellData());
 			return true;
 		}
 
 		@Override
 		public boolean apply(MagicSpellsGenericPlayerEvent event, boolean check, CustomData customData) {
-			if (check) modifyVariable(customData, new SpellData(event.getPlayer()));
+			modifyVariable(check, customData, new SpellData(event.getPlayer()));
 			return true;
 		}
 
 		@Override
 		public ModifierResult apply(LivingEntity caster, ModifierResult result, CustomData customData) {
-			if (result.check()) {
-				modifyVariable(customData, result.data());
-				return result;
-			}
-			return new ModifierResult(result.data(), true);
+			modifyVariable(result.check(), customData, result.data());
+			return result.check(true);
 		}
 
 		@Override
 		public ModifierResult apply(LivingEntity caster, LivingEntity target, ModifierResult result, CustomData customData) {
-			if (result.check()) {
-				modifyVariable(customData, result.data());
-				return result;
-			}
-			return new ModifierResult(result.data(), true);
+			modifyVariable(result.check(), customData, result.data());
+			return result.check(true);
 		}
 
 		@Override
 		public ModifierResult apply(LivingEntity caster, Location target, ModifierResult result, CustomData customData) {
-			if (result.check()) {
-				modifyVariable(customData, result.data());
-				return result;
-			}
-			return new ModifierResult(result.data(), true);
+			modifyVariable(result.check(), customData, result.data());
+			return result.check(true);
 		}
 
 		@Override
@@ -847,71 +1277,71 @@ public enum ModifierType {
 
 		}
 
-		private void setVariable(CustomData customData, SpellData spellData) {
-			if (!customData.isValid()) return;
-			StringData data = (StringData) customData;
+		private void setVariable(boolean check, CustomData customData, SpellData spellData) {
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'string' modifier action.")) {
+				if (!check) {
+					MagicDebug.info("Condition failed - continuing.");
+					return;
+				}
 
-			if (!(spellData.caster() instanceof Player caster)) return;
+				StringData data = (StringData) customData;
+				if (!(spellData.caster() instanceof Player caster)) {
+					MagicDebug.info("Condition passed, but target is not a player - continuing.");
+					return;
+				}
 
-			String value = MagicSpells.doReplacements(data.value, spellData);
-			MagicSpells.getVariableManager().set(data.variable, caster.getName(), value);
+				String value = MagicSpells.doReplacements(data.value, spellData);
+				MagicDebug.info("Condition passed - setting variable '%s' to value '%s'.", data.variable, value);
+				MagicSpells.getVariableManager().set(data.variable, caster.getName(), value);
+			}
 		}
 
 		@Override
 		public boolean apply(SpellCastEvent event, boolean check, CustomData customData) {
-			if (check) setVariable(customData, event.getSpellData());
+			setVariable(check, customData, event.getSpellData());
 			return true;
 		}
 
 		@Override
 		public boolean apply(ManaChangeEvent event, boolean check, CustomData customData) {
-			if (check) setVariable(customData, new SpellData(event.getPlayer()));
+			setVariable(check, customData, new SpellData(event.getPlayer()));
 			return true;
 		}
 
 		@Override
 		public boolean apply(SpellTargetEvent event, boolean check, CustomData customData) {
-			if (check) setVariable(customData, event.getSpellData());
+			setVariable(check, customData, event.getSpellData());
 			return true;
 		}
 
 		@Override
 		public boolean apply(SpellTargetLocationEvent event, boolean check, CustomData customData) {
-			if (check) setVariable(customData, event.getSpellData());
+			setVariable(check, customData, event.getSpellData());
 			return true;
 		}
 
 		@Override
 		public boolean apply(MagicSpellsGenericPlayerEvent event, boolean check, CustomData customData) {
-			if (check) setVariable(customData, new SpellData(event.getPlayer()));
+			setVariable(check, customData, new SpellData(event.getPlayer()));
 			return true;
 		}
 
 		@Override
 		public ModifierResult apply(LivingEntity caster, ModifierResult result, CustomData customData) {
-			if (result.check()) {
-				setVariable(customData, result.data());
-				return result;
-			}
-			return new ModifierResult(result.data(), true);
+			setVariable(result.check(), customData, result.data());
+			return result.check(true);
 		}
 
 		@Override
 		public ModifierResult apply(LivingEntity caster, LivingEntity target, ModifierResult result, CustomData customData) {
-			if (result.check()) {
-				setVariable(customData, result.data());
-				return result;
-			}
-			return new ModifierResult(result.data(), true);
+			setVariable(result.check(), customData, result.data());
+			return result.check(true);
 		}
 
 		@Override
 		public ModifierResult apply(LivingEntity caster, Location target, ModifierResult result, CustomData customData) {
-			if (result.check()) {
-				setVariable(customData, result.data());
-				return result;
-			}
-			return new ModifierResult(result.data(), true);
+			setVariable(result.check(), customData, result.data());
+			return result.check(true);
 		}
 
 		@Override
@@ -955,66 +1385,62 @@ public enum ModifierType {
 
 		@Override
 		public boolean apply(SpellCastEvent event, boolean check, CustomData customData) {
-			if (check && customData.isValid())
-				MagicSpells.sendMessage(((MessageData) customData).message, event.getCaster(), event.getSpellData());
-
+			sendMessage(check, customData, event.getCaster(), event.getSpellData());
 			return true;
 		}
 
 		@Override
 		public boolean apply(ManaChangeEvent event, boolean check, CustomData customData) {
-			if (check && customData.isValid())
-				MagicSpells.sendMessage(event.getPlayer(), ((MessageData) customData).message);
-
+			sendMessage(check, customData, event.getPlayer(), SpellData.NULL);
 			return true;
 		}
 
 		@Override
 		public boolean apply(SpellTargetEvent event, boolean check, CustomData customData) {
-			if (check && customData.isValid())
-				MagicSpells.sendMessage(((MessageData) customData).message, event.getCaster(), event.getSpellData());
-
+			sendMessage(check, customData, event.getCaster(), event.getSpellData());
 			return true;
 		}
 
 		@Override
 		public boolean apply(SpellTargetLocationEvent event, boolean check, CustomData customData) {
-			if (check && customData.isValid())
-				MagicSpells.sendMessage(((MessageData) customData).message, event.getCaster(), event.getSpellData());
-
+			sendMessage(check, customData, event.getCaster(), event.getSpellData());
 			return true;
 		}
 
 		@Override
 		public boolean apply(MagicSpellsGenericPlayerEvent event, boolean check, CustomData customData) {
-			if (check && customData.isValid())
-				MagicSpells.sendMessage(event.getPlayer(), ((MessageData) customData).message);
-
+			sendMessage(check, customData, event.getPlayer(), SpellData.NULL);
 			return true;
 		}
 
 		@Override
 		public ModifierResult apply(LivingEntity caster, ModifierResult result, CustomData customData) {
-			if (result.check() && customData.isValid())
-				MagicSpells.sendMessage(((MessageData) customData).message, caster, result.data());
-
-			return new ModifierResult(result.data(), true);
+			sendMessage(result.check(), customData, caster, result.data());
+			return result.check(true);
 		}
 
 		@Override
 		public ModifierResult apply(LivingEntity caster, LivingEntity target, ModifierResult result, CustomData customData) {
-			if (result.check() && customData.isValid())
-				MagicSpells.sendMessage(((MessageData) customData).message, caster, result.data());
-
-			return new ModifierResult(result.data(), true);
+			sendMessage(result.check(), customData, caster, result.data());
+			return result.check(true);
 		}
 
 		@Override
 		public ModifierResult apply(LivingEntity caster, Location target, ModifierResult result, CustomData customData) {
-			if (result.check() && customData.isValid())
-				MagicSpells.sendMessage(((MessageData) customData).message, caster, result.data());
+			sendMessage(result.check(), customData, caster, result.data());
+			return result.check(true);
+		}
 
-			return new ModifierResult(result.data(), true);
+		private void sendMessage(boolean check, CustomData customData, LivingEntity caster, SpellData data) {
+			try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Performing 'message' modifier action.")) {
+				if (!check) {
+					MagicDebug.info("Condition failed - continuing.");
+					return;
+				}
+
+				MagicDebug.info("Condition passed - messaging.");
+				MagicSpells.sendMessage(((MessageData) customData).message, caster, data);
+			}
 		}
 
 		@Override

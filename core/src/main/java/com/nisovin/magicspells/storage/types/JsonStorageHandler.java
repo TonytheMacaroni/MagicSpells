@@ -169,7 +169,7 @@ public class JsonStorageHandler implements StorageHandler {
 						continue;
 					}
 
-					try (var ignored1 = MagicDebug.section(spell.getDebugConfig(), "Adding spell '%s'.", data[0])) {
+					try (var ignored1 = MagicDebug.section(spell, "Adding spell '%s'.", data[0])) {
 						spellbook.addSpell(spell);
 
 						if (data.length == 1) {

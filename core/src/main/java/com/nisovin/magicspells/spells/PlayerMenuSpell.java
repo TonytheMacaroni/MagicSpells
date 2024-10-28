@@ -69,8 +69,6 @@ public class PlayerMenuSpell extends TargetedSpell implements TargetedEntitySpel
 	private Subspell spellOnSneakLeft;
 	private Subspell spellOnSneakRight;
 
-	private final List<String> playerModifiersStrings;
-
 	private ModifierSet playerModifiers;
 
 	private final ItemStack previousPageItem;
@@ -105,8 +103,6 @@ public class PlayerMenuSpell extends TargetedSpell implements TargetedEntitySpel
 		spellOnSneakLeftName = getConfigString("spell-on-sneak-left", "");
 		spellOnSneakRightName = getConfigString("spell-on-sneak-right", "");
 
-		playerModifiersStrings = getConfigStringList("player-modifiers", null);
-
 		previousPageItem = createItem("previous-page-item", "Previous Page");
 		nextPageItem = createItem("next-page-item", "Next Page");
 	}
@@ -115,8 +111,7 @@ public class PlayerMenuSpell extends TargetedSpell implements TargetedEntitySpel
 	public void initializeModifiers() {
 		super.initializeModifiers();
 
-		if (playerModifiersStrings == null || playerModifiersStrings.isEmpty()) return;
-		playerModifiers = new ModifierSet(playerModifiersStrings, this);
+		playerModifiers = initModifierSet("player-modifiers");
 	}
 
 	@Override

@@ -324,12 +324,11 @@ public class MagicConfig {
 	}
 
 	public boolean isSection(String path) {
-		return mainConfig.contains(path) && mainConfig.isConfigurationSection(path);
+		return mainConfig.isConfigurationSection(path);
 	}
 
 	public ConfigurationSection getSection(String path) {
-		if (mainConfig.contains(path)) return mainConfig.getConfigurationSection(path);
-		return null;
+		return mainConfig.getConfigurationSection(path);
 	}
 
 	public Set<String> getSpellKeys() {

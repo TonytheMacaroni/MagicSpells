@@ -25,6 +25,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
 
+import com.nisovin.magicspells.Spell;
 import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.util.config.ConfigData;
 
@@ -47,6 +48,22 @@ public class MagicDebug {
 		consumer.accept(builder);
 
 		return builder.build();
+	}
+
+	@NotNull
+	public static Section section(@NotNull Consumer<Section.Builder> consumer, @NotNull @PrintFormat String message, @Nullable Object @NotNull ... args) {
+		Section.Builder builder = new Section.Builder();
+		consumer.accept(builder);
+
+		return builder.message(message, args).build();
+	}
+
+	@NotNull
+	public static Section section(@NotNull DebugCategory category, @NotNull Consumer<Section.Builder> consumer, @NotNull @PrintFormat String message, @Nullable Object @NotNull ... args) {
+		Section.Builder builder = new Section.Builder();
+		consumer.accept(builder);
+
+		return builder.category(category).message(message, args).build();
 	}
 
 	@NotNull
@@ -198,6 +215,10 @@ public class MagicDebug {
 		return section.config();
 	}
 
+	public static DebugPath pushPath(int index, @NotNull DebugPath.Type type) {
+		return pushPath(String.valueOf(index), type, type != DebugPath.Type.FILE);
+	}
+
 	public static DebugPath pushPath(@NotNull String node, @NotNull DebugPath.Type type) {
 		return pushPath(node, type, type != DebugPath.Type.FILE);
 	}
@@ -239,6 +260,18 @@ public class MagicDebug {
 		}
 
 		paths.addLast(path);
+	}
+
+	private static void pushPaths(@NotNull ArrayDeque<DebugPath> paths, @NotNull String pathString, @NotNull DebugPath.Type type, boolean concrete) {
+		Preconditions.checkNotNull(pathString, "Path cannot be null");
+
+		pathString = MagicDebug.resolveShortPath(pathString).get();
+
+		String[] pathStrings = pathString.split("\\.");
+		for (int i = 0; i < pathStrings.length - 1; i++)
+			MagicDebug.pushPath(paths, new DebugPath(pathStrings[i], DebugPath.Type.SECTION, concrete));
+
+		MagicDebug.pushPath(paths, new DebugPath(pathStrings[pathStrings.length - 1], type, concrete));
 	}
 
 	public static void popPath(@NotNull DebugPath path) {
@@ -343,6 +376,11 @@ public class MagicDebug {
 	}
 
 	@NotNull
+	public static Supplier<String> resolvePath(@NotNull String subPath) {
+		return resolvePath(null, subPath);
+	}
+
+	@NotNull
 	public static Supplier<String> resolvePath(@Nullable ConfigurationSection config, @NotNull String subPath) {
 		return () -> {
 			String currentPath = subPath;
@@ -385,6 +423,7 @@ public class MagicDebug {
 			else if (arg instanceof Player player) args[i] = player.getName();
 			else if (arg instanceof Entity entity) args[i] = entity.getUniqueId();
 			else if (arg instanceof CommandSender sender) args[i] = sender.getName();
+			else if (arg instanceof Spell spell) args[i] = spell.getInternalName();
 		}
 
 		return args;
@@ -411,6 +450,16 @@ public class MagicDebug {
 
 		public Section pushPath(@NotNull DebugPath path) {
 			MagicDebug.pushPath(paths, path);
+			return this;
+		}
+
+		public Section pushPaths(@NotNull String path, @NotNull DebugPath.Type type) {
+			MagicDebug.pushPaths(paths, path, type, type != DebugPath.Type.FILE);
+			return this;
+		}
+
+		public Section pushPaths(@NotNull String path, @NotNull DebugPath.Type type, boolean concrete) {
+			MagicDebug.pushPaths(paths, path, type, concrete);
 			return this;
 		}
 
@@ -453,6 +502,11 @@ public class MagicDebug {
 				return this;
 			}
 
+			public Builder resetPath() {
+				paths.clear();
+				return this;
+			}
+
 			public Builder path(@NotNull String node, @NotNull DebugPath.Type type) {
 				MagicDebug.pushPath(paths, new DebugPath(node, type, type != DebugPath.Type.FILE));
 				return this;
@@ -460,6 +514,16 @@ public class MagicDebug {
 
 			public Builder path(@NotNull String node, @NotNull DebugPath.Type type, boolean concrete) {
 				MagicDebug.pushPath(paths, new DebugPath(node, type, concrete));
+				return this;
+			}
+
+			public Builder paths(@NotNull String path, @NotNull DebugPath.Type type) {
+				MagicDebug.pushPaths(paths, path, type, type != DebugPath.Type.FILE);
+				return this;
+			}
+
+			public Builder paths(@NotNull String path, @NotNull DebugPath.Type type, boolean concrete) {
+				MagicDebug.pushPaths(paths, path, type, concrete);
 				return this;
 			}
 
@@ -473,6 +537,11 @@ public class MagicDebug {
 
 			public Builder suppressWarnings(boolean suppressWarnings) {
 				this.suppressWarnings = suppressWarnings;
+				return this;
+			}
+
+			public Builder configure(Consumer<Builder> consumer) {
+				consumer.accept(this);
 				return this;
 			}
 

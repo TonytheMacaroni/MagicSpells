@@ -73,7 +73,7 @@ public class Spellbook {
 				boolean added = false;
 
 				for (Spell spell : MagicSpells.getSpellsOrdered()) {
-					try (var ignored1 = MagicDebug.section(spell.getDebugConfig(), "Attempting to grant spell '%s'.", spell.getInternalName())) {
+					try (var ignored1 = MagicDebug.section(spell, "Attempting to grant spell '%s'.", spell.getInternalName())) {
 						if (spell.isHelperSpell()) {
 							MagicDebug.info("Skipping spell '%s' - helper spells cannot be granted.", spell.getInternalName());
 							continue;
@@ -101,7 +101,7 @@ public class Spellbook {
 			boolean added = false;
 
 			for (Spell spell : MagicSpells.getSpellsOrdered()) {
-				try (var ignored1 = MagicDebug.section(spell.getDebugConfig(), "Attempting to grant spell '%s'.", spell.getInternalName())) {
+				try (var ignored1 = MagicDebug.section(spell, "Attempting to grant spell '%s'.", spell.getInternalName())) {
 					if (!spell.isAlwaysGranted() && !Perm.GRANT.has(player, spell)) {
 						MagicDebug.info("Skipping spell '%s' - player does not have the required grant permission.", spell.getInternalName());
 						continue;
@@ -127,7 +127,7 @@ public class Spellbook {
 	}
 
 	public boolean canLearn(Spell spell) {
-		try (var ignored = MagicDebug.section(DebugCategory.SPELLBOOK, spell.getDebugConfig(), "Checking if player '%s' can learn spell '%s'.", player.getName(), spell.getInternalName())) {
+		try (var ignored = MagicDebug.section(DebugCategory.SPELLBOOK, spell, "Checking if player '%s' can learn spell '%s'.", player.getName(), spell.getInternalName())) {
 			if (spell.isHelperSpell()) {
 				MagicDebug.info("Spell is a helper spell and cannot be learned - check failed.");
 				return false;
@@ -182,7 +182,7 @@ public class Spellbook {
 	}
 
 	public boolean canCast(Spell spell) {
-		try (var ignored = MagicDebug.section(DebugCategory.SPELLBOOK, spell.getDebugConfig(), "Checking if '%s' can cast spell '%s'.", player.getName(), spell.getInternalName())) {
+		try (var ignored = MagicDebug.section(DebugCategory.SPELLBOOK, spell, "Checking if '%s' can cast spell '%s'.", player.getName(), spell.getInternalName())) {
 			if (MagicSpells.hasCastPermsIgnored()) {
 				MagicDebug.info("Cast perms are being ignored - check passed.");
 				return true;
@@ -204,7 +204,7 @@ public class Spellbook {
 	}
 
 	public boolean canTeach(Spell spell) {
-		try (var ignored = MagicDebug.section(DebugCategory.SPELLBOOK, spell.getDebugConfig(), "Checking if '%s' can teach spell '%s'.", player.getName(), spell.getInternalName())) {
+		try (var ignored = MagicDebug.section(DebugCategory.SPELLBOOK, spell, "Checking if '%s' can teach spell '%s'.", player.getName(), spell.getInternalName())) {
 			if (spell.isHelperSpell()) {
 				MagicDebug.info("Spell is a helper spell - check failed.");
 				return false;
@@ -235,7 +235,7 @@ public class Spellbook {
 	}
 
 	public void addSpell(@NotNull Spell spell) {
-		try (var ignored = MagicDebug.section(DebugCategory.SPELLBOOK, spell.getDebugConfig(), "Adding spell '%s' to spellbook for player '%s'.", spell.getInternalName(), player.getName())) {
+		try (var ignored = MagicDebug.section(DebugCategory.SPELLBOOK, spell, "Adding spell '%s' to spellbook for player '%s'.", spell.getInternalName(), player.getName())) {
 			spells.add(spell);
 
 			spell.initializePlayerEffectTracker(player);
@@ -267,14 +267,14 @@ public class Spellbook {
 	}
 
 	public void addCustomBinding(@NotNull CastItem item, @NotNull Spell spell) {
-		try (var ignored = MagicDebug.section(DebugCategory.SPELLBOOK, spell.getDebugConfig(), "Adding a custom binding for spell '%s' to cast item '%s'.", spell.getInternalName(), item)) {
+		try (var ignored = MagicDebug.section(DebugCategory.SPELLBOOK, spell, "Adding a custom binding for spell '%s' to cast item '%s'.", spell.getInternalName(), item)) {
 			ItemBindings bindings = itemBindings.computeIfAbsent(item, i -> new ItemBindings());
 			bindings.addCustomBinding(spell);
 		}
 	}
 
 	public boolean removeCustomBinding(@NotNull CastItem item, @NotNull Spell spell) {
-		try (var ignored = MagicDebug.section(DebugCategory.SPELLBOOK, spell.getDebugConfig(), "Removing a custom binding for spell '%s' from cast item '%s'.", spell.getInternalName(), item)) {
+		try (var ignored = MagicDebug.section(DebugCategory.SPELLBOOK, spell, "Removing a custom binding for spell '%s' from cast item '%s'.", spell.getInternalName(), item)) {
 			ItemBindings bindings = itemBindings.get(item);
 			if (bindings != null && bindings.removeCustomBinding(spell)) {
 				if (bindings.isEmpty()) itemBindings.remove(item);
@@ -335,7 +335,7 @@ public class Spellbook {
 		try (var ignored = MagicDebug.section(DebugCategory.SPELLBOOK, "Adding default bindings to spellbook.")) {
 			Multimap<CastItem, Spell> defaultBindings = HashMultimap.create();
 			for (Spell spell : spells) {
-				try (var ignored1 = MagicDebug.section(spell.getDebugConfig(), "Checking cast items for spell '%s'.", spell.getInternalName())) {
+				try (var ignored1 = MagicDebug.section(spell, "Checking cast items for spell '%s'.", spell.getInternalName())) {
 					for (CastItem item : spell.getCastItems()) {
 						if (item == null) {
 							MagicDebug.info("No cast items found.");
@@ -360,7 +360,7 @@ public class Spellbook {
 	}
 
 	public void removeSpell(Spell spell) {
-		try (var ignored = MagicDebug.section(DebugCategory.SPELLBOOK, spell.getDebugConfig(), "Removing spell '%s' from spellbook of player '%s'.", spell.getInternalName(), player.getName())) {
+		try (var ignored = MagicDebug.section(DebugCategory.SPELLBOOK, spell, "Removing spell '%s' from spellbook of player '%s'.", spell.getInternalName(), player.getName())) {
 			spells.remove(spell);
 
 			spell.unloadPlayerEffectTracker(player);
@@ -375,7 +375,7 @@ public class Spellbook {
 	}
 
 	public boolean hasSpell(Spell spell, boolean checkGranted) {
-		try (var ignored = MagicDebug.section(DebugCategory.SPELLBOOK, spell.getDebugConfig(), "Checking if player '%s' has spell '%s'.", player.getName(), spell.getInternalName())) {
+		try (var ignored = MagicDebug.section(DebugCategory.SPELLBOOK, spell, "Checking if player '%s' has spell '%s'.", player.getName(), spell.getInternalName())) {
 			if (MagicSpells.ignoreGrantPerms() && MagicSpells.ignoreGrantPermsFakeValue()) {
 				MagicDebug.info("Ignoring grant permissions, and using the default value of 'true' - check passed.");
 				return true;
