@@ -143,36 +143,41 @@ public class MenuSpell extends TargetedSpell implements TargetedEntitySpell, Tar
 	}
 
 	@Override
-	public void initializeModifiers() {
-		super.initializeModifiers();
-
-		for (MenuOption option : options.values()) {
-			if (option.modifierList != null) option.menuOptionModifiers = new ModifierSet(option.modifierList, this);
-		}
-	}
-
-	@Override
 	public void initialize() {
 		super.initialize();
 
-		DebugPath optionsPath = MagicDebug.pushPath("options", DebugPath.Type.SECTION);
-		try {
+		try (var ignored = MagicDebug.section("Initializing 'options'.")
+			.pushPath("options", DebugPath.Type.SECTION)
+		) {
 			for (MenuOption option : options.values()) {
-				DebugPath optionPath = MagicDebug.pushPath(option.menuOptionName, DebugPath.Type.SECTION);
-
-				try {
+			    try (var ignored1 = MagicDebug.section("Initializing option '%s'.", option.menuOptionName)
+					.pushPath(option.menuOptionName, DebugPath.Type.SECTION)
+				) {
 					option.spell = initSubspell(option.spellName, true, "spell");
 					option.spellRight = initSubspell(option.spellRightName, true, "spell-right");
 					option.spellSneakLeft = initSubspell(option.spellSneakLeftName, true, "spell-sneak-left");
 					option.spellSneakRight = initSubspell(option.spellSneakRightName, true, "spell-sneak-right");
 					option.spellDrop = initSubspell(option.spellDropName, true, "spell-drop");
 					option.spellSwap = initSubspell(option.spellSwapName, true, "spell-swap");
-				} finally {
-					MagicDebug.popPath(optionPath);
 				}
 			}
-		} finally {
-			MagicDebug.popPath(optionsPath);
+		}
+	}
+
+	@Override
+	public void initializeModifiers() {
+		super.initializeModifiers();
+
+		try (var ignored = MagicDebug.section("Initializing option modifiers.")
+			.pushPath("options", DebugPath.Type.SECTION)
+		) {
+			for (MenuOption option : options.values()) {
+				try (var ignored1 = MagicDebug.section("Initializing 'modifiers' for option '%s'.", option.menuOptionName)
+					.pushPath(option.menuOptionName, DebugPath.Type.SECTION)
+				) {
+					option.menuOptionModifiers = initModifierSet("options." + option.menuOptionName + ".modifiers");
+				}
+			}
 		}
 	}
 

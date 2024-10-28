@@ -80,7 +80,6 @@ public class ProjectileSpell extends InstantSpell implements TargetedLocationSpe
 	private Subspell entityLocationSpell;
 
 	private ModifierSet projectileModifiers;
-	private List<String> projectileModifiersStrings;
 
 	public ProjectileSpell(MagicConfig config, String spellName) {
 		super(config, spellName);
@@ -124,18 +123,13 @@ public class ProjectileSpell extends InstantSpell implements TargetedLocationSpe
 		projectileName = getConfigDataComponent("projectile-name", null);
 
 		arrowColor = ConfigDataUtil.getColor(config.getMainConfig(), internalKey + "arrow-color", null);
-
-		projectileModifiersStrings = getConfigStringList("projectile-modifiers", null);
 	}
 
 	@Override
 	public void initializeModifiers() {
 		super.initializeModifiers();
 
-		if (projectileModifiersStrings != null && !projectileModifiersStrings.isEmpty()) {
-			projectileModifiers = new ModifierSet(projectileModifiersStrings, this);
-			projectileModifiersStrings = null;
-		}
+		projectileModifiers = initModifierSet("projectile-modifiers");
 	}
 
 	@Override

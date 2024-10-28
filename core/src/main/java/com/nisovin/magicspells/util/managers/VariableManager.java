@@ -21,7 +21,9 @@ import org.bukkit.configuration.ConfigurationSection;
 import com.nisovin.magicspells.util.*;
 import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.variables.*;
+import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.variables.meta.*;
+import com.nisovin.magicspells.debug.DebugCategory;
 import com.nisovin.magicspells.handlers.DebugHandler;
 import com.nisovin.magicspells.variables.variabletypes.*;
 
@@ -271,7 +273,7 @@ public class VariableManager {
 			if (bossBarColor == null) bossBarColor = BarColor.PURPLE;
 			if (bossBarNamespaceKey == null || bossBarNamespaceKey.isEmpty()) bossBarNamespaceKey = MagicSpells.getBossBarManager().getNamespaceKeyVariable();
 
-			variable.init(def, min, max, perm, objective, expBar, bossBarTitle, bossBarStyle, bossBarColor, bossBarNamespaceKey);
+			variable.init(var, def, min, max, perm, objective, expBar, bossBarTitle, bossBarStyle, bossBarColor, bossBarNamespaceKey);
 			variable.loadExtraData(varSection);
 			variables.put(var, variable);
 			MagicSpells.debug(2, "Loaded variable " + var);
@@ -615,65 +617,93 @@ public class VariableManager {
 
 	@Deprecated
 	public String processVariableMods(String var, VariableMod mod, Player playerToMod, Player caster, Player target) {
-		return processVariableMods(var, mod, playerToMod, new SpellData(caster, target, 1f, null));
+		return processVariableMods(var, mod, playerToMod, new SpellData(caster, target));
 	}
 
 	public String processVariableMods(String var, VariableMod mod, Player playerToMod, SpellData data) {
-		if (mod == null) return "0";
+		if (mod == null) {
+			MagicDebug.info(DebugCategory.VARIABLE_MODIFIERS, "No variable mod specified.");
+			return "0";
+		}
 
 		Variable variable = getVariable(var);
-		if (variable == null) return "0";
+		if (variable == null) {
+			MagicDebug.info(DebugCategory.VARIABLE_MODIFIERS, "Invalid variable '%s' specified.", var);
+			return "0";
+		}
 
 		return processVariableMods(variable, mod, playerToMod, data);
 	}
 
 	public String processVariableMods(Variable variable, VariableMod mod, Player playerToMod, SpellData data) {
-		VariableMod.Operation op = mod.getOperation();
+		try (var ignored = MagicDebug.section(DebugCategory.VARIABLE_MODIFIERS, "Performing variable modifier '%s' on variable '%s'.", mod, variable)) {
+			VariableMod.Operation op = mod.getOperation();
+			MagicDebug.info("Operation: %s", op);
 
-		if (playerToMod == null && !(variable instanceof GlobalVariable || variable instanceof GlobalStringVariable))
-			return "0";
+			if (playerToMod == null && !(variable instanceof GlobalVariable || variable instanceof GlobalStringVariable)) {
+				MagicDebug.info("Attempted to modify non-global variable without a player.");
+				return "0";
+			}
 
-		String playerToModName = playerToMod == null ? null : playerToMod.getName();
+			String playerToModName = playerToMod == null ? null : playerToMod.getName();
 
-		if (variable instanceof PlayerStringVariable || variable instanceof GlobalStringVariable) {
-			switch (op) {
-				case SET -> {
-					String value = mod.getStringValue(data);
+			if (variable instanceof PlayerStringVariable || variable instanceof GlobalStringVariable) {
+				switch (op) {
+					case SET -> {
+						String value = mod.getStringValue(data);
 
-					if (value.equals(variable.getDefaultStringValue())) reset(variable, playerToMod);
-					else set(variable, playerToModName, value);
+						if (value.equals(variable.getDefaultStringValue())) {
+							MagicDebug.info("Resetting string variable to default value '%s'.", value);
+							reset(variable, playerToMod);
+						} else {
+							MagicDebug.info("Setting string variable to value '%s'.", value);
+							set(variable, playerToModName, value);
+						}
 
-					return value;
-				}
-				case ADD -> {
-					String value = variable.getStringValue(playerToModName) + mod.getStringValue(data);
+						return value;
+					}
+					case ADD -> {
+						String value = variable.getStringValue(playerToModName) + mod.getStringValue(data);
 
-					if (value.equals(variable.getDefaultStringValue())) reset(variable, playerToMod);
-					else set(variable, playerToModName, value);
+						if (value.equals(variable.getDefaultStringValue())) {
+							MagicDebug.info("Resetting string variable to default value '%s'.", value);
+							reset(variable, playerToMod);
+						} else {
+							MagicDebug.info("Setting string variable to value '%s'.", value);
+							set(variable, playerToModName, value);
+						}
 
-					return value;
-				}
-				case MULTIPLY -> {
-					int count = (int) mod.getValue(data);
-					String value = variable.getStringValue(playerToModName).repeat(count);
+						return value;
+					}
+					case MULTIPLY -> {
+						int count = (int) mod.getValue(data);
+						String value = variable.getStringValue(playerToModName).repeat(count);
 
-					if (value.equals(variable.getDefaultStringValue())) reset(variable, playerToMod);
-					else set(variable, playerToModName, value);
+						if (value.equals(variable.getDefaultStringValue())) {
+							MagicDebug.info("Resetting string variable to default value '%s'.", value);
+							reset(variable, playerToMod);
+						} else {
+							MagicDebug.info("Setting string variable to value '%s'.", value);
+							set(variable, playerToModName, value);
+						}
 
-					return value;
+						return value;
+					}
 				}
 			}
+
+			double value = op.applyTo(variable.getValue(playerToMod), mod.getValue(data));
+
+			if (value == variable.getDefaultValue() && !(variable instanceof MetaVariable)) {
+				MagicDebug.info("Resetting variable to default value '%s'.", value);
+				reset(variable, playerToMod);
+			} else {
+				MagicDebug.info("Setting variable to value '%s'.", value);
+				set(variable, playerToModName, value);
+			}
+
+			return Double.toString(value);
 		}
-
-		double value = op.applyTo(variable.getValue(playerToMod), mod.getValue(data));
-
-		if (value == variable.getDefaultValue() && !(variable instanceof MetaVariable)) {
-			reset(variable, playerToMod);
-		} else {
-			set(variable, playerToModName, value);
-		}
-
-		return Double.toString(value);
 	}
 
 }

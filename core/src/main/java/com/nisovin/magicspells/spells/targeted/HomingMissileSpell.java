@@ -36,7 +36,6 @@ public class HomingMissileSpell extends TargetedSpell implements TargetedEntityS
 	private NoMagicZoneManager zoneManager;
 
 	private ModifierSet homingModifiers;
-	private List<String> homingModifiersStrings;
 
 	private final ConfigData<Vector> effectOffset;
 	private final ConfigData<Vector> relativeOffset;
@@ -85,8 +84,6 @@ public class HomingMissileSpell extends TargetedSpell implements TargetedEntityS
 	public HomingMissileSpell(MagicConfig config, String spellName) {
 		super(config, spellName);
 
-		homingModifiersStrings = getConfigStringList("homing-modifiers", null);
-
 		effectOffset = getConfigDataVector("effect-offset", new Vector(0, 0, 0));
 		relativeOffset = getConfigDataVector("relative-offset", new Vector(0, 0.6, 0));
 		targetRelativeOffset = getConfigDataVector("target-relative-offset", new Vector(0, 0.6, 0));
@@ -129,10 +126,7 @@ public class HomingMissileSpell extends TargetedSpell implements TargetedEntityS
 	public void initializeModifiers() {
 		super.initializeModifiers();
 
-		if (homingModifiersStrings != null && !homingModifiersStrings.isEmpty()) {
-			homingModifiers = new ModifierSet(homingModifiersStrings, this);
-			homingModifiersStrings = null;
-		}
+		homingModifiers = initModifierSet("homing-modifiers");
 	}
 
 	@Override

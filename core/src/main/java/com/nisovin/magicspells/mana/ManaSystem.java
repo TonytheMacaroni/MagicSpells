@@ -33,7 +33,6 @@ public class ManaSystem extends ManaHandler {
 	private boolean showManaOnActionBar;
 	private boolean showManaOnExperienceBar;
 
-	private List<String> modifierList;
 	private ModifierSet modifiers;
 
 	private ManaRank defaultRank;
@@ -60,8 +59,6 @@ public class ManaSystem extends ManaHandler {
 		showManaOnHungerBar = config.getBoolean(path + "show-mana-on-hunger-bar", false);
 		showManaOnActionBar = config.getBoolean(path + "show-mana-on-action-bar", false);
 		showManaOnExperienceBar = config.getBoolean(path + "show-mana-on-experience-bar", true);
-
-		modifierList = config.getStringList(path + "modifiers", null);
 
 		defaultRank = new ManaRank("default", defaultBarPrefix, defaultSymbol, defaultBarSize, defaultMaxMana, defaultStartingMana, defaultRegenAmount, defaultRegenInterval, defaultBarColorFull, defaultBarColorEmpty);
 
@@ -98,14 +95,9 @@ public class ManaSystem extends ManaHandler {
 		regenerators.add(new Regenerator(defaultRank, defaultRegenInterval));
 	}
 
-	// DEBUG INFO: level 2, adding mana modifiers
 	@Override
 	public void initialize() {
-		if (modifierList != null && !modifierList.isEmpty()) {
-			MagicSpells.debug(2, "Adding mana modifiers");
-			modifiers = new ModifierSet(modifierList, true);
-			modifierList = null;
-		}
+		modifiers = ModifierSet.fromConfig(MagicSpells.getMagicConfig().getMainConfig(), "mana.modifiers");
 	}
 
 	// DEBUG INFO: level 1, creating mana bar for player playerName with rank rankName
