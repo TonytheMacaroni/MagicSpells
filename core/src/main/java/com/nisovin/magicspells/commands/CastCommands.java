@@ -178,7 +178,7 @@ public class CastCommands {
 		CommandSender sender = stack.getSender();
 		CommandSender executor = Objects.requireNonNullElse(stack.getExecutor(), sender);
 
-		try (var ignored = MagicDebug.section(spell.getDebugConfig(), "Self-casting spell '%s'.", spell.getInternalName())) {
+		try (var ignored = MagicDebug.section(spell, "Self-casting spell '%s'.", spell.getInternalName())) {
 			MagicDebug.info("Power: %s", power);
 			MagicDebug.info("Cast arguments: %s", argsToString(arguments));
 
@@ -224,7 +224,7 @@ public class CastCommands {
 			throw new InvalidCommandArgumentException("Target is not a living entity");
 		}
 
-		try (var ignored = MagicDebug.section(spell.getDebugConfig(), "Casting spell '%s' as '%s'.", spell.getInternalName(), caster)) {
+		try (var ignored = MagicDebug.section(spell, "Casting spell '%s' as '%s'.", spell.getInternalName(), caster)) {
 			MagicDebug.info("Power: %s", power);
 			MagicDebug.info("Cast arguments: %s", argsToString(arguments));
 			MagicDebug.info("Casting as %s %s.", caster instanceof Player ? "player" : "entity", caster);
@@ -259,7 +259,7 @@ public class CastCommands {
 			throw new InvalidCommandArgumentException("Spell is not a targeted entity spell");
 		}
 
-		try (var ignored = MagicDebug.section(spell.getDebugConfig(), "Casting spell '%s' on '%s'.", spell.getInternalName(), target)) {
+		try (var ignored = MagicDebug.section(spell, "Casting spell '%s' on '%s'.", spell.getInternalName(), target)) {
 			MagicDebug.info("Power: %s", power);
 			MagicDebug.info("Cast arguments: %s", argsToString(arguments));
 
@@ -300,7 +300,7 @@ public class CastCommands {
 			throw new InvalidCommandArgumentException("Spell is not a targeted location spell");
 		}
 
-		try (var ignored = MagicDebug.section(spell.getDebugConfig(), "Casting spell '%s' at '%s'.", spell.getInternalName(), location)) {
+		try (var ignored = MagicDebug.section(spell, "Casting spell '%s' at '%s'.", spell.getInternalName(), location)) {
 			MagicDebug.info("Power: %s", power);
 			MagicDebug.info("Cast arguments: %s", argsToString(arguments));
 

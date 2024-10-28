@@ -15,15 +15,15 @@ import com.nisovin.magicspells.events.SpellTargetEvent;
 import com.nisovin.magicspells.events.SpellTargetLocationEvent;
 
 public class ModifierListener implements Listener {
-	
+
 	private List<IModifier> preModifierHooks;
 	private List<IModifier> postModifierHooks;
-	
+
 	public ModifierListener() {
 		preModifierHooks = new CopyOnWriteArrayList<>();
 		postModifierHooks = new CopyOnWriteArrayList<>();
 	}
-	
+
 	@EventHandler(priority = EventPriority.LOW)
 	public void onSpellCast(SpellCastEvent event) {
 		ModifierSet m = event.getSpell().getModifiers();
@@ -72,22 +72,22 @@ public class ModifierListener implements Listener {
 			if (!postMod.apply(event)) return;
 		}
 	}
-	
+
 	public void addPreModifierHook(IModifier hook) {
 		if (hook == null) return;
 		preModifierHooks.add(hook);
 	}
-	
+
 	public void addPostModifierHook(IModifier hook) {
 		if (hook == null) return;
 		postModifierHooks.add(hook);
 	}
-	
+
 	public void unload() {
 		preModifierHooks.clear();
 		preModifierHooks = null;
 		postModifierHooks.clear();
 		postModifierHooks = null;
 	}
-	
+
 }
