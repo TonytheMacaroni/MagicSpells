@@ -70,7 +70,7 @@ public class ModifierCollection {
 			int pass = 0, fail = 0;
 
 			for (ModifierSet.ModifierData modifierData : modifiers) {
-				try (var ignored1 = MagicDebug.pushPath(modifierData.ordinal(), DebugPath.Type.LIST_ENTRY)) {
+				try (var ignored1 = MagicDebug.pushListEntry(modifierData.ordinal())) {
 					Modifier modifier = modifierData.modifier();
 
 					if (check.test(modifier)) pass++;
@@ -109,7 +109,7 @@ public class ModifierCollection {
 			int pass = 0, fail = 0;
 
 			for (ModifierSet.ModifierData modifierData : modifiers) {
-				try (var ignored1 = MagicDebug.pushPath(modifierData.ordinal(), DebugPath.Type.LIST_ENTRY)) {
+				try (var ignored1 = MagicDebug.pushListEntry(modifierData.ordinal())) {
 					Modifier modifier = modifierData.modifier();
 
 					ModifierResult result = check.apply(modifier);

@@ -83,7 +83,7 @@ public class ModifierSet {
 	static List<ModifierData> getModifierData(@Nullable Spell spell, @NotNull List<String> modifierStrings) {
 		List<ModifierData> modifiers = new ArrayList<>();
 		for (int i = 0; i < modifierStrings.size(); i++) {
-			try (var ignored1 = MagicDebug.pushPath(i, DebugPath.Type.LIST_ENTRY)) {
+			try (var ignored1 = MagicDebug.pushListEntry(i)) {
 				Modifier modifier = Modifier.fromString(modifierStrings.get(i));
 				if (modifier == null) continue;
 
@@ -158,7 +158,7 @@ public class ModifierSet {
 			.pushPaths(path, DebugPath.Type.LIST)
 		) {
 			for (ModifierData modifierData : modifiers) {
-				try (var ignored1 = MagicDebug.pushPath(modifierData.ordinal, DebugPath.Type.LIST_ENTRY)) {
+				try (var ignored1 = MagicDebug.pushListEntry(modifierData.ordinal)) {
 					Modifier modifier = modifierData.modifier;
 					if (check.test(modifier)) continue;
 
@@ -180,7 +180,7 @@ public class ModifierSet {
 			.pushPaths(path, DebugPath.Type.LIST)
 		) {
 			for (ModifierData modifierData : modifiers) {
-				try (var ignored1 = MagicDebug.pushPath(modifierData.ordinal, DebugPath.Type.LIST_ENTRY)) {
+				try (var ignored1 = MagicDebug.pushListEntry(modifierData.ordinal)) {
 					Modifier modifier = modifierData.modifier;
 
 					ModifierResult result = apply.apply(modifier);

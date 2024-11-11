@@ -21,13 +21,14 @@ public class LeatherArmorHandler extends ItemHandler {
 	public boolean process(@NotNull ConfigurationSection config, @NotNull ItemStack item, @NotNull ItemMeta meta, @NotNull MagicItemData data) {
 		if (!(meta instanceof LeatherArmorMeta armorMeta)) return true;
 
-		if (!config.isString(COLOR.getKey())) return invalidIfSet(config, COLOR);
+		String key = COLOR.getKey();
+		if (!config.isString(key)) return invalidIfSet(config, key);
 
-		String colorString = config.getString(COLOR.getKey());
+		String colorString = config.getString(key);
 
 		Color color = ColorUtil.getColorFromHexString(colorString, false);
 		if (color == null) {
-			MagicDebug.warn("Invalid 'color' value '%s' %s.", colorString, MagicDebug.resolveFullPath());
+			MagicDebug.warn("Invalid color '%s' %s.", colorString, MagicDebug.resolveFullPath(key));
 			return false;
 		}
 

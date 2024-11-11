@@ -13,9 +13,10 @@ import static com.nisovin.magicspells.util.magicitems.MagicItemData.MagicItemAtt
 public class CustomModelDataHandler extends ItemHandler {
 
 	public boolean process(@NotNull ConfigurationSection config, @NotNull ItemStack item, @NotNull ItemMeta meta, @NotNull MagicItemData data) {
-		if (!config.isInt(CUSTOM_MODEL_DATA.getKey())) return invalidIfSet(config, CUSTOM_MODEL_DATA);
+		String key = CUSTOM_MODEL_DATA.getKey();
+		if (!config.isInt(key)) return invalidIfSet(config, key);
 
-		int customModelData = config.getInt(CUSTOM_MODEL_DATA.getKey());
+		int customModelData = config.getInt(key);
 
 		meta.setCustomModelData(customModelData);
 		data.setAttribute(CUSTOM_MODEL_DATA, customModelData);
