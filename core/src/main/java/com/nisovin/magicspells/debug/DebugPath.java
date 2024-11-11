@@ -20,7 +20,8 @@ public record DebugPath(String node, Type type, boolean concrete) implements Aut
 		FILE,
 		SECTION,
 		LIST,
-		LIST_ENTRY
+		LIST_ENTRY,
+		SCALAR
 	}
 
 }

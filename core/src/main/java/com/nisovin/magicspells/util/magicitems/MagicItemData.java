@@ -1,5 +1,6 @@
 package com.nisovin.magicspells.util.magicitems;
 
+import io.papermc.paper.potion.SuspiciousEffectEntry;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -200,6 +201,8 @@ public class MagicItemData implements Cloneable {
 		public static final MagicItemAttribute<List<Component>> PAGES = new ListComponentAttribute("pages");
 
 		public static final MagicItemAttribute<List<PotionEffect>> POTION_EFFECTS = new MagicItemAttribute<>("potion-effects");
+
+		public static final MagicItemAttribute<List<SuspiciousEffectEntry>> STEW_EFFECTS = new MagicItemAttribute<>("stew-effects");
 
 		public static final MagicItemAttribute<List<Pattern>> PATTERNS = new MagicItemAttribute<>("patterns");
 
