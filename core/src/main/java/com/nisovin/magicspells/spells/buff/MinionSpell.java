@@ -138,7 +138,7 @@ public class MinionSpell extends BuffSpell {
 
 		List<?> attributeList = getConfigList("attributes", null);
 		if (attributeList != null && !attributeList.isEmpty())
-			attributes = AttributeHandler.getAttributeModifiers(attributeList, internalName);
+			attributes = AttributeHandler.getAttributeModifiers(attributeList, "attributes", internalName);
 
 		// Equipment
 		MagicItem magicMainHandItem = MagicItems.getMagicItemFromString(getConfigString("main-hand", ""));

@@ -18,20 +18,21 @@ public class BlockDataHandler extends ItemHandler {
 
 	@Override
 	public boolean process(@NotNull ConfigurationSection config, @NotNull ItemStack item, @NotNull ItemMeta meta, @NotNull MagicItemData data) {
-		if (!config.isString(BLOCK_DATA.getKey())) return invalidIfSet(config, BLOCK_DATA);
+		String key = BLOCK_DATA.getKey();
+		if (!config.isString(key)) return invalidIfSet(config, key);
 
 		if (!(meta instanceof BlockDataMeta blockDataMeta)) {
 			MagicDebug.warn("Invalid option 'block-data' specified %s - item type '%s' cannot have block data applied.", MagicDebug.resolveFullPath(), item.getType().getKey().getKey());
 			return false;
 		}
 
-		String blockDataString = config.getString(BLOCK_DATA.getKey());
+		String blockDataString = config.getString(key);
 
 		BlockData blockData;
 		try {
 			blockData = Bukkit.createBlockData(item.getType(), blockDataString.toLowerCase());
 		} catch (IllegalArgumentException e) {
-			MagicDebug.warn("Invalid block data '%s' on magic item.", blockDataString);
+			MagicDebug.warn("Invalid block data '%s' %s.", blockDataString, MagicDebug.resolveFullPath(key));
 			return false;
 		}
 

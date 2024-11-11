@@ -7,10 +7,8 @@ import com.google.common.collect.Multimap;
 import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
 
+import io.papermc.paper.potion.SuspiciousEffectEntry;
 import net.kyori.adventure.text.Component;
-
-import io.papermc.paper.registry.RegistryKey;
-import io.papermc.paper.registry.RegistryAccess;
 
 import org.bukkit.*;
 import org.bukkit.potion.PotionType;
@@ -18,19 +16,14 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.block.banner.Pattern;
 import org.bukkit.enchantments.Enchantment;
-import org.bukkit.block.banner.PatternType;
 import org.bukkit.attribute.AttributeModifier;
 
-import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.util.Util;
 import com.nisovin.magicspells.util.ColorUtil;
 import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.debug.DebugCategory;
 import com.nisovin.magicspells.handlers.EnchantmentHandler;
-import com.nisovin.magicspells.util.itemreader.PotionHandler;
-import com.nisovin.magicspells.util.itemreader.AttributeHandler;
-import com.nisovin.magicspells.util.itemreader.FireworkEffectHandler;
-import com.nisovin.magicspells.util.itemreader.SuspiciousStewHandler;
+import com.nisovin.magicspells.util.itemreader.*;
 import com.nisovin.magicspells.util.magicitems.MagicItemData.MagicItemAttribute;
 import static com.nisovin.magicspells.util.magicitems.MagicItemData.MagicItemAttributes.*;
 
@@ -141,7 +134,7 @@ public class MagicItemDataParser {
 					case "uuid" ->
 						data.setAttribute(UUID, java.util.UUID.fromString(value.getAsString()));
 					case "attributes" -> {
-						Multimap<Attribute, AttributeModifier> attributes = AttributeHandler.getAttributeModifiers(gson.fromJson(value, List.class));
+						Multimap<Attribute, AttributeModifier> attributes = AttributeHandler.getAttributeModifiers(gson.fromJson(value, List.class), key);
 						if (attributes == null) return null;
 
 						if (!attributes.isEmpty()) data.setAttribute(ATTRIBUTES, attributes);
@@ -206,67 +199,14 @@ public class MagicItemDataParser {
 						data.setAttribute(FAKE_GLINT, true);
 					}
 					case "firework-effect", "firework_effect", "fireworkeffect" -> {
-						String effectString = value.getAsString();
-
-						String[] values = effectString.split(" ");
-						if (values.length < 3 || values.length > 5) {
-							MagicDebug.warn("Invalid firework effect '%s' %s - missing or too many values.", effectString, MagicDebug.resolveFullPath());
-							return null;
-						}
-
-						FireworkEffect.Type fireworkType = FireworkEffect.Type.valueOf(values[0].toUpperCase());
-						boolean trail = Boolean.parseBoolean(values[1]);
-						boolean flicker = Boolean.parseBoolean(values[2]);
-
-						List<Color> colors = values.length > 3 ? FireworkEffectHandler.getColorsFromString(values[3], "colors", true) : List.of();
-						if (colors == null) return null;
-
-						List<Color> fadeColors = values.length > 4 ? FireworkEffectHandler.getColorsFromString(values[4], "fade colors", true) : List.of();
-						if (fadeColors == null) return null;
-
-						FireworkEffect effect = FireworkEffect.builder()
-							.flicker(flicker)
-							.trail(trail)
-							.with(fireworkType)
-							.withColor(colors)
-							.withFade(fadeColors)
-							.build();
+						FireworkEffect effect = FireworkHandler.getFireworkEffect(value.getAsString(), key);
+						if (effect == null) return null;
 
 						data.setAttribute(FIREWORK_EFFECT, effect);
 					}
 					case "firework-effects", "firework_effects", "fireworkeffects" -> {
-						List<FireworkEffect> effects = new ArrayList<>();
-
-						JsonArray effectStrings = value.getAsJsonArray();
-						for (JsonElement element : effectStrings) {
-							String effectString = element.getAsString();
-
-							String[] values = effectString.split(" ");
-							if (values.length != 4 && values.length != 5) {
-								MagicDebug.warn("Invalid firework effect '%s' %s - missing or too many values.", effectString, MagicDebug.resolveFullPath());
-								return null;
-							}
-
-							FireworkEffect.Type fireworkType = FireworkEffect.Type.valueOf(values[0].toUpperCase());
-							boolean trail = Boolean.parseBoolean(values[1]);
-							boolean flicker = Boolean.parseBoolean(values[2]);
-
-							List<Color> colors = FireworkEffectHandler.getColorsFromString(values[3], "colors", true);
-							if (colors == null) return null;
-
-							List<Color> fadeColors = values.length > 4 ? FireworkEffectHandler.getColorsFromString(values[4], "fade colors", true) : List.of();
-							if (fadeColors == null) return null;
-
-							FireworkEffect effect = FireworkEffect.builder()
-								.flicker(flicker)
-								.trail(trail)
-								.with(fireworkType)
-								.withColor(colors)
-								.withFade(fadeColors)
-								.build();
-
-							effects.add(effect);
-						}
+						List<FireworkEffect> effects = FireworkHandler.getFireworkEffects(gson.fromJson(value, List.class), key);
+						if (effects == null) return null;
 
 						if (!effects.isEmpty()) data.setAttribute(FIREWORK_EFFECTS, effects);
 					}
@@ -303,51 +243,24 @@ public class MagicItemDataParser {
 						if (!pages.isEmpty()) data.setAttribute(PAGES, pages);
 					}
 					case "patterns" -> {
-						List<Pattern> patterns = new ArrayList<>();
-
-						Registry<PatternType> registry = RegistryAccess.registryAccess().getRegistry(RegistryKey.BANNER_PATTERN);
-
-						JsonArray patternStrings = value.getAsJsonArray();
-						for (JsonElement element : patternStrings) {
-							String patternString = element.getAsString();
-							String[] pattern = patternString.split(" ");
-
-							if (pattern.length != 2) {
-								MagicDebug.warn("Invalid pattern '%s' %s - missing or too many values.", patternString, MagicDebug.resolveFullPath());
-								return null;
-							}
-
-							NamespacedKey namespacedKey = NamespacedKey.fromString(pattern[0]);
-							if (namespacedKey == null) {
-								MagicDebug.warn("Invalid banner pattern '%s' %s.", pattern[0], MagicDebug.resolveFullPath());
-								return null;
-							}
-
-							PatternType patternType = registry.get(namespacedKey);
-							if (patternType == null) {
-								MagicDebug.warn("Invalid banner pattern '%s' %s.", pattern[0], MagicDebug.resolveFullPath());
-								return null;
-							}
-
-							DyeColor dyeColor = DyeColor.valueOf(pattern[1]);
-
-							patterns.add(new Pattern(dyeColor, patternType));
-						}
+						List<Pattern> patterns = BannerHandler.getPatterns(gson.fromJson(value, List.class), key);
+						if (patterns == null) return null;
 
 						if (!patterns.isEmpty()) data.setAttribute(PATTERNS, patterns);
 					}
 					case "potion-effects", "potion_effects", "potioneffects" -> {
-						List<PotionEffect> effects = new ArrayList<>();
+						// Legacy stew support
+						if (type == Material.SUSPICIOUS_STEW) {
+							List<SuspiciousEffectEntry> entries = SuspiciousStewHandler.getSuspiciousStewEffects(gson.fromJson(value, List.class), key);
+							if (entries == null) return null;
 
-						JsonArray effectStrings = value.getAsJsonArray();
-						for (JsonElement element : effectStrings) {
-							String effectString = element.getAsString();
+							if (!entries.isEmpty()) data.setAttribute(STEW_EFFECTS, entries);
 
-							PotionEffect effect = type == Material.SUSPICIOUS_STEW ? SuspiciousStewHandler.buildSuspiciousStewPotionEffect(effectString) : PotionHandler.buildPotionEffect(effectString);
-							if (effect == null) return null;
-
-							effects.add(effect);
+							continue;
 						}
+
+						List<PotionEffect> effects = PotionHandler.getPotionEffects(gson.fromJson(value, List.class), key);
+						if (effects == null) return null;
 
 						if (!effects.isEmpty()) data.setAttribute(POTION_EFFECTS, effects);
 					}
@@ -361,6 +274,12 @@ public class MagicItemDataParser {
 						}
 
 						data.setAttribute(POTION_TYPE, potionType);
+					}
+					case "stew-effects", "stew_effects", "steweffects" -> {
+						List<SuspiciousEffectEntry> entries = SuspiciousStewHandler.getSuspiciousStewEffects(gson.fromJson(value, List.class), key);
+						if (entries == null) return null;
+
+						if (!entries.isEmpty()) data.setAttribute(STEW_EFFECTS, entries);
 					}
 				}
 			}

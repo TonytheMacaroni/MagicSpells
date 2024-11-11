@@ -1,5 +1,6 @@
 package com.nisovin.magicspells.util.itemreader;
 
+import org.checkerframework.checker.units.qual.N;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -7,6 +8,7 @@ import java.util.ArrayList;
 
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.RegistryAccess;
+import org.jetbrains.annotations.Nullable;
 
 import org.bukkit.DyeColor;
 import org.bukkit.NamespacedKey;
@@ -17,54 +19,25 @@ import org.bukkit.block.banner.PatternType;
 import org.bukkit.inventory.meta.BannerMeta;
 import org.bukkit.configuration.ConfigurationSection;
 
+import com.nisovin.magicspells.debug.DebugPath;
 import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.util.magicitems.MagicItemData;
+
 import static com.nisovin.magicspells.util.magicitems.MagicItemData.MagicItemAttributes.PATTERNS;
 
 public class BannerHandler extends ItemHandler {
 
 	@Override
 	public boolean process(@NotNull ConfigurationSection config, @NotNull ItemStack item, @NotNull ItemMeta meta, @NotNull MagicItemData data) {
-		if (!config.isList(PATTERNS.getKey())) return invalidIfSet(config, PATTERNS);
+		String key = PATTERNS.getKey();
+		if (!config.isList(key)) return invalidIfSet(config, key);
 
 		if (!(meta instanceof BannerMeta bannerMeta)) {
 			MagicDebug.warn("Invalid option 'patterns' specified %s - item type '%s' cannot have banner patterns applied.", MagicDebug.resolveFullPath(), item.getType().getKey().getKey());
 			return false;
 		}
 
-		List<Pattern> patterns = new ArrayList<>();
-
-		List<String> patternStrings = config.getStringList(PATTERNS.getKey());
-		for (String patternString : patternStrings) {
-			String[] patternData = patternString.split(" ");
-			if (patternData.length != 2) {
-				MagicDebug.warn("Invalid banner pattern '%s' %s.", patternString, MagicDebug.resolveFullPath());
-				return false;
-			}
-
-			String patternTypeString = patternData[0].toLowerCase();
-
-			PatternType patternType = fromLegacyIdentifier(patternTypeString);
-			if (patternType == null) {
-				NamespacedKey key = NamespacedKey.fromString(patternTypeString);
-				if (key != null) patternType = RegistryAccess.registryAccess().getRegistry(RegistryKey.BANNER_PATTERN).get(key);
-
-				if (patternType == null) {
-					MagicDebug.warn("Invalid pattern type '%s' in pattern '%s' %s.", patternData[0], patternString, MagicDebug.resolveFullPath());
-					return false;
-				}
-			}
-
-			DyeColor dyeColor;
-			try {
-				dyeColor = DyeColor.valueOf(patternData[1].toUpperCase());
-			} catch (IllegalArgumentException e) {
-				MagicDebug.warn("Invalid banner color '%s' in pattern '%s' %s.", patternData[1], patternString, MagicDebug.resolveFullPath());
-				return false;
-			}
-
-			patterns.add(new Pattern(dyeColor, patternType));
-		}
+		List<Pattern> patterns = getPatterns(config.getList(key), key);
 
 		if (!patterns.isEmpty()) {
 			bannerMeta.setPatterns(patterns);
@@ -95,11 +68,59 @@ public class BannerHandler extends ItemHandler {
 		if (data.hasAttribute(PATTERNS)) bannerMeta.setPatterns(data.getAttribute(PATTERNS));
 	}
 
-	public static void processMagicItemData(ItemMeta meta, MagicItemData data) {
-		if (!(meta instanceof BannerMeta bannerMeta)) return;
+	@Nullable
+	public static List<Pattern> getPatterns(@NotNull List<?> patternStrings, @NotNull String name) {
+		try (var ignored = MagicDebug.section("Resolving banner patterns from '%s'.", name)
+			.pushPath(name, DebugPath.Type.LIST)
+		) {
+			List<Pattern> patterns = new ArrayList<>();
 
-		List<Pattern> patterns = ((BannerMeta) meta).getPatterns();
-		if (!patterns.isEmpty()) data.setAttribute(PATTERNS, bannerMeta.getPatterns());
+			for (int i = 0; i < patternStrings.size(); i++) {
+				Object object = patternStrings.get(i);
+				if (!(object instanceof String patternString)) {
+					try (var ignored1 = MagicDebug.pushListEntry(i)) {
+						MagicDebug.warn("Invalid banner pattern '%s' %s.", object, MagicDebug.resolveFullPath());
+						return null;
+					}
+				}
+
+				try (var ignored1 = MagicDebug.section("Resolving banner pattern '%s'.", patternString)
+					.pushListEntry(i)
+				) {
+					String[] patternData = patternString.split(" ");
+					if (patternData.length != 2) {
+						MagicDebug.warn("Invalid banner pattern '%s' %s - too many or too few arguments.", patternString, MagicDebug.resolveFullPath());
+						return null;
+					}
+
+					String patternTypeString = patternData[0].toLowerCase();
+
+					PatternType patternType = fromLegacyIdentifier(patternTypeString);
+					if (patternType == null) {
+						NamespacedKey patternKey = NamespacedKey.fromString(patternTypeString);
+						if (patternKey != null)
+							patternType = RegistryAccess.registryAccess().getRegistry(RegistryKey.BANNER_PATTERN).get(patternKey);
+
+						if (patternType == null) {
+							MagicDebug.warn("Invalid pattern type '%s' in pattern '%s' %s.", patternData[0], patternString, MagicDebug.resolveFullPath());
+							return null;
+						}
+					}
+
+					DyeColor dyeColor;
+					try {
+						dyeColor = DyeColor.valueOf(patternData[1].toUpperCase());
+					} catch (IllegalArgumentException e) {
+						MagicDebug.warn("Invalid pattern color '%s' in pattern '%s' %s.", patternData[1], patternString, MagicDebug.resolveFullPath());
+						return null;
+					}
+
+					patterns.add(new Pattern(dyeColor, patternType));
+				}
+			}
+
+			return patterns;
+		}
 	}
 
 	private static PatternType fromLegacyIdentifier(String identifier) {

@@ -215,8 +215,8 @@ public class MagicDebug {
 		return section.config();
 	}
 
-	public static DebugPath pushPath(int index, @NotNull DebugPath.Type type) {
-		return pushPath(String.valueOf(index), type, type != DebugPath.Type.FILE);
+	public static DebugPath pushListEntry(int index) {
+		return pushPath(String.valueOf(index), DebugPath.Type.LIST_ENTRY, true);
 	}
 
 	public static DebugPath pushPath(@NotNull String node, @NotNull DebugPath.Type type) {
@@ -234,24 +234,23 @@ public class MagicDebug {
 	}
 
 	private static void pushPath(@NotNull ArrayDeque<DebugPath> paths, @NotNull DebugPath path) {
+		Preconditions.checkNotNull(paths, "Paths cannot be null");
 		Preconditions.checkNotNull(path, "Path cannot be null");
 
 		DebugPath prev = paths.isEmpty() ? null : paths.getLast();
 		if (prev != null && !path.concrete() && prev.concrete())
 			throw new IllegalArgumentException("Cannot append a non-concrete path to a concrete path: '%s' was appended to '%s'".formatted(path, prev));
 
+		if (prev != null && prev.type() == DebugPath.Type.LIST && path.type() != DebugPath.Type.LIST_ENTRY)
+			throw new IllegalArgumentException("Cannot append a non-list entry path to a list path: '%s' was appended to '%s'".formatted(path, prev));
+
+		if (prev != null && prev.type() == DebugPath.Type.SCALAR)
+			throw new IllegalArgumentException("Cannot append to a scalar path: '%s' was append to '%s'".formatted(path, prev));
+
 		switch (path.type()) {
 			case FILE -> {
 				if (prev != null)
 					throw new IllegalArgumentException("Cannot append a file path to another path: '%s' was appended to '%s'".formatted(path, prev));
-			}
-			case SECTION -> {
-				if (prev != null && prev.type() == DebugPath.Type.LIST)
-					throw new IllegalArgumentException("Cannot append a section path to a list path: '%s' was appended to '%s'".formatted(path, prev));
-			}
-			case LIST -> {
-				if (prev != null && prev.type() == DebugPath.Type.LIST)
-					throw new IllegalArgumentException("Cannot append a list path to a list path: '%s' was appended to '%s'".formatted(path, prev));
 			}
 			case LIST_ENTRY -> {
 				if (prev == null || prev.type() != DebugPath.Type.LIST)
@@ -436,6 +435,11 @@ public class MagicDebug {
 
 		public DebugConfig config() {
 			return config == null ? MagicSpells.getDebugConfig() : config;
+		}
+
+		public Section pushListEntry(int index) {
+			MagicDebug.pushPath(paths, new DebugPath(String.valueOf(index), DebugPath.Type.LIST_ENTRY, true));
+			return this;
 		}
 
 		public Section pushPath(@NotNull String node, @NotNull DebugPath.Type type) {

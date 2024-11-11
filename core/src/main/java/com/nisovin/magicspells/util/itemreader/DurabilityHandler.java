@@ -16,14 +16,15 @@ public class DurabilityHandler extends ItemHandler {
 
 	@Override
 	public boolean process(@NotNull ConfigurationSection config, @NotNull ItemStack item, @NotNull ItemMeta meta, @NotNull MagicItemData data) {
-		if (!config.isInt(DURABILITY.getKey())) return invalidIfSet(config, DURABILITY);
+		String key = DURABILITY.getKey();
+		if (!config.isInt(key)) return invalidIfSet(config, key);
 
 		if (!(meta instanceof Damageable damageable && item.getType().getMaxDurability() > 0)) {
 			MagicDebug.warn("Invalid 'durability' specified %s - item type '%s' does not have durability.", MagicDebug.resolveFullPath(), item.getType().getKey().getKey());
 			return false;
 		}
 
-		int durability = config.getInt(DURABILITY.getKey());
+		int durability = config.getInt(key);
 
 		damageable.setDamage(durability);
 		data.setAttribute(DURABILITY, durability);

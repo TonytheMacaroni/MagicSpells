@@ -13,6 +13,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.FireworkEffectMeta;
 import org.bukkit.configuration.ConfigurationSection;
 
+import com.nisovin.magicspells.debug.DebugPath;
 import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.util.magicitems.MagicItemData;
 
@@ -44,10 +45,10 @@ public class FireworkEffectHandler extends ItemHandler {
 		if (!config.isBoolean(FLICKER_CONFIG_NAME) && !invalidIfSet(config, FADE_COLORS_CONFIG_NAME))
 			return false;
 
-		List<Color> colors = getColorsFromString(config.getString(COLORS_CONFIG_NAME), "'colors'", true);
+		List<Color> colors = getColors(config.getString(COLORS_CONFIG_NAME), COLORS_CONFIG_NAME, true);
 		if (colors == null) return false;
 
-		List<Color> fadeColors = getColorsFromString(config.getString(FADE_COLORS_CONFIG_NAME), "'fade-colors'", false);
+		List<Color> fadeColors = getColors(config.getString(FADE_COLORS_CONFIG_NAME), FADE_COLORS_CONFIG_NAME, false);
 		if (fadeColors == null) return false;
 
 		String typeString = config.getString(TYPE_CONFIG_NAME, "BALL");
@@ -56,7 +57,7 @@ public class FireworkEffectHandler extends ItemHandler {
 		try {
 			type = FireworkEffect.Type.valueOf(typeString);
 		} catch (IllegalArgumentException e) {
-			MagicDebug.warn("Invalid 'firework-type' value '%s' %s.", typeString, MagicDebug.resolveFullPath());
+			MagicDebug.warn("Invalid firework effect type '%s' %s.", typeString, MagicDebug.resolveFullPath(TYPE_CONFIG_NAME));
 			return false;
 		}
 
@@ -92,30 +93,39 @@ public class FireworkEffectHandler extends ItemHandler {
 	}
 
 	@Nullable
-	public static List<Color> getColorsFromString(String input, String name, boolean required) {
-		if (input == null || input.isEmpty()) {
-			if (required) {
-				MagicDebug.warn("Invalid value '%s' for %s %s - firework effect color(s) not specified.", input, name, MagicDebug.resolveFullPath());
-				return null;
+	public static List<Color> getColors(String input, String name, boolean required) {
+		try (var ignored = MagicDebug.pushPath(name, DebugPath.Type.SCALAR)) {
+			return getColorsFromString(input, required);
+		}
+	}
+
+	@Nullable
+	public static List<Color> getColorsFromString(String input, boolean required) {
+		try (var ignored = MagicDebug.section("Resolving firework effect colors '%s'.", input)) {
+			if (input == null || input.isEmpty()) {
+				if (required) {
+					MagicDebug.warn("Invalid or no colors specified %s.", MagicDebug.resolveFullPath());
+					return null;
+				}
+
+				return List.of();
 			}
 
-			return List.of();
-		}
+			List<Color> colors = new ArrayList<>();
 
-		List<Color> colors = new ArrayList<>();
-
-		String[] colorStrings = input.split(",");
-		for (String colorString : colorStrings) {
-			try {
-				int c = Integer.parseInt(colorString.trim(), 16);
-				colors.add(Color.fromRGB(c));
-			} catch (IllegalArgumentException e) {
-				MagicDebug.warn("Invalid color '%s' for %s %s.", colorString, name, MagicDebug.resolveFullPath());
-				return null;
+			String[] colorStrings = input.split(",");
+			for (String colorString : colorStrings) {
+				try {
+					int c = Integer.parseInt(colorString.trim(), 16);
+					colors.add(Color.fromRGB(c));
+				} catch (IllegalArgumentException e) {
+					MagicDebug.warn("Invalid color '%s' %s.", colorString, MagicDebug.resolveFullPath());
+					return null;
+				}
 			}
-		}
 
-		return colors;
+			return colors;
+		}
 	}
 
 }

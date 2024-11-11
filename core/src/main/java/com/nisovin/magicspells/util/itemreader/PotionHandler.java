@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.ArrayList;
 
 import org.bukkit.Color;
+import org.bukkit.FireworkEffect;
 import org.bukkit.Registry;
 import org.bukkit.NamespacedKey;
 import org.bukkit.potion.PotionType;
@@ -16,6 +17,7 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.configuration.ConfigurationSection;
 
+import com.nisovin.magicspells.debug.DebugPath;
 import com.nisovin.magicspells.util.ColorUtil;
 import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.util.BooleanUtils;
@@ -30,34 +32,36 @@ public class PotionHandler extends ItemHandler {
 	public boolean process(@NotNull ConfigurationSection config, @NotNull ItemStack item, @NotNull ItemMeta meta, @NotNull MagicItemData data) {
 		if (!(meta instanceof PotionMeta potionMeta)) return true;
 
-		if (config.isList(POTION_EFFECTS.getKey())) {
-			List<PotionEffect> effects = new ArrayList<>();
-			potionMeta.clearCustomEffects();
+		String effectKey = POTION_EFFECTS.getKey();
+		if (config.isList(effectKey)) {
+			List<PotionEffect> effects = getPotionEffects(config.getList(effectKey), effectKey);
+			if (effects == null) return false;
 
-			List<String> effectStrings = config.getStringList(POTION_EFFECTS.getKey());
-			for (String effectString : effectStrings) {
-				PotionEffect effect = buildPotionEffect(effectString);
-				if (effect == null) return false;
+			if (!effects.isEmpty()) {
+				for (PotionEffect effect : effects)
+					potionMeta.addCustomEffect(effect, false);
 
-				potionMeta.addCustomEffect(effect, true);
-				effects.add(effect);
+				data.setAttribute(POTION_EFFECTS, effects);
 			}
+		} else if (!invalidIfSet(config, effectKey)) return false;
 
-			if (!effects.isEmpty()) data.setAttribute(POTION_EFFECTS, effects);
-		} else if (!invalidIfSet(config, POTION_EFFECTS.getKey())) return false;
-
-		if (config.isString(COLOR.getKey()) || config.isString("potion-color")) {
-			String colorString = config.getString(COLOR.getKey(), config.getString("potion-color", ""));
+		String colorKey = COLOR.getKey();
+		if (config.isString(colorKey) || config.isString("potion-color")) {
+			String colorString = config.getString(colorKey, null);
+			if (colorString == null) {
+				colorString = config.getString("potion-color", "");
+				colorKey = "potion-color";
+			}
 
 			Color color = ColorUtil.getColorFromHexString(colorString, false);
 			if (color == null) {
-				MagicDebug.warn("Invalid 'color' value '%s' %s.", colorString, MagicDebug.resolveFullPath());
+				MagicDebug.warn("Invalid color '%s' %s.", colorString, MagicDebug.resolveFullPath(colorKey));
 				return false;
 			}
 
 			potionMeta.setColor(color);
 			data.setAttribute(COLOR, color);
-		} else if (!invalidIfSet(config, COLOR.getKey(), "potion-color")) return false;
+		} else if (!invalidIfSet(config, colorKey, "potion-color")) return false;
 
 		if (config.isString(POTION_TYPE.getKey()) || config.isString("potion-data")) {
 			String potionTypeString = config.getString(POTION_TYPE.getKey(), config.getString("potion-data", ""));
@@ -134,43 +138,67 @@ public class PotionHandler extends ItemHandler {
 		}
 	}
 
-	// - <potionEffectType> (level) (duration) (ambient)
-	public static PotionEffect buildPotionEffect(String effectString) {
-		String[] data = effectString.split(" ");
+	public static List<PotionEffect> getPotionEffects(@NotNull List<?> data, @NotNull String name) {
+		try (var ignored = MagicDebug.section("Resolving potion effects from '%s'.", name)
+			.pushPath(name, DebugPath.Type.LIST)
+		) {
+			List<PotionEffect> potionEffects = new ArrayList<>();
 
-		PotionEffectType t = PotionEffectHandler.getPotionEffectType(data[0]);
-		if (t == null) {
-			MagicDebug.warn("Invalid potion effect type '%s' for potion effect '%s' %s.", data[0], effectString, MagicDebug.resolveFullPath());
-			return null;
+			for (int i = 0; i < data.size(); i++) {
+				try (var ignored1 = MagicDebug.pushListEntry(i)) {
+					Object object = data.get(i);
+					if (!(object instanceof String effectString)) {
+						MagicDebug.warn("Invalid potion effect '%s' %s.", object, MagicDebug.resolveFullPath());
+						return null;
+					}
+
+					PotionEffect effect = getPotionEffect(effectString);
+					if (effect == null) return null;
+
+					potionEffects.add(effect);
+				}
+			}
+
+			return potionEffects;
 		}
+	}
 
-		int level = 0;
-		if (data.length > 1) {
-			try {
-				level = Integer.parseInt(data[1]);
-			} catch (NumberFormatException ex) {
-				MagicDebug.warn("Invalid level '%s' for potion effect '%s' %s.", data[1], effectString, MagicDebug.resolveFullPath());
+	public static PotionEffect getPotionEffect(@NotNull String effectString) {
+		try (var ignored = MagicDebug.section("Resolving potion effect '%s'.", effectString)) {
+			String[] data = effectString.split(" ");
+
+			PotionEffectType t = PotionEffectHandler.getPotionEffectType(data[0]);
+			if (t == null) {
+				MagicDebug.warn("Invalid effect type '%s' in potion effect '%s' %s.", data[0], effectString, MagicDebug.resolveFullPath());
 				return null;
 			}
-		}
 
-		int duration = 600;
-		if (data.length > 2) {
-			try {
-				duration = Integer.parseInt(data[2]);
-			} catch (NumberFormatException ex) {
-				MagicDebug.warn("Invalid duration '%s' for potion effect '%s' %s.", data[2], effectString, MagicDebug.resolveFullPath());
-				return null;
+			int level = 0;
+			if (data.length > 1) {
+				try {
+					level = Integer.parseInt(data[1]);
+				} catch (NumberFormatException ex) {
+					MagicDebug.warn("Invalid level '%s' in potion effect '%s' %s.", data[1], effectString, MagicDebug.resolveFullPath());
+					return null;
+				}
 			}
+
+			int duration = 600;
+			if (data.length > 2) {
+				try {
+					duration = Integer.parseInt(data[2]);
+				} catch (NumberFormatException ex) {
+					MagicDebug.warn("Invalid duration '%s' in potion effect '%s' %s.", data[2], effectString, MagicDebug.resolveFullPath());
+					return null;
+				}
+			}
+
+			boolean ambient = data.length > 3 && (BooleanUtils.isYes(data[3]) || data[3].equalsIgnoreCase("ambient"));
+			boolean particles = data.length > 4 && (BooleanUtils.isYes(data[4]) || data[4].equalsIgnoreCase("particles"));
+			boolean icon = data.length > 5 && (BooleanUtils.isYes(data[5]) || data[5].equalsIgnoreCase("icon"));
+
+			return new PotionEffect(t, duration, level, ambient, particles, icon);
 		}
-
-		boolean ambient = data.length > 3 && (BooleanUtils.isYes(data[3]) || data[3].equalsIgnoreCase("ambient"));
-
-		boolean particles = data.length > 4 && (BooleanUtils.isYes(data[4]) || data[4].equalsIgnoreCase("particles"));
-
-		boolean icon = data.length > 5 && (BooleanUtils.isYes(data[5]) || data[5].equalsIgnoreCase("icon"));
-
-		return new PotionEffect(t, duration, level, ambient, particles, icon);
 	}
 
 }

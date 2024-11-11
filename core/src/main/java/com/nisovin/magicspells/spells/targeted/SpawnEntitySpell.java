@@ -198,7 +198,7 @@ public class SpawnEntitySpell extends TargetedSpell implements TargetedLocationS
 
 		List<?> attributeList = getConfigList("attributes", null);
 		if (attributeList != null && !attributeList.isEmpty())
-			attributes = AttributeHandler.getAttributeModifiers(attributeList, internalName);
+			attributes = AttributeHandler.getAttributeModifiers(attributeList, "attributes", internalName);
 
 		List<String> list = getConfigStringList("potion-effects", null);
 		if (list != null && !list.isEmpty()) {
