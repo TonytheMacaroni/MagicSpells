@@ -467,9 +467,9 @@ public class MagicSpells extends JavaPlugin {
 		debugLevelOriginal = config.getInt(path + "debug-level", 3);
 		debugLevel = debugLevelOriginal;
 
-		DebugPath generalPath = MagicDebug.pushPath("general.yml", DebugPath.Type.FILE);
-		debugConfig = new DebugConfig(config.getSection("general"));
-		MagicDebug.popPath(generalPath);
+		try (var ignored = MagicDebug.pushPath("general.yml", DebugPath.Type.FILE)) {
+			debugConfig = new DebugConfig(config.getSection("general"));
+		}
 
 		tabCompleteInternalNames = config.getBoolean(path + "tab-complete-internal-names", false);
 		terminateEffectlibInstances = config.getBoolean(path + "terminate-effectlib-instances", true);
