@@ -154,6 +154,8 @@ public class ModifierSet {
 	}
 
 	private boolean check(LivingEntity caster, SpellData data, Predicate<Modifier> check) {
+		if (modifiers.isEmpty()) return true;
+
 		try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Processing modifier set '%s'.", MagicDebug.resolveShortPath(path))
 			.pushPaths(path, DebugPath.Type.LIST)
 		) {
@@ -176,6 +178,8 @@ public class ModifierSet {
 	}
 
 	private ModifierResult checkResult(LivingEntity caster, SpellData data, Function<Modifier, ModifierResult> apply) {
+		if (modifiers.isEmpty()) return new ModifierResult(data, true);
+
 		try (var ignored = MagicDebug.section(DebugCategory.MODIFIERS, "Processing modifier set '%s'.", MagicDebug.resolveShortPath(path))
 			.pushPaths(path, DebugPath.Type.LIST)
 		) {
