@@ -83,7 +83,7 @@ public class Util {
 			.path("potion-effects", DebugPath.Type.LIST)
 		)) {
 			for (int i = 0; i < potionEffectData.size(); i++) {
-				try (var ignored1 = MagicDebug.section("Initializing entry at index #%d.", i).pushPath(Integer.toString(i), DebugPath.Type.LIST_ENTRY)) {
+				try (var ignored1 = MagicDebug.section("Initializing entry at index #%d.", i).pushListEntry(i)) {
 					Object potionEffectObj = potionEffectData.get(i);
 
 					if (potionEffectObj instanceof Map<?, ?> potionEffectMap) {

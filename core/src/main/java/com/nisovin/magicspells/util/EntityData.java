@@ -502,7 +502,7 @@ public class EntityData {
 				EntityType type = entityType.isConstant() ? entityType.get() : null;
 
 				for (int i = 0; i < delayedDataEntries.size(); i++) {
-					try (var ignored2 = MagicDebug.section("Initializing entry at index #%d.", i).pushPath(Integer.toString(i), DebugPath.Type.LIST_ENTRY)) {
+					try (var ignored2 = MagicDebug.section("Initializing entry at index #%d.", i).pushListEntry(i)) {
 						Object object = delayedDataEntries.get(i);
 
 						if (!(object instanceof Map<?, ?> map)) {

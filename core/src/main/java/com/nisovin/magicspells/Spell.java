@@ -621,53 +621,68 @@ public abstract class Spell implements Comparable<Spell>, Debuggable, Listener {
 		if (rawSharedCooldowns != null) {
 			sharedCooldowns = new ArrayList<>();
 
-			for (Object object : rawSharedCooldowns) {
-				if (object instanceof String s) {
-					String[] data = s.split(" ");
-					if (data.length != 2) {
-						MagicDebug.warn("Invalid shared cooldown '%s' %s - too many/few arguments.", s, MagicDebug.resolveFullPath());
-						continue;
-					}
+			try (var ignored = MagicDebug.section("Resolving 'shared-cooldowns'.")
+				.pushPath("shared-cooldowns", DebugPath.Type.LIST)
+			) {
+				for (int i = 0; i < rawSharedCooldowns.size(); i++) {
+					Object object = rawSharedCooldowns.get(i);
 
-					Spell spell = MagicSpells.getSpellByInternalName(data[0]);
-					if (spell == null) {
-						MagicDebug.warn("Invalid spell '%s' in shared cooldown '%s' %s.", data[0], s, MagicDebug.resolveFullPath());
-						continue;
-					}
+					try (var ignored1 = MagicDebug.pushListEntry(i)) {
+						if (object instanceof String s) {
+							try (var ignored2 = MagicDebug.section("Resolving string-based shared cooldown '%s'.", s)) {
+								String[] data = s.split(" ");
+								if (data.length != 2) {
+									MagicDebug.warn("Invalid shared cooldown %s - too many/few arguments.", MagicDebug.resolveFullPath());
+									continue;
+								}
 
-					float cooldown;
-					try {
-						cooldown = Float.parseFloat(data[1]);
-					} catch (NumberFormatException e) {
-						MagicDebug.warn("Invalid cooldown '%s' in shared cooldown '%s' %s.", data[1], s, MagicDebug.resolveFullPath());
-						continue;
-					}
+								Spell spell = MagicSpells.getSpellByInternalName(data[0]);
+								if (spell == null) {
+									MagicDebug.warn("Invalid spell '%s' in shared cooldown %s.", data[0], MagicDebug.resolveFullPath());
+									continue;
+								}
 
-					sharedCooldowns.add(new SharedCooldown(Set.of(spell), spellData -> cooldown));
-					continue;
+								float cooldown;
+								try {
+									cooldown = Float.parseFloat(data[1]);
+								} catch (NumberFormatException e) {
+									MagicDebug.warn("Invalid cooldown '%s' in shared cooldown %s.", data[1], MagicDebug.resolveFullPath());
+									continue;
+								}
+
+								sharedCooldowns.add(new SharedCooldown(Set.of(spell), spellData -> cooldown));
+								continue;
+							}
+						}
+
+						if (object instanceof Map<?, ?> map) {
+							try (var ignored2 = MagicDebug.section("Resolving section-based shared cooldown.")) {
+								ConfigurationSection section = ConfigReaderUtil.mapToSection(map);
+
+								if (!section.isString("filter") && !section.isConfigurationSection("filter")) {
+									MagicDebug.warn("No 'filter' specified in shared cooldown %s.", MagicDebug.resolveFullPath());
+									continue;
+								}
+
+								SpellFilter filter = SpellFilter.fromConfig(section, "filter");
+
+								ConfigData<Float> cooldown = ConfigDataUtil.getFloat(section, "cooldown");
+								if (cooldown.isNull()) {
+									MagicDebug.warn("Invalid or no 'cooldown' specified in shared cooldown %s.", MagicDebug.resolveFullPath());
+									continue;
+								}
+
+								sharedCooldowns.add(new SharedCooldown(filter.getMatchingSpells(), cooldown));
+								continue;
+							}
+
+							sharedCooldowns.add(new SharedCooldown(filter.getMatchingSpells(), cooldown));
+							continue;
+						}
+
+						MagicDebug.warn("Invalid shared cooldown '%s' on %s.", object, MagicDebug.resolveFullPath());
+					}
 				}
-
-				if (object instanceof Map<?, ?> map) {
-					ConfigurationSection section = ConfigReaderUtil.mapToSection(map);
-
-					if (!section.isString("filter") && !section.isConfigurationSection("filter")) {
-						MagicDebug.warn("No 'filter' specified in shared cooldown %s.", MagicDebug.resolveFullPath());
-						continue;
-					}
-
-					SpellFilter filter = SpellFilter.fromConfig(section, "filter");
-
-					ConfigData<Float> cooldown = ConfigDataUtil.getFloat(section, "cooldown");
-					if (cooldown.isNull()) {
-						MagicDebug.warn("Invalid or no 'cooldown' specified in shared cooldown %s.", MagicDebug.resolveFullPath());
-						continue;
-					}
-
-					sharedCooldowns.add(new SharedCooldown(filter.getMatchingSpells(), cooldown));
-					continue;
-				}
-
-				MagicDebug.warn("Invalid shared cooldown %s on %s.", object, MagicDebug.resolveFullPath());
 			}
 		}
 

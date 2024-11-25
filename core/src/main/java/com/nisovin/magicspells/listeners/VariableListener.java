@@ -43,13 +43,11 @@ public class VariableListener implements Listener {
 	public void onQuit(PlayerQuitEvent event) {
 		Player player = event.getPlayer();
 
-		try (var ignored = MagicDebug.section(DebugCategory.VARIABLES, "Saving variables on quit for player '%s'.", player.getName())) {
-			if (!variableManager.getDirtyPlayerVariables().contains(player.getName())) {
-				MagicDebug.info("Variables not marked dirty - skipping save.");
-				return;
-			}
+		String name = player.getName();
+		if (!variableManager.getDirtyPlayerVariables().contains(name)) return;
 
-			variableManager.savePlayerVariables(player.getName(), Util.getUniqueId(player));
+		try (var ignored = MagicDebug.section(DebugCategory.VARIABLES, "Saving variables on quit for player '%s'.", name)) {
+			variableManager.savePlayerVariables(name, Util.getUniqueId(player));
 		}
 	}
 
@@ -62,10 +60,7 @@ public class VariableListener implements Listener {
 		}
 
 		VariableModSet varMods = event.getSpell().getVariableModsCast();
-		if (varMods == null || varMods.isEmpty()) {
-			MagicDebug.info("No 'variable-mods-cast' found.");
-			return;
-		}
+		if (varMods == null || varMods.isEmpty()) return;
 
 		varMods.process(event.getSpellData());
 	}
@@ -85,10 +80,7 @@ public class VariableListener implements Listener {
 		}
 
 		VariableModSet varMods = event.getSpell().getVariableModsCasted();
-		if (varMods == null || varMods.isEmpty()) {
-			MagicDebug.info("No 'variable-mods-casted' found.");
-			return;
-		}
+		if (varMods == null || varMods.isEmpty()) return;
 
 		varMods.process(event.getSpellData());
 	}
@@ -96,10 +88,7 @@ public class VariableListener implements Listener {
 	@EventHandler(priority = EventPriority.MONITOR)
 	public void variableModsTarget(SpellTargetEvent event) {
 		VariableModSet varMods = event.getSpell().getVariableModsTarget();
-		if (varMods == null || varMods.isEmpty()) {
-			MagicDebug.info("No 'variable-mods-target' found.");
-			return;
-		}
+		if (varMods == null || varMods.isEmpty()) return;
 
 		varMods.process(VariableOwner.TARGET, event.getSpellData());
 	}
