@@ -4,6 +4,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 import org.bukkit.event.EventPriority;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.configuration.ConfigurationSection;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -74,6 +75,10 @@ public abstract class PassiveListener implements Listener {
 	}
 	
 	public abstract void initialize(@NotNull String var);
+
+	public boolean initialize(@NotNull ConfigurationSection config) {
+		return false;
+	}
 
 	public void turnOff() {
 		// No op

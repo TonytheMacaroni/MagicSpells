@@ -1,5 +1,6 @@
 package com.nisovin.magicspells.spells;
 
+import java.util.Map;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -8,6 +9,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.EventPriority;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.configuration.ConfigurationSection;
 
 import com.nisovin.magicspells.Spell;
 import com.nisovin.magicspells.util.*;
@@ -23,7 +25,6 @@ import com.nisovin.magicspells.spells.passive.util.PassiveListener;
 public class PassiveSpell extends Spell {
 
 	private final List<PassiveListener> passiveListeners;
-	private final List<String> triggers;
 	private final List<String> spellNames;
 	private List<Subspell> spells;
 
@@ -46,7 +47,6 @@ public class PassiveSpell extends Spell {
 
 		passiveListeners = new ArrayList<>();
 
-		triggers = getConfigStringList("triggers", null);
 		spellNames = getConfigStringList("spells", null);
 
 		if (config.isList(internalKey + "can-trigger")) {
@@ -98,45 +98,90 @@ public class PassiveSpell extends Spell {
 	}
 
 	public void initializeListeners() {
-		// Get trigger
-		int trigCount = 0;
+		List<?> triggers = getConfigList("triggers", null);
 		if (triggers == null) {
 			MagicSpells.error("PassiveSpell '" + internalName + "' has no triggers defined!");
 			return;
 		}
 
-		for (String trigger : triggers) {
-			String type = trigger;
-			String args = "";
-			if (trigger.contains(" ")) {
-				String[] data = Util.splitParams(trigger, 2);
-				type = data[0];
-				// Util#splitParams does not return empty-string elements.
-				if (data.length > 1) args = data[1];
+		int count = 0;
+		for (int i = 0; i < triggers.size(); i++) {
+			Object trigger = triggers.get(i);
+
+			switch (trigger) {
+				case String string -> {
+					String type, args;
+					if (string.contains(" ")) {
+						String[] data = Util.splitParams(string, 2);
+						type = data[0].toLowerCase();
+						args = data.length > 1 ? data[1] : "";
+					} else {
+						type = string.toLowerCase();
+						args = "";
+					}
+
+					EventPriority priority = MagicSpells.getPassiveManager().getEventPriorityFromName(type);
+					if (priority == null) priority = EventPriority.NORMAL;
+
+					String priorityName = MagicSpells.getPassiveManager().getEventPriorityName(priority);
+					if (priorityName != null) type = type.replace(priorityName, "");
+
+					PassiveListener listener = MagicSpells.getPassiveManager().getListenerByName(type);
+					if (listener == null) {
+						MagicSpells.error("PassiveSpell '" + internalName + "' has an invalid trigger type defined: " + type);
+						continue;
+					}
+
+					listener.setPassiveSpell(this);
+					listener.setEventPriority(priority);
+					listener.initialize(args);
+					MagicSpells.registerEvents(listener, priority);
+					passiveListeners.add(listener);
+					count++;
+				}
+				case Map<?, ?> map -> {
+					ConfigurationSection config = ConfigReaderUtil.mapToSection(map);
+
+					String type = config.getString("trigger");
+					if (type == null) {
+						MagicSpells.error("PassiveSpell '" + internalName + "' has no 'trigger' defined for trigger at position " + i + ".");
+						continue;
+					}
+
+					PassiveListener listener = MagicSpells.getPassiveManager().getListenerByName(type);
+					if (listener == null) {
+						MagicSpells.error("PassiveSpell '" + internalName + "' has an invalid trigger type defined: " + type);
+						continue;
+					}
+
+					listener.setPassiveSpell(this);
+					if (!listener.initialize(config)) {
+						MagicSpells.error("PassiveSpell '" + internalName + "' has an invalid trigger defined at position " + i + ".");
+						continue;
+					}
+
+					EventPriority priority = EventPriority.NORMAL;
+
+					String priorityString = config.getString("priority");
+					if (priorityString != null) {
+						try {
+							priority = EventPriority.valueOf(priorityString.toUpperCase());
+						} catch (IllegalArgumentException e) {
+							MagicSpells.error("PassiveSpell '" + internalName + "' has an invalid 'priority' defined: " + priorityString);
+						}
+					}
+
+					listener.setEventPriority(priority);
+					MagicSpells.registerEvents(listener, priority);
+					passiveListeners.add(listener);
+					count++;
+				}
+				default ->
+					MagicSpells.error("PassiveSpell '" + internalName + "' has an invalid trigger defined: " + trigger);
 			}
-			type = type.toLowerCase();
-
-			EventPriority priority = MagicSpells.getPassiveManager().getEventPriorityFromName(type);
-			if (priority == null) priority = EventPriority.NORMAL;
-
-			String priorityName = MagicSpells.getPassiveManager().getEventPriorityName(priority);
-			if (priorityName != null) type = type.replace(priorityName, "");
-
-			PassiveListener listener = MagicSpells.getPassiveManager().getListenerByName(type);
-			if (listener == null) {
-				MagicSpells.error("PassiveSpell '" + internalName + "' has an invalid trigger defined: " + type);
-				continue;
-			}
-
-			listener.setPassiveSpell(this);
-			listener.setEventPriority(priority);
-			listener.initialize(args);
-			MagicSpells.registerEvents(listener, priority);
-			passiveListeners.add(listener);
-			trigCount++;
 		}
 
-		if (trigCount == 0) MagicSpells.error("PassiveSpell '" + internalName + "' has no triggers defined!");
+		if (count == 0) MagicSpells.error("PassiveSpell '" + internalName + "' has no triggers defined!");
 	}
 
 	public List<PassiveListener> getPassiveListeners() {
