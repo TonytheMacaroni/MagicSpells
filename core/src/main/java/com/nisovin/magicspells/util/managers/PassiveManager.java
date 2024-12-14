@@ -99,6 +99,7 @@ public class PassiveManager {
 		addListener(BlockPlaceListener.class);
 		addListener(BuffListener.class);
 		addListener(CraftListener.class);
+		addListener(DamageListener.class);
 		addListener(DeathListener.class);
 		addListener(DropItemListener.class);
 		addListener(EnterBedListener.class);

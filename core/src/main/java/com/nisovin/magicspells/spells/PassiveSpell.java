@@ -233,29 +233,31 @@ public class PassiveSpell extends Spell {
 	}
 
 	public boolean activate(LivingEntity caster) {
-		return activate(caster, null, null);
+		return activate(new SpellData(caster));
 	}
 	
 	public boolean activate(LivingEntity caster, float power) {
-		return activate(caster, null, null, power);
+		return activate(new SpellData(caster, power));
 	}
 	
 	public boolean activate(LivingEntity caster, LivingEntity target) {
-		return activate(caster, target, null, 1F);
+		return activate(new SpellData(caster, target));
 	}
 	
 	public boolean activate(LivingEntity caster, Location location) {
-		return activate(caster, null, location, 1F);
+		return activate(new SpellData(caster, location));
 	}
 	
 	public boolean activate(final LivingEntity caster, final LivingEntity target, final Location location) {
-		return activate(caster, target, location, 1F);
+		return activate(new SpellData(caster, target, location, 1f, null));
 	}
-	
-	public boolean activate(final LivingEntity caster, final LivingEntity target, final Location location, final float power) {
-		if (disabled) return false;
 
-		SpellData data = new SpellData(caster, target, location, power, null);
+	public boolean activate(final LivingEntity caster, final LivingEntity target, final Location location, final float power) {
+		return activate(new SpellData(caster, target, location, power, null));
+	}
+
+	public boolean activate(SpellData data) {
+		if (disabled) return false;
 
 		int delay = this.delay.get(data);
 		if (delay < 0) return activateSpells(data);
