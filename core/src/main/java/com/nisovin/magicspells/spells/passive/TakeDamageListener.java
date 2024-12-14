@@ -22,6 +22,7 @@ import com.nisovin.magicspells.util.magicitems.MagicItems;
 import com.nisovin.magicspells.util.magicitems.MagicItemData;
 import com.nisovin.magicspells.spells.passive.util.PassiveListener;
 import com.nisovin.magicspells.util.magicitems.MagicItemDataParser;
+import com.nisovin.magicspells.events.MagicSpellsEntityDamageByEntityEvent;
 
 // Optional trigger variable of a pipe separated list that can contain
 // damage causes or damaging magic items to accept
@@ -80,6 +81,12 @@ public class TakeDamageListener extends PassiveListener {
 
 		boolean casted = passiveSpell.activate(caster, attacker);
 		if (cancelDefaultAction(casted)) event.setCancelled(true);
+	}
+
+	@OverridePriority
+	@EventHandler
+	public void onLegacyDamage(MagicSpellsEntityDamageByEntityEvent event) {
+		onDamage(event);
 	}
 
 	private LivingEntity getAttacker(EntityDamageEvent event) {

@@ -13,6 +13,7 @@ import com.nisovin.magicspells.util.Name;
 import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.util.OverridePriority;
 import com.nisovin.magicspells.spells.passive.util.PassiveListener;
+import com.nisovin.magicspells.events.MagicSpellsEntityDamageByEntityEvent;
 
 @Name("fataldamage")
 public class FatalDamageListener extends PassiveListener {
@@ -37,7 +38,7 @@ public class FatalDamageListener extends PassiveListener {
 
 	@OverridePriority
 	@EventHandler
-	void onDamage(EntityDamageEvent event) {
+	public void onDamage(EntityDamageEvent event) {
 		if (!(event.getEntity() instanceof LivingEntity caster)) return;
 		if (!isCancelStateOk(event.isCancelled())) return;
 		if (event.getFinalDamage() < caster.getHealth()) return;
@@ -46,6 +47,12 @@ public class FatalDamageListener extends PassiveListener {
 
 		boolean casted = passiveSpell.activate(caster);
 		if (cancelDefaultAction(casted)) event.setCancelled(true);
+	}
+
+	@OverridePriority
+	@EventHandler
+	public void onLegacyDamage(MagicSpellsEntityDamageByEntityEvent event) {
+		onDamage(event);
 	}
 
 }
