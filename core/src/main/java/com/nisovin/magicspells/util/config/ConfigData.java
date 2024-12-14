@@ -18,6 +18,13 @@ public interface ConfigData<T> {
 		return value == null ? fallback : value;
 	}
 
+	default ConfigData<T> orDefault(@NotNull ConfigData<T> def) {
+		return data -> {
+			T value = get(data);
+			return value != null ? value : def.get(data);
+		};
+	}
+
 	default boolean isConstant() {
 		return true;
 	}

@@ -1,6 +1,7 @@
 package com.nisovin.magicspells;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import de.slikey.effectlib.Effect;
 
@@ -902,11 +903,11 @@ public abstract class Spell implements Comparable<Spell>, Listener {
 		return ConfigDataUtil.getBlockData(config.getMainConfig(), internalKey + key, def);
 	}
 
-	protected <T extends Keyed> ConfigData<T> getConfigDataRegistryEntry(String key, RegistryKey<T> registryKey, T def) {
+	protected <T extends Keyed> ConfigData<T> getConfigDataRegistryEntry(@NotNull String key, @NotNull RegistryKey<T> registryKey, @Nullable T def) {
 		return ConfigDataUtil.getRegistryEntry(config.getMainConfig(), internalKey + key, RegistryAccess.registryAccess().getRegistry(registryKey), def);
 	}
 
-	protected <T extends Keyed> ConfigData<T> getConfigDataRegistryEntry(String key, Registry<T> registry, T def) {
+	protected <T extends Keyed> ConfigData<T> getConfigDataRegistryEntry(@NotNull String key, @NotNull Registry<T> registry, @Nullable T def) {
 		return ConfigDataUtil.getRegistryEntry(config.getMainConfig(), internalKey + key, registry, def);
 	}
 
