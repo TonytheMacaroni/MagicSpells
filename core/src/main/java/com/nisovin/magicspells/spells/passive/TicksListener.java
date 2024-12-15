@@ -59,86 +59,105 @@ public class TicksListener extends PassiveListener {
 
 	@Override
 	public void turnOff() {
-		ticker.turnOff();
+		if (ticker != null) ticker.turnOff();
 	}
 
 	@OverridePriority
 	@EventHandler
 	public void onChunkLoad(ChunkLoadEvent event) {
+		if (ticker == null) return;
+
 		for (Entity entity : event.getChunk().getEntities()) {
-			if (!(entity instanceof LivingEntity)) continue;
-			if (!canTrigger((LivingEntity) entity)) continue;
-			ticker.add((LivingEntity) entity);
+			if (!(entity instanceof LivingEntity le) || !canTrigger(le)) continue;
+			ticker.add(le);
 		}
 	}
 
 	@OverridePriority
 	@EventHandler
 	public void onChunkUnload(ChunkUnloadEvent event) {
+		if (ticker == null) return;
+
 		for (Entity entity : event.getChunk().getEntities()) {
-			if (!(entity instanceof LivingEntity)) continue;
-			if (!canTrigger((LivingEntity) entity)) continue;
-			ticker.remove((LivingEntity) entity);
+			if (!(entity instanceof LivingEntity le) || !canTrigger(le)) continue;
+			ticker.remove(le);
 		}
 	}
 
 	@OverridePriority
 	@EventHandler
 	public void onEntitySpawn(EntitySpawnEvent event) {
+		if (ticker == null) return;
+
 		Entity entity = event.getEntity();
-		if (entity instanceof Player) return;
-		if (!(entity instanceof LivingEntity)) return;
-		if (!canTrigger((LivingEntity) entity)) return;
-		ticker.add((LivingEntity) entity);
+		if (entity instanceof Player || !(entity instanceof LivingEntity le) || !canTrigger(le)) return;
+
+		ticker.add(le);
 	}
 
 	@OverridePriority
 	@EventHandler
 	public void onJoin(PlayerJoinEvent event) {
+		if (ticker == null) return;
+
 		Player player = event.getPlayer();
 		if (!canTrigger(player)) return;
+
 		ticker.add(player);
 	}
 
 	@OverridePriority
 	@EventHandler
 	public void onQuit(PlayerQuitEvent event) {
+		if (ticker == null) return;
+
 		Player player = event.getPlayer();
 		if (!canTrigger(player)) return;
+
 		ticker.remove(player);
 	}
 
 	@OverridePriority
 	@EventHandler
 	public void onDeath(PlayerDeathEvent event) {
+		if (ticker == null) return;
+
 		Player player = event.getEntity();
 		if (!canTrigger(player)) return;
+
 		ticker.remove(player);
 	}
 
 	@OverridePriority
 	@EventHandler
 	public void onRespawn(PlayerRespawnEvent event) {
+		if (ticker == null) return;
+
 		Player player = event.getPlayer();
 		if (!canTrigger(player)) return;
+
 		ticker.add(player);
 	}
 
 	@OverridePriority
 	@EventHandler
 	public void onLearn(SpellLearnEvent event) {
+		if (ticker == null) return;
+
 		Spell spell = event.getSpell();
-		if (!(spell instanceof PassiveSpell)) return;
-		if (!spell.getInternalName().equals(passiveSpell.getInternalName())) return;
+		if (!(spell instanceof PassiveSpell passive) || !passive.equals(passiveSpell)) return;
+
 		ticker.add(event.getLearner());
 	}
 
 	@OverridePriority
 	@EventHandler
 	public void onForget(SpellForgetEvent event) {
+		if (ticker == null) return;
+
 		Spell spell = event.getSpell();
-		if (!(spell instanceof PassiveSpell)) return;
-		if (!spell.getInternalName().equals(passiveSpell.getInternalName())) return;
+		if (!(spell instanceof PassiveSpell passive) || !passive.equals(passiveSpell)) return;
+
 		ticker.remove(event.getForgetter());
 	}
 
