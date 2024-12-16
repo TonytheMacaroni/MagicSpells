@@ -4,6 +4,8 @@ import org.bukkit.World;
 import org.bukkit.Location;
 import org.bukkit.util.Vector;
 import org.bukkit.entity.Player;
+import org.bukkit.damage.DamageType;
+import org.bukkit.damage.DamageSource;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.entity.EntityRegainHealthEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
@@ -12,8 +14,8 @@ import com.nisovin.magicspells.util.*;
 import com.nisovin.magicspells.Subspell;
 import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.spells.TargetedSpell;
-import com.nisovin.magicspells.util.compat.EventUtil;
 import com.nisovin.magicspells.mana.ManaChangeReason;
+import com.nisovin.magicspells.util.compat.EventUtil;
 import com.nisovin.magicspells.util.config.ConfigData;
 import com.nisovin.magicspells.spells.TargetedEntitySpell;
 import com.nisovin.magicspells.spelleffects.EffectPosition;
@@ -21,20 +23,15 @@ import com.nisovin.magicspells.events.SpellApplyDamageEvent;
 import com.nisovin.magicspells.events.MagicSpellsEntityRegainHealthEvent;
 import com.nisovin.magicspells.events.MagicSpellsEntityDamageByEntityEvent;
 
+import io.papermc.paper.registry.RegistryKey;
+
+@SuppressWarnings("UnstableApiUsage")
 public class DrainlifeSpell extends TargetedSpell implements TargetedEntitySpell {
 
-	private static final String STR_MANA = "mana";
-	private static final String STR_HEALTH = "health";
-	private static final String STR_HUNGER = "hunger";
-	private static final String STR_EXPERIENCE = "experience";
-
-	private static final int MAX_FOOD_LEVEL = 20;
-	private static final int MIN_FOOD_LEVEL = 0;
-	private static final double MIN_HEALTH = 0D;
-
-	private final ConfigData<String> takeType;
-	private final ConfigData<String> giveType;
+	private final ConfigData<DrainType> takeType;
+	private final ConfigData<DrainType> giveType;
 	private final ConfigData<String> spellDamageType;
+	private final ConfigData<DamageType> drainDamageType;
 
 	private final ConfigData<Double> takeAmt;
 	private final ConfigData<Double> giveAmt;
@@ -56,8 +53,8 @@ public class DrainlifeSpell extends TargetedSpell implements TargetedEntitySpell
 	public DrainlifeSpell(MagicConfig config, String spellName) {
 		super(config, spellName);
 
-		takeType = getConfigDataString("take-type", "health");
-		giveType = getConfigDataString("give-type", "health");
+		takeType = getConfigDataEnum("take-type", DrainType.class, DrainType.HEALTH_POINTS);
+		giveType = getConfigDataEnum("give-type", DrainType.class, DrainType.HEALTH_POINTS);
 		spellDamageType = getConfigDataString("spell-damage-type", "");
 
 		takeAmt = getConfigDataDouble("take-amt", 2);
@@ -74,7 +71,9 @@ public class DrainlifeSpell extends TargetedSpell implements TargetedEntitySpell
 
 		spellOnAnimationName = getConfigString("spell-on-animation", "");
 
-		damageType = getConfigDataEnum("damage-type", DamageCause.class, DamageCause.ENTITY_ATTACK);
+		damageType = getConfigDataEnum("damage-type", DamageCause.class, null);
+		drainDamageType = getConfigDataRegistryEntry("drain-damage-type", RegistryKey.DAMAGE_TYPE, null)
+			.orDefault(data -> data.caster() instanceof Player ? DamageType.PLAYER_ATTACK : DamageType.MOB_ATTACK);
 	}
 
 	@Override
@@ -114,10 +113,8 @@ public class DrainlifeSpell extends TargetedSpell implements TargetedEntitySpell
 			give *= data.power();
 		}
 
-		Player playerTarget = target instanceof Player p ? p : null;
-
 		switch (takeType.get(data)) {
-			case STR_HEALTH -> {
+			case HEALTH -> {
 				DamageCause damageType = this.damageType.get(data);
 
 				if (checkPlugins) {
@@ -131,39 +128,44 @@ public class DrainlifeSpell extends TargetedSpell implements TargetedEntitySpell
 				EventUtil.call(event);
 				take = event.getFinalDamage();
 				if (ignoreArmor.get(data)) {
-					double health = target.getHealth();
-					if (health > Util.getMaxHealth(target)) health = Util.getMaxHealth(target);
-					health -= take;
-					if (health < MIN_HEALTH) health = MIN_HEALTH;
-					if (health > Util.getMaxHealth(target)) health = Util.getMaxHealth(target);
-					if (health == MIN_HEALTH && caster instanceof Player) target.setKiller((Player) caster);
+					double maxHealth = Util.getMaxHealth(target);
+					double health = Math.min(target.getHealth(), maxHealth);
+
+					health = Math.clamp(health - take, 0, maxHealth);
+					if (health == 0 && caster instanceof Player playerCaster) target.setKiller(playerCaster);
+
 					target.setHealth(health);
 					target.setLastDamage(take);
-					Util.playHurtEffect(data.target(), data.caster());
+					Util.playHurtEffect(target, caster);
 				} else target.damage(take, caster);
 			}
-			case STR_MANA -> {
-				if (playerTarget == null) break;
+			case HEALTH_POINTS -> {
+				DamageSource source = DamageSource.builder(drainDamageType.get(data))
+					.withDirectEntity(caster)
+					.build();
+
+				target.damage(take, source);
+			}
+			case MANA -> {
+				if (!(target instanceof Player playerTarget)) break;
+
 				boolean removed = MagicSpells.getManaHandler().removeMana(playerTarget, (int) Math.round(take), ManaChangeReason.OTHER);
 				if (!removed) give = 0;
 			}
-			case STR_HUNGER -> {
-				if (playerTarget == null) break;
-				int food = playerTarget.getFoodLevel();
-				if (give > food) give = food;
-				food -= take;
-				if (food < MIN_FOOD_LEVEL) food = MIN_FOOD_LEVEL;
-				playerTarget.setFoodLevel(food);
+			case HUNGER -> {
+				if (!(target instanceof Player playerTarget)) break;
+
+				int food = playerTarget.getFoodLevel() - (int) take;
+				playerTarget.setFoodLevel(Math.clamp(food, 0, 20));
 			}
-			case STR_EXPERIENCE -> {
-				if (playerTarget == null) break;
-				int exp = ExperienceUtils.getExperience(playerTarget);
-				if (give > exp) give = exp;
+			case EXPERIENCE -> {
+				if (!(target instanceof Player playerTarget)) break;
+
 				ExperienceUtils.changeExp(playerTarget, (int) Math.round(-take));
 			}
 		}
 
-		String giveType = this.giveType.get(data);
+		DrainType giveType = this.giveType.get(data);
 		boolean instant = this.instant.get(data);
 
 		if (instant) {
@@ -177,9 +179,9 @@ public class DrainlifeSpell extends TargetedSpell implements TargetedEntitySpell
 		return true;
 	}
 
-	private void giveToCaster(LivingEntity caster, String giveType, double give, boolean checkPlugins) {
+	private void giveToCaster(LivingEntity caster, DrainType giveType, double give, boolean checkPlugins) {
 		switch (giveType) {
-			case STR_HEALTH -> {
+			case HEALTH -> {
 				if (checkPlugins) {
 					MagicSpellsEntityRegainHealthEvent event = new MagicSpellsEntityRegainHealthEvent(caster, give, EntityRegainHealthEvent.RegainReason.CUSTOM);
 					if (!event.callEvent()) return;
@@ -191,20 +193,20 @@ public class DrainlifeSpell extends TargetedSpell implements TargetedEntitySpell
 				if (h > Util.getMaxHealth(caster)) h = Util.getMaxHealth(caster);
 				caster.setHealth(h);
 			}
-			case STR_MANA -> {
-				if (caster instanceof Player)
-					MagicSpells.getManaHandler().addMana((Player) caster, (int) give, ManaChangeReason.OTHER);
+			case HEALTH_POINTS -> caster.heal(give);
+			case MANA -> {
+				if (caster instanceof Player player)
+					MagicSpells.getManaHandler().addMana(player, (int) give, ManaChangeReason.OTHER);
 			}
-			case STR_HUNGER -> {
-				if (caster instanceof Player) {
-					int food = ((Player) caster).getFoodLevel();
-					food += give;
-					if (food > MAX_FOOD_LEVEL) food = MAX_FOOD_LEVEL;
-					((Player) caster).setFoodLevel(food);
+			case HUNGER -> {
+				if (caster instanceof Player player) {
+					int food = player.getFoodLevel() + (int) give;
+					player.setFoodLevel(Math.clamp(food, 0, 20));
 				}
 			}
-			case STR_EXPERIENCE -> {
-				if (caster instanceof Player) ExperienceUtils.changeExp((Player) caster, (int) give);
+			case EXPERIENCE -> {
+				if (caster instanceof Player player)
+					ExperienceUtils.changeExp(player, (int) give);
 			}
 		}
 	}
@@ -214,14 +216,14 @@ public class DrainlifeSpell extends TargetedSpell implements TargetedEntitySpell
 		private final LivingEntity caster;
 		private final boolean checkPlugins;
 		private final boolean instant;
-		private final String giveType;
+		private final DrainType giveType;
 		private final SpellData data;
 		private final Vector current;
 		private final double giveAmt;
 		private final World world;
 		private final int range;
 
-		private DrainAnimation(LivingEntity caster, Location start, String giveType, double giveAmt, boolean instant, boolean checkPlugins, SpellData data) {
+		private DrainAnimation(LivingEntity caster, Location start, DrainType giveType, double giveAmt, boolean instant, boolean checkPlugins, SpellData data) {
 			super(animationSpeed.get(data), true);
 
 			this.data = data;
@@ -250,6 +252,16 @@ public class DrainlifeSpell extends TargetedSpell implements TargetedEntitySpell
 				if (!instant) giveToCaster(caster, giveType, giveAmt, checkPlugins);
 			}
 		}
+
+	}
+
+	private enum DrainType{
+
+		EXPERIENCE,
+		HEALTH,
+		HEALTH_POINTS,
+		HUNGER,
+		MANA
 
 	}
 
