@@ -17,7 +17,6 @@ import com.nisovin.magicspells.util.compat.EventUtil;
 import com.nisovin.magicspells.util.config.ConfigData;
 import com.nisovin.magicspells.spells.TargetedEntitySpell;
 import com.nisovin.magicspells.events.SpellApplyDamageEvent;
-import com.nisovin.magicspells.events.MagicSpellsEntityDamageByEntityEvent;
 
 public class CombustSpell extends TargetedSpell implements TargetedEntitySpell {
 
@@ -57,10 +56,8 @@ public class CombustSpell extends TargetedSpell implements TargetedEntitySpell {
 
 	@Override
 	public CastResult castAtEntity(SpellData data) {
-		if (data.hasCaster() && checkPlugins.get(data)) {
-			MagicSpellsEntityDamageByEntityEvent event = new MagicSpellsEntityDamageByEntityEvent(data.caster(), data.target(), DamageCause.ENTITY_ATTACK, 1, this);
-			if (!event.callEvent()) return noTarget(data);
-		}
+		if (data.hasCaster() && checkPlugins.get(data) && checkFakeDamageEvent(data.caster(), data.target()))
+			return noTarget(data);
 
 		int duration = fireTicks.get(data);
 		if (powerAffectsFireTicks.get(data)) duration = Math.round(duration * data.power());

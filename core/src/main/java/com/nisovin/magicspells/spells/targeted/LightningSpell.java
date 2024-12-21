@@ -60,10 +60,8 @@ public class LightningSpell extends TargetedSpell implements TargetedLocationSpe
 			double additionalDamage = this.additionalDamage.get(data);
 			if (powerAffectsAdditionalDamage.get(data)) additionalDamage *= data.power();
 
-			if (checkPlugins.get(data)) {
-				MagicSpellsEntityDamageByEntityEvent event = new MagicSpellsEntityDamageByEntityEvent(data.caster(), data.target(), DamageCause.LIGHTNING, additionalDamage, this);
-				if (!event.callEvent()) return noTarget(data);
-			}
+			if (checkPlugins.get(data) && checkFakeDamageEvent(data.caster(), data.target()))
+				return noTarget(data);
 
 			ChargeOption option = new ChargeOption(additionalDamage, chargeCreepers.get(data), zapPigs.get(data));
 

@@ -12,6 +12,7 @@ import java.util.*;
 import java.util.function.Predicate;
 import java.util.concurrent.ThreadLocalRandom;
 
+import com.google.common.base.Functions;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.LinkedListMultimap;
 
@@ -23,8 +24,10 @@ import org.bukkit.event.Listener;
 import org.bukkit.scoreboard.Team;
 import org.bukkit.util.VoxelShape;
 import org.bukkit.util.BoundingBox;
+import org.bukkit.damage.DamageType;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.EventHandler;
+import org.bukkit.damage.DamageSource;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.event.EventPriority;
@@ -1588,15 +1591,36 @@ public abstract class Spell implements Comparable<Spell>, Listener {
 
 			target = targetEvent.getTarget();
 
-			if (targetDamageCause != null) {
-				EntityDamageByEntityEvent entityDamageEvent = new MagicSpellsEntityDamageByEntityEvent(caster, target, targetDamageCause, targetDamageAmount, this);
-				if (!entityDamageEvent.callEvent()) continue;
-			}
+			if (targetDamageCause != null && checkFakeDamageEvent(caster, target, targetDamageCause, targetDamageAmount))
+				continue;
 
 			return new TargetInfo<>(target, targetEvent.getSpellData(), false);
 		}
 
 		return new TargetInfo<>(null, data, false);
+	}
+
+	protected boolean checkFakeDamageEvent(@NotNull LivingEntity caster, @NotNull LivingEntity target) {
+		return !createFakeDamageEvent(caster, target, DamageCause.ENTITY_ATTACK, 1).callEvent();
+	}
+
+	protected boolean checkFakeDamageEvent(@NotNull LivingEntity caster, @NotNull LivingEntity target, @NotNull DamageCause cause, double damage) {
+		return !createFakeDamageEvent(caster, target, cause, damage).callEvent();
+	}
+
+	@SuppressWarnings({"UnstableApiUsage", "deprecation"})
+	protected EntityDamageByEntityEvent createFakeDamageEvent(@NotNull LivingEntity caster, @NotNull LivingEntity target, @NotNull DamageCause cause, double damage) {
+		DamageType damageType = caster instanceof Player ? DamageType.PLAYER_ATTACK : DamageType.MOB_ATTACK;
+		DamageSource source = DamageSource.builder(damageType).withDirectEntity(caster).build();
+
+		EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(
+			caster, target, cause, source,
+			Map.of(EntityDamageEvent.DamageModifier.BASE, damage),
+			Map.of(EntityDamageEvent.DamageModifier.BASE, Functions.constant(-0.0)),
+			false
+		);
+
+		return event;
 	}
 
 	protected Block getTargetedBlock(LivingEntity entity, float power) {

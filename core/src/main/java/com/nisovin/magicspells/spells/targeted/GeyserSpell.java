@@ -11,13 +11,13 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 
 import com.nisovin.magicspells.util.*;
 import com.nisovin.magicspells.spells.TargetedSpell;
 import com.nisovin.magicspells.util.config.ConfigData;
 import com.nisovin.magicspells.spells.TargetedEntitySpell;
-import com.nisovin.magicspells.events.MagicSpellsEntityDamageByEntityEvent;
 
 public class GeyserSpell extends TargetedSpell implements TargetedEntitySpell {
 
@@ -68,18 +68,16 @@ public class GeyserSpell extends TargetedSpell implements TargetedEntitySpell {
 		double damage = this.damage.get(data);
 		if (powerAffectsDamage.get(data)) damage *= data.power();
 
-		if (data.hasCaster() && damage > 0 && checkPlugins.get(data)) {
-			MagicSpellsEntityDamageByEntityEvent event = new MagicSpellsEntityDamageByEntityEvent(data.caster(), target, DamageCause.ENTITY_ATTACK, damage, this);
-			if (!event.callEvent()) return noTarget(data);
-
-			if (!avoidDamageModification.get(data)) damage = event.getDamage();
-		}
-
 		if (damage > 0) {
 			if (ignoreArmor.get(data)) {
-				double health = target.getHealth() - damage;
-				if (health < 0) health = 0;
-				target.setHealth(health);
+				if (data.hasCaster() && checkPlugins.get(data)) {
+					EntityDamageEvent event = createFakeDamageEvent(data.caster(), target, DamageCause.ENTITY_ATTACK, damage);
+					if (!event.callEvent()) return noTarget(data);
+
+					if (!avoidDamageModification.get(data)) damage = event.getDamage();
+				}
+
+				target.setHealth(Math.clamp(target.getHealth() - damage, 0, Util.getMaxHealth(target)));
 				Util.playHurtEffect(data.target(), data.caster());
 			} else {
 				if (data.hasCaster()) target.damage(damage, data.caster());

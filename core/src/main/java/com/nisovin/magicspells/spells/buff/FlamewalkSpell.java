@@ -7,7 +7,6 @@ import java.util.HashMap;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
-import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 
 import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.util.SpellData;
@@ -16,7 +15,6 @@ import com.nisovin.magicspells.util.MagicConfig;
 import com.nisovin.magicspells.util.config.ConfigData;
 import com.nisovin.magicspells.events.SpellTargetEvent;
 import com.nisovin.magicspells.spelleffects.EffectPosition;
-import com.nisovin.magicspells.events.MagicSpellsEntityDamageByEntityEvent;
 
 public class FlamewalkSpell extends BuffSpell {
 
@@ -140,10 +138,8 @@ public class FlamewalkSpell extends BuffSpell {
 				for (Entity entity : caster.getNearbyEntities(radius, radius, radius)) {
 					if (!(entity instanceof LivingEntity target) || !validTargetList.canTarget(caster, target)) continue;
 
-					if (data.checkPlugins) {
-						MagicSpellsEntityDamageByEntityEvent event = new MagicSpellsEntityDamageByEntityEvent(caster, target, DamageCause.ENTITY_ATTACK, 1, FlamewalkSpell.this);
-						if (!event.callEvent()) continue;
-					}
+					if (data.checkPlugins && checkFakeDamageEvent(caster, target))
+						continue;
 
 					SpellTargetEvent targetEvent = new SpellTargetEvent(FlamewalkSpell.this, data.spellData, target);
 					if (!targetEvent.callEvent()) continue;

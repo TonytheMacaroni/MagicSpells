@@ -2,6 +2,7 @@ package com.nisovin.magicspells.spells.targeted;
 
 import org.bukkit.entity.Player;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 
 import com.nisovin.magicspells.util.*;
@@ -62,11 +63,14 @@ public class PainSpell extends TargetedSpell implements TargetedEntitySpell {
 		DamageCause damageType = this.damageType.get(data);
 		String spellDamageType = this.spellDamageType.get(data);
 
-		if (checkPlugins.get(data)) {
+		boolean checkPlugins = this.checkPlugins.get(data);
+		boolean avoidDamageModification = this.avoidDamageModification.get(data);
+
+		if (checkPlugins && data.hasCaster() && damageType != DamageCause.ENTITY_ATTACK) {
 			MagicSpellsEntityDamageByEntityEvent event = new MagicSpellsEntityDamageByEntityEvent(data.caster(), data.target(), damageType, damage, this);
 			if (!event.callEvent()) return noTarget(data);
 
-			if (!avoidDamageModification.get(data)) damage = event.getDamage();
+			if (!avoidDamageModification) damage = event.getDamage();
 			data.target().setLastDamageCause(event);
 		}
 
@@ -75,6 +79,13 @@ public class PainSpell extends TargetedSpell implements TargetedEntitySpell {
 		damage = event.getFinalDamage();
 
 		if (ignoreArmor.get(data)) {
+			if (checkPlugins && data.hasCaster()) {
+				EntityDamageEvent damageEvent = createFakeDamageEvent(data.caster(), data.target(), DamageCause.ENTITY_ATTACK, damage);
+				if (!damageEvent.callEvent()) return noTarget(data);
+
+				if (!avoidDamageModification) damage = event.getDamage();
+			}
+
 			double maxHealth = Util.getMaxHealth(data.target());
 
 			double health = Math.min(data.target().getHealth(), maxHealth);

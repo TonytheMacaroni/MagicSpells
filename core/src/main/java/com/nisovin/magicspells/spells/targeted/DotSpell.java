@@ -7,6 +7,7 @@ import java.util.HashMap;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 
@@ -161,7 +162,7 @@ public class DotSpell extends TargetedSpell implements TargetedEntitySpell {
 			double localDamage = damage.get(data);
 			if (powerAffectsDamage) localDamage *= data.power();
 
-			if (checkPlugins && data.hasCaster()) {
+			if (checkPlugins && data.hasCaster() && damageType != DamageCause.ENTITY_ATTACK) {
 				MagicSpellsEntityDamageByEntityEvent event = new MagicSpellsEntityDamageByEntityEvent(data.caster(), data.target(), damageType, localDamage, DotSpell.this);
 				if (!event.callEvent()) return;
 
@@ -174,6 +175,13 @@ public class DotSpell extends TargetedSpell implements TargetedEntitySpell {
 			localDamage = event.getFinalDamage();
 
 			if (ignoreArmor) {
+				if (checkPlugins && data.hasCaster()) {
+					EntityDamageEvent damageEvent = createFakeDamageEvent(data.caster(), data.target(), DamageCause.ENTITY_ATTACK, localDamage);
+					if (!damageEvent.callEvent()) return;
+
+					if (!avoidDamageModification) localDamage = event.getDamage();
+				}
+
 				double maxHealth = Util.getMaxHealth(data.target());
 				double health = data.target().getHealth();
 

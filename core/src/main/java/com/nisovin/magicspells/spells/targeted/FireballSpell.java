@@ -28,7 +28,6 @@ import com.nisovin.magicspells.spells.TargetedSpell;
 import com.nisovin.magicspells.util.config.ConfigData;
 import com.nisovin.magicspells.spelleffects.EffectPosition;
 import com.nisovin.magicspells.spells.TargetedEntityFromLocationSpell;
-import com.nisovin.magicspells.events.MagicSpellsEntityDamageByEntityEvent;
 
 public class FireballSpell extends TargetedSpell implements TargetedEntityFromLocationSpell {
 
@@ -101,10 +100,8 @@ public class FireballSpell extends TargetedSpell implements TargetedEntityFromLo
 			if (info.noTarget()) return noTarget(info);
 			data = info.spellData();
 
-			if (checkPlugins.get(data)) {
-				MagicSpellsEntityDamageByEntityEvent event = new MagicSpellsEntityDamageByEntityEvent(data.caster(), data.target(), DamageCause.PROJECTILE, 1D, this);
-				if (!event.callEvent()) return noTarget(data);
-			}
+			if (checkPlugins.get(data) && checkFakeDamageEvent(data.caster(), data.target(), DamageCause.PROJECTILE, 1d))
+				return noTarget(data);
 
 			Location origin = data.caster().getEyeLocation();
 			if (data.caster().equals(data.target())) {
