@@ -28,6 +28,11 @@ import io.papermc.paper.registry.RegistryKey;
 @SuppressWarnings("UnstableApiUsage")
 public class DrainlifeSpell extends TargetedSpell implements TargetedEntitySpell {
 
+	private static final DeprecationNotice HEALTH_DEPRECATION_NOTICE = new DeprecationNotice(
+		"The 'health' drain type of '.targeted.DrainlifeSpell' does not function properly.",
+		"Use the 'health_points' drain type"
+	);
+
 	private final ConfigData<DrainType> takeType;
 	private final ConfigData<DrainType> giveType;
 	private final ConfigData<String> spellDamageType;
@@ -74,6 +79,11 @@ public class DrainlifeSpell extends TargetedSpell implements TargetedEntitySpell
 		damageType = getConfigDataEnum("damage-type", DamageCause.class, null);
 		drainDamageType = getConfigDataRegistryEntry("drain-damage-type", RegistryKey.DAMAGE_TYPE, null)
 			.orDefault(data -> data.caster() instanceof Player ? DamageType.PLAYER_ATTACK : DamageType.MOB_ATTACK);
+
+		MagicSpells.getDeprecationManager().addDeprecation(this, HEALTH_DEPRECATION_NOTICE,
+			takeType.isConstant() && takeType.get() == DrainType.HEALTH ||
+				giveType.isConstant() && giveType.get() == DrainType.HEALTH
+		);
 	}
 
 	@Override

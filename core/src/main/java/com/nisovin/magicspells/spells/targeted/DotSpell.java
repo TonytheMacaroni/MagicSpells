@@ -23,6 +23,11 @@ import com.nisovin.magicspells.events.MagicSpellsEntityDamageByEntityEvent;
 
 public class DotSpell extends TargetedSpell implements TargetedEntitySpell {
 
+	private static final DeprecationNotice DAMAGE_TYPE_DEPRECATION_NOTICE = new DeprecationNotice(
+		"The 'damage-type' option of '.targeted.DotSpell' does not function properly",
+		"Use '.targeted.DamageSpell', in combination with '.targeted.LoopSpell'."
+	);
+
 	private final Map<UUID, Dot> activeDots;
 
 	private final ConfigData<Integer> delay;
@@ -59,6 +64,10 @@ public class DotSpell extends TargetedSpell implements TargetedEntitySpell {
 		damageType = getConfigDataEnum("damage-type", DamageCause.class, DamageCause.ENTITY_ATTACK);
 
 		activeDots = new HashMap<>();
+
+		MagicSpells.getDeprecationManager().addDeprecation(this, DAMAGE_TYPE_DEPRECATION_NOTICE,
+			!damage.isConstant() || damage.get() > 0
+		);
 	}
 
 	@Override

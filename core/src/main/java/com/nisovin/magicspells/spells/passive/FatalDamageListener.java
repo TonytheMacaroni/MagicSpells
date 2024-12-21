@@ -12,11 +12,17 @@ import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import com.nisovin.magicspells.util.Name;
 import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.util.OverridePriority;
+import com.nisovin.magicspells.util.DeprecationNotice;
 import com.nisovin.magicspells.spells.passive.util.PassiveListener;
 import com.nisovin.magicspells.events.MagicSpellsEntityDamageByEntityEvent;
 
 @Name("fataldamage")
 public class FatalDamageListener extends PassiveListener {
+
+	private static final DeprecationNotice DEPRECATION_NOTICE = new DeprecationNotice(
+		"The 'fataldamage' trigger does not function properly.",
+		"Use the 'damage' trigger."
+	);
 
 	private final EnumSet<DamageCause> damageCauses = EnumSet.noneOf(DamageCause.class);
 
@@ -34,6 +40,8 @@ public class FatalDamageListener extends PassiveListener {
 			}
 			damageCauses.add(cause);
 		}
+
+		MagicSpells.getDeprecationManager().addDeprecation(passiveSpell, DEPRECATION_NOTICE);
 	}
 
 	@OverridePriority

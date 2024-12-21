@@ -6,6 +6,7 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 
 import com.nisovin.magicspells.util.*;
+import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.spells.TargetedSpell;
 import com.nisovin.magicspells.util.config.ConfigData;
 import com.nisovin.magicspells.util.compat.CompatBasics;
@@ -14,6 +15,11 @@ import com.nisovin.magicspells.events.SpellApplyDamageEvent;
 import com.nisovin.magicspells.events.MagicSpellsEntityDamageByEntityEvent;
 
 public class PainSpell extends TargetedSpell implements TargetedEntitySpell {
+
+	private static final DeprecationNotice DAMAGE_TYPE_DEPRECATION_NOTICE = new DeprecationNotice(
+		"The 'damage-type' option of '.targeted.PainSpell' does not function properly.",
+		"Use '.targeted.DamageSpell', which has properly damage type support."
+	);
 
 	private final ConfigData<String> spellDamageType;
 	private final ConfigData<DamageCause> damageType;
@@ -40,6 +46,10 @@ public class PainSpell extends TargetedSpell implements TargetedEntitySpell {
 		powerAffectsDamage = getConfigDataBoolean("power-affects-damage", true);
 		avoidDamageModification = getConfigDataBoolean("avoid-damage-modification", true);
 		tryAvoidingAntiCheatPlugins = getConfigDataBoolean("try-avoiding-anticheat-plugins", false);
+
+		MagicSpells.getDeprecationManager().addDeprecation(this, DAMAGE_TYPE_DEPRECATION_NOTICE,
+			!damageType.isConstant() || damageType.get() != DamageCause.ENTITY_ATTACK
+		);
 	}
 
 	@Override

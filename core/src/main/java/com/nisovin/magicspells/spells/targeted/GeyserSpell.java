@@ -15,11 +15,17 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 
 import com.nisovin.magicspells.util.*;
+import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.spells.TargetedSpell;
 import com.nisovin.magicspells.util.config.ConfigData;
 import com.nisovin.magicspells.spells.TargetedEntitySpell;
 
 public class GeyserSpell extends TargetedSpell implements TargetedEntitySpell {
+
+	private static final DeprecationNotice DAMAGE_DEPRECATION_NOTICE = new DeprecationNotice(
+		"The 'damage' option of '.targeted.GeyserSpell' does not function properly.",
+		"Use '.targeted.DamageSpell' for damage."
+	);
 
 	private ConfigData<BlockData> geyserType;
 
@@ -51,6 +57,10 @@ public class GeyserSpell extends TargetedSpell implements TargetedEntitySpell {
 		avoidDamageModification = getConfigDataBoolean("avoid-damage-modification", false);
 
 		geyserType = getConfigDataBlockData("geyser-type", Material.WATER.createBlockData());
+
+		MagicSpells.getDeprecationManager().addDeprecation(this, DAMAGE_DEPRECATION_NOTICE,
+			!damage.isConstant() || damage.get() > 0
+		);
 	}
 
 	@Override
