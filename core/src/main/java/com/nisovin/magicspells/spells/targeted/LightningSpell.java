@@ -1,26 +1,33 @@
 package com.nisovin.magicspells.spells.targeted;
 
-import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.HashMap;
 
 import org.bukkit.Location;
+import org.bukkit.event.Listener;
 import org.bukkit.event.EventHandler;
 import org.bukkit.entity.LivingEntity;
-import org.bukkit.metadata.MetadataValue;
+import org.bukkit.damage.DamageType;
+import org.bukkit.damage.DamageSource;
 import org.bukkit.entity.LightningStrike;
 import org.bukkit.event.entity.PigZapEvent;
-import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.event.entity.CreeperPowerEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
+
+import com.destroystokyo.paper.event.entity.EntityZapEvent;
+import com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent;
 
 import com.nisovin.magicspells.util.*;
 import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.spells.TargetedSpell;
 import com.nisovin.magicspells.util.config.ConfigData;
 import com.nisovin.magicspells.spells.TargetedLocationSpell;
-import com.nisovin.magicspells.events.MagicSpellsEntityDamageByEntityEvent;
 
 public class LightningSpell extends TargetedSpell implements TargetedLocationSpell {
+
+	//	private Map<UUID, ChargeOption> striking;
+	private static LightningListener lightningListener;
 
 	private final ConfigData<Double> additionalDamage;
 
@@ -28,6 +35,7 @@ public class LightningSpell extends TargetedSpell implements TargetedLocationSpe
 	private final ConfigData<Boolean> noDamage;
 	private final ConfigData<Boolean> checkPlugins;
 	private final ConfigData<Boolean> chargeCreepers;
+	private final ConfigData<Boolean> transformEntities;
 	private final ConfigData<Boolean> requireEntityTarget;
 	private final ConfigData<Boolean> powerAffectsAdditionalDamage;
 
@@ -40,8 +48,19 @@ public class LightningSpell extends TargetedSpell implements TargetedLocationSpe
 		noDamage = getConfigDataBoolean("no-damage", false);
 		checkPlugins = getConfigDataBoolean("check-plugins", true);
 		chargeCreepers = getConfigDataBoolean("charge-creepers", true);
+		transformEntities = getConfigDataBoolean("transform-entities", true);
 		requireEntityTarget = getConfigDataBoolean("require-entity-target", false);
 		powerAffectsAdditionalDamage = getConfigDataBoolean("power-affects-additional-damage", true);
+
+		if (lightningListener == null) {
+			lightningListener = new LightningListener();
+			MagicSpells.registerEvents(lightningListener);
+		}
+	}
+
+	@Override
+	protected void turnOff() {
+		if (lightningListener != null) lightningListener = null;
 	}
 
 	@Override
@@ -63,10 +82,9 @@ public class LightningSpell extends TargetedSpell implements TargetedLocationSpe
 			if (checkPlugins.get(data) && checkFakeDamageEvent(data.caster(), data.target()))
 				return noTarget(data);
 
-			ChargeOption option = new ChargeOption(additionalDamage, chargeCreepers.get(data), zapPigs.get(data));
-
+			ChargeOption option = new ChargeOption(additionalDamage, chargeCreepers.get(data), zapPigs.get(data), transformEntities.get(data));
 			LightningStrike strike = data.target().getWorld().strikeLightning(data.target().getLocation());
-			strike.setMetadata("MS" + internalName, new FixedMetadataValue(MagicSpells.plugin, option));
+			lightningListener.striking.put(strike.getUniqueId(), option);
 
 			return new CastResult(PostCastAction.HANDLE_NORMALLY, data);
 		}
@@ -85,57 +103,69 @@ public class LightningSpell extends TargetedSpell implements TargetedLocationSpe
 		else {
 			double additionalDamage = this.additionalDamage.get(data);
 			if (powerAffectsAdditionalDamage.get(data)) additionalDamage *= data.power();
-			ChargeOption option = new ChargeOption(additionalDamage, chargeCreepers.get(data), zapPigs.get(data));
 
+			ChargeOption option = new ChargeOption(additionalDamage, chargeCreepers.get(data), zapPigs.get(data), transformEntities.get(data));
 			LightningStrike strike = target.getWorld().strikeLightning(target);
-			strike.setMetadata("MS" + internalName, new FixedMetadataValue(MagicSpells.plugin, option));
+			lightningListener.striking.put(strike.getUniqueId(), option);
 		}
 
 		playSpellEffects(data);
 		return new CastResult(PostCastAction.HANDLE_NORMALLY, data);
 	}
 
-	@EventHandler
-	public void onLightningDamage(EntityDamageByEntityEvent event) {
-		if (event.getCause() != DamageCause.LIGHTNING || !(event.getDamager() instanceof LightningStrike strike)) return;
+	private record ChargeOption(double additionalDamage, boolean chargeCreeper, boolean changePig, boolean transformEntities) {
 
-		List<MetadataValue> data = strike.getMetadata("MS" + internalName);
-		if (data.isEmpty()) return;
-
-		for (MetadataValue val : data) {
-			ChargeOption option = (ChargeOption) val.value();
-			if (option != null && option.additionalDamage > 0)
-				event.setDamage(event.getDamage() + option.additionalDamage);
-			return;
-		}
 	}
 
-	@EventHandler
-	public void onCreeperCharge(CreeperPowerEvent event) {
-		LightningStrike strike = event.getLightning();
-		if (strike == null) return;
-		List<MetadataValue> data = strike.getMetadata("MS" + internalName);
-		if (data.isEmpty()) return;
-		for (MetadataValue val : data) {
-			ChargeOption option = (ChargeOption) val.value();
-			if (option == null) continue;
-			if (!option.chargeCreeper) event.setCancelled(true);
-			break;
-		}
-	}
+	private static class LightningListener implements Listener {
 
-	@EventHandler
-	public void onPigZap(PigZapEvent event) {
-		LightningStrike strike = event.getLightning();
-		List<MetadataValue> data = strike.getMetadata("MS" + internalName);
-		if (data.isEmpty()) return;
-		for (MetadataValue val : data) {
-			ChargeOption option = (ChargeOption) val.value();
-			if (option == null) continue;
-			if (!option.changePig) event.setCancelled(true);
-		}
-	}
+		private final Map<UUID, ChargeOption> striking = new HashMap<>();
 
-	private record ChargeOption(double additionalDamage, boolean chargeCreeper, boolean changePig) { }
+		@SuppressWarnings("UnstableApiUsage")
+		@EventHandler
+		public void onLightningDamage(EntityDamageByEntityEvent event) {
+			if (!(event.getDamager() instanceof LightningStrike strike)) return;
+
+			DamageSource source = event.getDamageSource();
+			if (source.getDamageType() != DamageType.LIGHTNING_BOLT) return;
+
+			ChargeOption option = striking.get(strike.getUniqueId());
+			if (option == null || option.additionalDamage <= 0) return;
+
+			event.setDamage(event.getDamage() + option.additionalDamage);
+		}
+
+		@EventHandler
+		public void onCreeperCharge(CreeperPowerEvent event) {
+			LightningStrike strike = event.getLightning();
+			if (strike == null) return;
+
+			ChargeOption option = striking.get(strike.getUniqueId());
+			if (option == null || option.transformEntities && option.chargeCreeper) return;
+
+			event.setCancelled(true);
+		}
+
+		@EventHandler
+		public void onPigZap(PigZapEvent event) {
+			ChargeOption option = striking.get(event.getLightning().getUniqueId());
+			if (option == null || option.transformEntities && option.changePig) return;
+
+			event.setCancelled(true);
+		}
+
+		public void onZap(EntityZapEvent event) {
+			ChargeOption option = striking.get(event.getBolt().getUniqueId());
+			if (option == null || option.transformEntities) return;
+
+			event.setCancelled(true);
+		}
+
+		@EventHandler
+		public void onRemove(EntityRemoveFromWorldEvent event) {
+			striking.remove(event.getEntity().getUniqueId());
+		}
+
+	}
 
 }
