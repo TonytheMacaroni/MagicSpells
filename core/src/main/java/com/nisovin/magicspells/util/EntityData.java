@@ -778,7 +778,7 @@ public class EntityData {
 			}
 		}
 
-		try (var ignored = MagicDebug.suppressWarnings()) {
+		try (var ignored = MagicDebug.downgradeWarnings()) {
 			return supplier.get();
 		}
 	}
