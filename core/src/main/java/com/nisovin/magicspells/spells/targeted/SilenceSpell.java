@@ -38,10 +38,6 @@ public class SilenceSpell extends TargetedSpell implements TargetedEntitySpell {
 	private final boolean notifyPassiveSpells;
 	private final ConfigData<Boolean> powerAffectsDuration;
 
-	private String preventCastSpellName;
-	private String preventChatSpellName;
-	private String preventCommandSpellName;
-
 	private SpellFilter filter;
 
 	private Subspell preventCastSpell;
@@ -62,10 +58,6 @@ public class SilenceSpell extends TargetedSpell implements TargetedEntitySpell {
 		notifyPassiveSpells = getConfigBoolean("notify-passive-spells", true);
 		powerAffectsDuration = getConfigDataBoolean("power-affects-duration", true);
 
-		preventCastSpellName = getConfigString("spell-on-denied-cast", "");
-		preventChatSpellName = getConfigString("spell-on-denied-chat", "");
-		preventCommandSpellName = getConfigString("spell-on-denied-command", "");
-
 		if (preventChat) silenced = new ConcurrentHashMap<>();
 		else silenced = new HashMap<>();
 	}
@@ -75,20 +67,17 @@ public class SilenceSpell extends TargetedSpell implements TargetedEntitySpell {
 		super.initialize();
 
 		if (preventCast) {
-			preventCastSpell = initSubspell(preventCastSpellName, true, "spell-on-denied-cast");
-			preventCastSpellName = null;
+			preventCastSpell = initSubspell("spell-on-denied-cast", "", true);
 			registerEvents(new CastListener());
 		}
 
 		if (preventChat) {
-			preventChatSpell = initSubspell(preventChatSpellName, true, "spell-on-denied-chat");
-			preventChatSpellName = null;
+			preventChatSpell = initSubspell("spell-on-denied-chat", "", true);
 			registerEvents(new ChatListener());
 		}
 
 		if (preventCommands) {
-			preventCommandSpell = initSubspell(preventCommandSpellName, true, "spell-on-denied-command");
-			preventCommandSpellName = null;
+			preventCommandSpell = initSubspell("spell-on-denied-command", "", true);
 			registerEvents(new CommandListener());
 		}
 

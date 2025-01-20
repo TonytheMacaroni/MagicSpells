@@ -63,12 +63,6 @@ public class HomingProjectileSpell extends TargetedSpell implements TargetedEnti
 
 	private final ConfigData<Color> arrowColor;
 
-	private String hitSpellName;
-	private String airSpellName;
-	private String groundSpellName;
-	private String modifierSpellName;
-	private String durationSpellName;
-
 	private Subspell hitSpell;
 	private Subspell airSpell;
 	private Subspell groundSpell;
@@ -106,12 +100,7 @@ public class HomingProjectileSpell extends TargetedSpell implements TargetedEnti
 
 		maxDuration = getConfigDataDouble("max-duration", 10);
 
-		hitSpellName = getConfigString("spell", "");
-		airSpellName = getConfigString("spell-on-hit-air", "");
 		projectileName = getConfigDataComponent("projectile-name", Component.empty());
-		groundSpellName = getConfigString("spell-on-hit-ground", "");
-		modifierSpellName = getConfigString("spell-on-modifier-fail", "");
-		durationSpellName = getConfigString("spell-after-duration", "");
 	}
 
 	@Override
@@ -125,17 +114,11 @@ public class HomingProjectileSpell extends TargetedSpell implements TargetedEnti
 	public void initialize() {
 		super.initialize();
 
-		hitSpell = initSubspell(hitSpellName, true, "spell");
-		groundSpell = initSubspell(groundSpellName, true, "spell-on-hit-ground");
-		airSpell = initSubspell(airSpellName, true, "spell-on-hit-air");
-		durationSpell = initSubspell(durationSpellName, true, "spell-after-duration");
-		modifierSpell = initSubspell(modifierSpellName, true, "spell-on-modifier-fail");
-
-		hitSpellName = null;
-		groundSpellName = null;
-		airSpellName = null;
-		durationSpellName = null;
-		modifierSpellName = null;
+		hitSpell = initSubspell("spell", "", true);
+		groundSpell = initSubspell("spell-on-hit-ground", "", true);
+		airSpell = initSubspell("spell-on-hit-air", "", true);
+		durationSpell = initSubspell("spell-after-duration", "", true);
+		modifierSpell = initSubspell("spell-on-modifier-fail", "", true);
 
 		zoneManager = MagicSpells.getNoMagicZoneManager();
 	}

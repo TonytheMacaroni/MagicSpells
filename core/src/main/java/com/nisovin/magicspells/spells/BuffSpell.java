@@ -65,9 +65,6 @@ public abstract class BuffSpell extends TargetedSpell implements TargetedEntityS
 	private final boolean endSpellFromTarget;
 
 	protected String strFade;
-	protected String spellOnEndName;
-	protected String spellOnCostName;
-	protected String spellOnUseIncrementName;
 
 	protected SpellFilter filter;
 
@@ -102,9 +99,6 @@ public abstract class BuffSpell extends TargetedSpell implements TargetedEntityS
 		endSpellFromTarget = getConfigBoolean("end-spell-from-target", true);
 
 		strFade = getConfigString("str-fade", "");
-		spellOnEndName = getConfigString("spell-on-end", "");
-		spellOnCostName = getConfigString("spell-on-cost", "");
-		spellOnUseIncrementName = getConfigString("spell-on-use-increment", "");
 
 		if (cancelOnGiveDamage || cancelOnTakeDamage) registerEvents(new DamageListener());
 		if (cancelOnDeath) registerEvents(new PlayerDeathListener());
@@ -125,13 +119,9 @@ public abstract class BuffSpell extends TargetedSpell implements TargetedEntityS
 	public void initialize() {
 		super.initialize();
 
-		spellOnUseIncrement = initSubspell(spellOnUseIncrementName, true, "spell-on-use-increment");
-		spellOnCost = initSubspell(spellOnCostName, true, "spell-on-cost");
-		spellOnEnd = initSubspell(spellOnEndName, true, "spell-on-end");
-
-		spellOnUseIncrementName = null;
-		spellOnCostName = null;
-		spellOnEndName = null;
+		spellOnUseIncrement = initSubspell("spell-on-use-increment", "", true);
+		spellOnCost = initSubspell("spell-on-cost", "", true);
+		spellOnEnd = initSubspell("spell-on-end", "", true);
 
 		filter = getConfigSpellFilter();
 	}

@@ -54,12 +54,6 @@ public class BeamSpell extends InstantSpell implements TargetedLocationSpell, Ta
 	private Subspell groundSpell;
 	private Subspell entityLocationSpell;
 
-	private String hitSpellName;
-	private String endSpellName;
-	private String travelSpellName;
-	private String groundSpellName;
-	private String entityLocationSpellName;
-
 	private NoMagicZoneManager zoneManager;
 
 	private static final double ANGLE_Y = AccurateMath.toRadians(-90);
@@ -91,29 +85,17 @@ public class BeamSpell extends InstantSpell implements TargetedLocationSpell, Ta
 		changePitch = getConfigDataBoolean("change-pitch", true);
 		stopOnHitEntity = getConfigDataBoolean("stop-on-hit-entity", false);
 		stopOnHitGround = getConfigDataBoolean("stop-on-hit-ground", false);
-
-		hitSpellName = getConfigString("spell", "");
-		endSpellName = getConfigString("spell-on-end", "");
-		travelSpellName = getConfigString("spell-on-travel", "");
-		groundSpellName = getConfigString("spell-on-hit-ground", "");
-		entityLocationSpellName = getConfigString("spell-on-entity-location", "");
 	}
 
 	@Override
 	public void initialize() {
 		super.initialize();
 
-		hitSpell = initSubspell(hitSpellName, true, "spell");
-		endSpell = initSubspell(endSpellName, true, "spell-on-end");
-		travelSpell = initSubspell(travelSpellName, true, "spell-on-travel");
-		groundSpell = initSubspell(groundSpellName, true, "spell-on-hit-ground");
-		entityLocationSpell = initSubspell(entityLocationSpellName, true, "spell-on-entity-location");
-
-		hitSpellName = null;
-		endSpellName = null;
-		travelSpellName = null;
-		groundSpellName = null;
-		entityLocationSpellName = null;
+		hitSpell = initSubspell("spell", "", true);
+		endSpell = initSubspell("spell-on-end", "", true);
+		travelSpell = initSubspell("spell-on-travel", "", true);
+		groundSpell = initSubspell("spell-on-hit-ground", "", true);
+		entityLocationSpell = initSubspell("spell-on-entity-location", "", true);
 
 		zoneManager = MagicSpells.getNoMagicZoneManager();
 	}

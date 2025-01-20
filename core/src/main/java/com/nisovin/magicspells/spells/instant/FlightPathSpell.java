@@ -25,8 +25,6 @@ public class FlightPathSpell extends InstantSpell {
 
 	private FlightHandler flightHandler;
 
-	private String landSpellName;
-
 	private final ConfigData<Float> speed;
 	private final ConfigData<Float> targetX;
 	private final ConfigData<Float> targetZ;
@@ -45,16 +43,13 @@ public class FlightPathSpell extends InstantSpell {
 
 		interval = getConfigInt("interval", 5);
 		cruisingAltitude = getConfigDataInt("cruising-altitude", 150);
-
-		landSpellName = getConfigString("land-spell", "");
 	}
 
 	@Override
 	public void initialize() {
 		super.initialize();
 
-		landSpell = initSubspell(landSpellName, true, "land-spell");
-		landSpellName = null;
+		landSpell = initSubspell("land-spell", "", true);
 
 		flightHandler = new FlightHandler();
 	}

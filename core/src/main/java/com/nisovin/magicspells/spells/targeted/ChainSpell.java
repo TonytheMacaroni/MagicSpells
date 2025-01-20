@@ -24,7 +24,6 @@ public class ChainSpell extends TargetedSpell implements TargetedEntitySpell, Ta
 
 	private final ConfigData<Double> bounceRange;
 
-	private String spellToCastName;
 	private Subspell spellToCast;
 
 	public ChainSpell(MagicConfig config, String spellName) {
@@ -35,15 +34,13 @@ public class ChainSpell extends TargetedSpell implements TargetedEntitySpell, Ta
 
 		bounceRange = getConfigDataDouble("bounce-range", 8);
 
-		spellToCastName = getConfigString("spell", "");
 	}
 
 	@Override
 	public void initialize() {
 		super.initialize();
 
-		spellToCast = initSubspell(spellToCastName, false, "spell");
-		spellToCastName = null;
+		spellToCast = initSubspell("spell", "", false);
 	}
 
 	@Override

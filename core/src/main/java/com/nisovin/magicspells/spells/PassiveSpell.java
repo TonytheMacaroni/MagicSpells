@@ -15,6 +15,7 @@ import com.nisovin.magicspells.Spell;
 import com.nisovin.magicspells.util.*;
 import com.nisovin.magicspells.Subspell;
 import com.nisovin.magicspells.MagicSpells;
+import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.events.SpellCastEvent;
 import com.nisovin.magicspells.util.config.ConfigData;
 import com.nisovin.magicspells.events.SpellCastedEvent;
@@ -25,7 +26,6 @@ import com.nisovin.magicspells.spells.passive.util.PassiveListener;
 public class PassiveSpell extends Spell {
 
 	private final List<PassiveListener> passiveListeners;
-	private final List<String> spellNames;
 	private List<Subspell> spells;
 
 	private final ValidTargetList triggerList;
@@ -46,8 +46,6 @@ public class PassiveSpell extends Spell {
 		super(config, spellName);
 
 		passiveListeners = new ArrayList<>();
-
-		spellNames = getConfigStringList("spells", null);
 
 		if (config.isList(internalKey + "can-trigger")) {
 			List<String> defaultTargets = getConfigStringList("can-trigger", null);
@@ -72,21 +70,8 @@ public class PassiveSpell extends Spell {
 	public void initialize() {
 		super.initialize();
 
-		// Create spell list
-		spells = new ArrayList<>();
-
-		if (spellNames != null) {
-			for (int i = 0; i < spellNames.size(); i++) {
-				String spellName = spellNames.get(i);
-
-				Subspell spell = initSubspell(spellName, false, "spells[" + i + "]");
-				if (spell == null) continue;
-
-				spells.add(spell);
-			}
-		}
-
-		if (spells.isEmpty()) MagicSpells.error("PassiveSpell '" + internalName + "' has no spells defined!");
+		spells = initSubspells("spells");
+		if (spells.isEmpty()) MagicDebug.warn("PassiveSpell %s has no spells defined!", MagicDebug.resolveFullPath());
 	}
 
 	@Override

@@ -94,16 +94,9 @@ public class SpawnEntitySpell extends TargetedSpell implements TargetedLocationS
 	private final ConfigData<Boolean> allowSpawnInMidair;
 
 	private Subspell attackSpell;
-	private String attackSpellName;
-
 	private Subspell spellOnSpawn;
-	private String spellOnSpawnName;
-
 	private Subspell spellOnDeath;
-	private String spellOnDeathName;
-
 	private Subspell spellOnTarget;
-	private String spellOnTargetName;
 
 	private List<PotionEffect> potionEffects;
 	private Multimap<Attribute, AttributeModifier> attributes;
@@ -191,11 +184,6 @@ public class SpawnEntitySpell extends TargetedSpell implements TargetedLocationS
 		allowSpawnInMidair = getConfigDataBoolean("allow-spawn-in-midair", false);
 		cancelAttack = getConfigDataBoolean("cancel-attack", true);
 
-		attackSpellName = getConfigString("attack-spell", "");
-		spellOnSpawnName = getConfigString("spell-on-spawn", "");
-		spellOnDeathName = getConfigString("spell-on-death", "");
-		spellOnTargetName = getConfigString("spell-on-target", "");
-
 		List<?> attributeList = getConfigList("attributes", null);
 		if (attributeList != null && !attributeList.isEmpty())
 			attributes = AttributeHandler.getAttributeModifiers(attributeList, "attributes", internalName);
@@ -241,15 +229,10 @@ public class SpawnEntitySpell extends TargetedSpell implements TargetedLocationS
 			entityData = null;
 		}
 
-		spellOnSpawn = initSubspell(spellOnSpawnName, true, "spell-on-spawn");
-		spellOnDeath = initSubspell(spellOnDeathName, true, "spell-on-death");
-		spellOnTarget = initSubspell(spellOnTargetName, true, "spell-on-target");
-		attackSpell = initSubspell(attackSpellName, true, "attack-spell");
-
-		spellOnSpawnName = null;
-		spellOnDeathName = null;
-		spellOnTargetName = null;
-		attackSpellName = null;
+		spellOnSpawn = initSubspell("spell-on-spawn", "", true);
+		spellOnDeath = initSubspell("spell-on-death", "", true);
+		spellOnTarget = initSubspell("spell-on-target", "", true);
+		attackSpell = initSubspell("attack-spell", "", true);
 	}
 
 	@Override

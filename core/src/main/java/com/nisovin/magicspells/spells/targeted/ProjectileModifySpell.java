@@ -24,7 +24,6 @@ import com.nisovin.magicspells.util.trackers.ParticleProjectileTracker;
 public class ProjectileModifySpell extends TargetedSpell implements TargetedLocationSpell {
 
 	private Subspell projectileSpell;
-	private String projectileSpellName;
 
 	private final ConfigData<Boolean> stop;
 	private final ConfigData<Boolean> circleShape;
@@ -85,14 +84,6 @@ public class ProjectileModifySpell extends TargetedSpell implements TargetedLoca
 	private Subspell durationSpell;
 	private Subspell modifierSpell;
 	private Subspell entityLocationSpell;
-	private String airSpellName;
-	private String selfSpellName;
-	private String tickSpellName;
-	private String entitySpellName;
-	private String groundSpellName;
-	private String durationSpellName;
-	private String modifierSpellName;
-	private String entityLocationSpellName;
 
 	private ModifierSet projModifiers;
 
@@ -103,8 +94,6 @@ public class ProjectileModifySpell extends TargetedSpell implements TargetedLoca
 		circleShape = getConfigDataBoolean("circle-shape", false);
 		affectOwnedProjectiles = getConfigDataBoolean("affect-owned-projectiles", true);
 		affectEnemyProjectiles = getConfigDataBoolean("affect-enemy-projectiles", true);
-
-		projectileSpellName = getConfigString("spell", "");
 
 		cone = getConfigDataInt("cone", 0);
 		vRadius = getConfigDataInt("vertical-radius", 5);
@@ -148,15 +137,6 @@ public class ProjectileModifySpell extends TargetedSpell implements TargetedLoca
 		hitAirAfterDuration = getConfigDataBoolean("hit-air-after-duration", false);
 		stopOnHitGround = getConfigDataBoolean("stop-on-hit-ground", true);
 		stopOnModifierFail = getConfigDataBoolean("stop-on-modifier-fail", true);
-
-		airSpellName = getConfigString("spell-on-hit-air", "");
-		selfSpellName = getConfigString("spell-on-hit-self", "");
-		tickSpellName = getConfigString("spell-on-tick", "");
-		groundSpellName = getConfigString("spell-on-hit-ground", "");
-		entitySpellName = getConfigString("spell-on-hit-entity", "");
-		durationSpellName = getConfigString("spell-on-duration-end", "");
-		modifierSpellName = getConfigString("spell-on-modifier-fail", "");
-		entityLocationSpellName = getConfigString("spell-on-entity-location", "");
 	}
 
 	@Override
@@ -170,25 +150,15 @@ public class ProjectileModifySpell extends TargetedSpell implements TargetedLoca
 	public void initialize() {
 		super.initialize();
 
-		projectileSpell = initSubspell(projectileSpellName, true, "spell");
-		airSpell = initSubspell(airSpellName, true, "spell-on-hit-air");
-		selfSpell = initSubspell(selfSpellName, true, "spell-on-hit-self");
-		tickSpell = initSubspell(tickSpellName, true, "spell-on-tick");
-		groundSpell = initSubspell(groundSpellName, true, "spell-on-hit-ground");
-		entitySpell = initSubspell(entitySpellName, true, "spell-on-hit-entity");
-		durationSpell = initSubspell(durationSpellName, true, "spell-on-duration-end");
-		modifierSpell = initSubspell(modifierSpellName, true, "spell-on-modifier-fail");
-		entityLocationSpell = initSubspell(entityLocationSpellName, true, "spell-on-entity-location");
-
-		projectileSpellName = null;
-		airSpellName = null;
-		selfSpellName = null;
-		tickSpellName = null;
-		groundSpellName = null;
-		entitySpellName = null;
-		durationSpellName = null;
-		modifierSpellName = null;
-		entityLocationSpellName = null;
+		projectileSpell = initSubspell("spell", "", true);
+		airSpell = initSubspell("spell-on-hit-air", "", true);
+		selfSpell = initSubspell("spell-on-hit-self", "", true);
+		tickSpell = initSubspell("spell-on-tick", "", true);
+		groundSpell = initSubspell("spell-on-hit-ground", "", true);
+		entitySpell = initSubspell("spell-on-hit-entity", "", true);
+		durationSpell = initSubspell("spell-on-duration-end", "", true);
+		modifierSpell = initSubspell("spell-on-modifier-fail", "", true);
+		entityLocationSpell = initSubspell("spell-on-entity-location", "", true);
 
 		filter = getConfigSpellFilter();
 	}

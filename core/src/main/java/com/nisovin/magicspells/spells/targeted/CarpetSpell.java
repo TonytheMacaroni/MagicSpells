@@ -32,7 +32,6 @@ public class CarpetSpell extends TargetedSpell implements TargetedLocationSpell 
 	private final ConfigData<Boolean> removeOnTouch;
 	private final ConfigData<Boolean> powerAffectsRadius;
 
-	private String spellOnTouchName;
 	private Subspell spellOnTouch;
 
 	private TouchChecker checker;
@@ -50,8 +49,6 @@ public class CarpetSpell extends TargetedSpell implements TargetedLocationSpell 
 		removeOnTouch = getConfigDataBoolean("remove-on-touch", true);
 		powerAffectsRadius = getConfigDataBoolean("power-affects-radius", true);
 
-		spellOnTouchName = getConfigString("spell-on-touch", "");
-
 		blocks = new HashMap<>();
 	}
 
@@ -59,9 +56,7 @@ public class CarpetSpell extends TargetedSpell implements TargetedLocationSpell 
 	public void initialize() {
 		super.initialize();
 
-		spellOnTouch = initSubspell(spellOnTouchName, true, "spell-on-touch");
-		spellOnTouchName = null;
-
+		spellOnTouch = initSubspell("spell-on-touch", "", true);
 		if (spellOnTouch != null) checker = new TouchChecker();
 	}
 

@@ -10,14 +10,11 @@ public class LocationSpell extends InstantSpell {
 
 	private Subspell spellToCast;
 
-	private String spellToCastName;
-
 	private final ConfigData<String> location;
 
 	public LocationSpell(MagicConfig config, String spellName) {
 		super(config, spellName);
 
-		spellToCastName = getConfigString("spell", "");
 		location = getConfigDataString("location", "world,0,0,0");
 	}
 
@@ -25,8 +22,7 @@ public class LocationSpell extends InstantSpell {
 	public void initialize() {
 		super.initialize();
 
-		spellToCast = initSubspell(spellToCastName, false, "spell");
-		spellToCastName = null;
+		spellToCast = initSubspell("spell", "", false);
 	}
 
 	@Override

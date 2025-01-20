@@ -24,8 +24,6 @@ public class LeapSpell extends InstantSpell {
 
 	private static LeapMonitor leapMonitor;
 
-	private String landSpellName;
-
 	private final ConfigData<Float> rotation;
 	private final ConfigData<Float> upwardVelocity;
 	private final ConfigData<Float> forwardVelocity;
@@ -48,16 +46,13 @@ public class LeapSpell extends InstantSpell {
 		cancelDamage = getConfigDataBoolean("cancel-damage", true);
 		addVelocityInstead = getConfigDataBoolean("add-velocity-instead", false);
 		powerAffectsVelocity = getConfigDataBoolean("power-affects-velocity", true);
-
-		landSpellName = getConfigString("land-spell", "");
 	}
 
 	@Override
 	public void initialize() {
 		super.initialize();
 
-		landSpell = initSubspell(landSpellName, true, "land-spell");
-		landSpellName = null;
+		landSpell = initSubspell("land-spell", "", true);
 
 		if (leapMonitor == null) leapMonitor = new LeapMonitor();
 	}

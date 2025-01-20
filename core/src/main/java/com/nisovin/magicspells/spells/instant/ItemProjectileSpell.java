@@ -26,11 +26,6 @@ public class ItemProjectileSpell extends InstantSpell implements TargetedLocatio
 
 	private static Set<ItemProjectileTracker> trackerSet;
 
-	private String spellOnTickName;
-	private String spellOnDelayName;
-	private String spellOnHitEntityName;
-	private String spellOnHitGroundName;
-
 	private ItemStack item;
 
 	private final ConfigData<Component> itemName;
@@ -93,26 +88,16 @@ public class ItemProjectileSpell extends InstantSpell implements TargetedLocatio
 		relativeOffset = getConfigDataVector("relative-offset", new Vector());
 
 		itemName = getConfigDataComponent("item-name", null);
-
-		spellOnTickName = getConfigString("spell-on-tick", "");
-		spellOnDelayName = getConfigString("spell-on-delay", "");
-		spellOnHitEntityName = getConfigString("spell-on-hit-entity", "");
-		spellOnHitGroundName = getConfigString("spell-on-hit-ground", "");
 	}
 
 	@Override
 	public void initialize() {
 		super.initialize();
 
-		spellOnTick = initSubspell(spellOnTickName, true, "spell-on-tick");
-		spellOnDelay = initSubspell(spellOnDelayName, true, "spell-on-delay");
-		spellOnHitEntity = initSubspell(spellOnHitEntityName, true, "spell-on-hit-entity");
-		spellOnHitGround = initSubspell(spellOnHitGroundName, true, "spell-on-hit-ground");
-
-		spellOnTickName = null;
-		spellOnDelayName = null;
-		spellOnHitEntityName = null;
-		spellOnHitGroundName = null;
+		spellOnTick = initSubspell("spell-on-tick", "", true);
+		spellOnDelay = initSubspell("spell-on-delay", "", true);
+		spellOnHitEntity = initSubspell("spell-on-hit-entity", "", true);
+		spellOnHitGround = initSubspell("spell-on-hit-ground", "", true);
 	}
 
 	@Override

@@ -105,16 +105,6 @@ public class ParticleProjectileSpell extends InstantSpell implements TargetedLoc
 	private Subspell durationSpell;
 	private Subspell modifierSpell;
 	private Subspell entityLocationSpell;
-	private String airSpellName;
-	private String selfSpellName;
-	private String tickSpellName;
-	private String entitySpellName;
-	private String groundSpellName;
-	private String durationSpellName;
-	private String modifierSpellName;
-	private String entityLocationSpellName;
-
-	private String defaultSpellName;
 
 	public ParticleProjectileSpell(MagicConfig config, String spellName) {
 		super(config, spellName);
@@ -217,17 +207,6 @@ public class ParticleProjectileSpell extends InstantSpell implements TargetedLoc
 		validTargetList.enforce(ValidTargetList.TargetingElement.TARGET_NONPLAYERS, hitNonPlayers);
 
 		interactionData = getConfigList("interactions", null);
-
-		// Compatibility
-		defaultSpellName = getConfigString("spell", "");
-		airSpellName = getConfigString("spell-on-hit-air", defaultSpellName);
-		selfSpellName = getConfigString("spell-on-hit-self", defaultSpellName);
-		tickSpellName = getConfigString("spell-on-tick", defaultSpellName);
-		groundSpellName = getConfigString("spell-on-hit-ground", defaultSpellName);
-		entitySpellName = getConfigString("spell-on-hit-entity", defaultSpellName);
-		durationSpellName = getConfigString("spell-on-duration-end", defaultSpellName);
-		modifierSpellName = getConfigString("spell-on-modifier-fail", defaultSpellName);
-		entityLocationSpellName = getConfigString("spell-on-entity-location", "");
 	}
 
 	@Override
@@ -241,68 +220,16 @@ public class ParticleProjectileSpell extends InstantSpell implements TargetedLoc
 	public void initialize() {
 		super.initialize();
 
-		String subSpellError = "ParticleProjectileSpell '" + internalName + "' has an invalid '%s' defined!";
+		String defaultSpellName = getConfigString("spell", "");
 
-		Subspell defaultSpell = new Subspell(defaultSpellName);
-		if (!defaultSpell.process() && !defaultSpellName.isEmpty()) MagicSpells.error(subSpellError.formatted("spell"));
-
-		airSpell = new Subspell(airSpellName);
-		if (!airSpell.process()) {
-			if (!airSpellName.equals(defaultSpellName)) MagicSpells.error(subSpellError.formatted("spell-on-hit-air"));
-			airSpell = null;
-		}
-		airSpellName = null;
-
-		selfSpell = new Subspell(selfSpellName);
-		if (!selfSpell.process()) {
-			if (!selfSpellName.equals(defaultSpellName)) MagicSpells.error(subSpellError.formatted("spell-on-hit-self"));
-			selfSpell = null;
-		}
-		selfSpellName = null;
-
-		tickSpell = new Subspell(tickSpellName);
-		if (!tickSpell.process()) {
-			if (!tickSpellName.equals(defaultSpellName)) MagicSpells.error(subSpellError.formatted("spell-on-tick"));
-			tickSpell = null;
-		}
-		tickSpellName = null;
-
-		groundSpell = new Subspell(groundSpellName);
-		if (!groundSpell.process()) {
-			if (!groundSpellName.equals(defaultSpellName)) MagicSpells.error(subSpellError.formatted("spell-on-hit-ground"));
-			groundSpell = null;
-		}
-		groundSpellName = null;
-
-		entitySpell = new Subspell(entitySpellName);
-		if (!entitySpell.process()) {
-			if (!entitySpellName.equals(defaultSpellName)) MagicSpells.error(subSpellError.formatted("spell-on-hit-entity"));
-			entitySpell = null;
-		}
-		entitySpellName = null;
-
-		durationSpell = new Subspell(durationSpellName);
-		if (!durationSpell.process()) {
-			if (!durationSpellName.equals(defaultSpellName)) MagicSpells.error(subSpellError.formatted("spell-on-duration-end"));
-			durationSpell = null;
-		}
-		durationSpellName = null;
-
-		modifierSpell = new Subspell(modifierSpellName);
-		if (!modifierSpell.process()) {
-			if (!modifierSpellName.equals(defaultSpellName)) MagicSpells.error(subSpellError.formatted("spell-on-modifier-fail"));
-			modifierSpell = null;
-		}
-		modifierSpellName = null;
-
-		entityLocationSpell = new Subspell(entityLocationSpellName);
-		if (!entityLocationSpell.process()) {
-			if (!entityLocationSpellName.isEmpty()) MagicSpells.error(subSpellError.formatted("spell-on-entity-location"));
-			entityLocationSpell = null;
-		}
-		entityLocationSpellName = null;
-
-		defaultSpellName = null;
+		airSpell = initSubspell("spell-on-hit-air", defaultSpellName, true);
+		selfSpell = initSubspell("spell-on-hit-self", defaultSpellName, true);
+		tickSpell = initSubspell("spell-on-tick", defaultSpellName, true);
+		groundSpell = initSubspell("spell-on-hit-ground", defaultSpellName, true);
+		entitySpell = initSubspell("spell-on-hit-entity", defaultSpellName, true);
+		durationSpell = initSubspell("spell-on-duration-end", defaultSpellName, true);
+		modifierSpell = initSubspell("spell-on-modifier-fail", defaultSpellName, true);
+		entityLocationSpell = initSubspell("spell-on-entity-location", defaultSpellName, true);
 
 		if (interactionData == null || interactionData.isEmpty()) return;
 		interactions = Interaction.read(this, interactionData);

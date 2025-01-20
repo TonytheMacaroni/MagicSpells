@@ -61,13 +61,6 @@ public class ProjectileSpell extends InstantSpell implements TargetedLocationSpe
 
 	private final ConfigData<Double> maxDuration;
 
-	private String hitSpellName;
-	private String tickSpellName;
-	private String groundSpellName;
-	private String modifierSpellName;
-	private String durationSpellName;
-	private String entityLocationSpellName;
-
 	private final ConfigData<Component> projectileName;
 
 	private final ConfigData<Color> arrowColor;
@@ -113,13 +106,6 @@ public class ProjectileSpell extends InstantSpell implements TargetedLocationSpe
 
 		maxDuration = getConfigDataDouble("max-duration", 10);
 
-		hitSpellName = getConfigString("spell", "");
-		tickSpellName = getConfigString("spell-on-tick", "");
-		groundSpellName = getConfigString("spell-on-hit-ground", "");
-		modifierSpellName = getConfigString("spell-on-modifier-fail", "");
-		durationSpellName = getConfigString("spell-after-duration", "");
-		entityLocationSpellName = getConfigString("spell-on-entity-location", "");
-
 		projectileName = getConfigDataComponent("projectile-name", null);
 
 		arrowColor = ConfigDataUtil.getColor(config.getMainConfig(), internalKey + "arrow-color", null);
@@ -136,19 +122,12 @@ public class ProjectileSpell extends InstantSpell implements TargetedLocationSpe
 	public void initialize() {
 		super.initialize();
 
-		hitSpell = initSubspell(hitSpellName, true, "spell");
-		groundSpell = initSubspell(groundSpellName, true, "spell-on-hit-ground");
-		tickSpell = initSubspell(tickSpellName, true, "spell-on-tick");
-		durationSpell = initSubspell(durationSpellName, true, "spell-after-duration");
-		modifierSpell = initSubspell(modifierSpellName, true, "spell-on-modifier-fail");
-		entityLocationSpell = initSubspell(entityLocationSpellName, true, "spell-on-entity-location");
-
-		hitSpellName = null;
-		groundSpellName = null;
-		tickSpellName = null;
-		durationSpellName = null;
-		modifierSpellName = null;
-		entityLocationSpellName = null;
+		hitSpell = initSubspell("spell", "", true);
+		groundSpell = initSubspell("spell-on-hit-ground", "", true);
+		tickSpell = initSubspell("spell-on-tick", "", true);
+		durationSpell = initSubspell("spell-after-duration", "", true);
+		modifierSpell = initSubspell("spell-on-modifier-fail", "", true);
+		entityLocationSpell = initSubspell("spell-on-entity-location", "", true);
 	}
 
 	@Override

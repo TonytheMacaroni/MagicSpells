@@ -51,7 +51,6 @@ public class DrainlifeSpell extends TargetedSpell implements TargetedEntitySpell
 	private final ConfigData<Boolean> avoidDamageModification;
 
 	private Subspell spellOnAnimation;
-	private String spellOnAnimationName;
 
 	private final ConfigData<DamageCause> damageType;
 
@@ -74,8 +73,6 @@ public class DrainlifeSpell extends TargetedSpell implements TargetedEntitySpell
 		powerAffectsAmount = getConfigDataBoolean("power-affects-amount", true);
 		avoidDamageModification = getConfigDataBoolean("avoid-damage-modification", true);
 
-		spellOnAnimationName = getConfigString("spell-on-animation", "");
-
 		damageType = getConfigDataEnum("damage-type", DamageCause.class, null);
 		drainDamageType = getConfigDataRegistryEntry("drain-damage-type", RegistryKey.DAMAGE_TYPE, null)
 			.orDefault(data -> data.caster() instanceof Player ? DamageType.PLAYER_ATTACK : DamageType.MOB_ATTACK);
@@ -90,8 +87,7 @@ public class DrainlifeSpell extends TargetedSpell implements TargetedEntitySpell
 	public void initialize() {
 		super.initialize();
 
-		spellOnAnimation = initSubspell(spellOnAnimationName, true, "spell-on-animation");
-		spellOnAnimationName = null;
+		spellOnAnimation = initSubspell("spell-on-animation", "", true);
 	}
 
 	@Override

@@ -2,6 +2,7 @@ package com.nisovin.magicspells.spells;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import it.unimi.dsi.fastutil.ints.IntArrayList;
@@ -13,14 +14,15 @@ import org.bukkit.entity.LivingEntity;
 import com.nisovin.magicspells.util.*;
 import com.nisovin.magicspells.Subspell;
 import com.nisovin.magicspells.MagicSpells;
+import com.nisovin.magicspells.debug.DebugPath;
+import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.util.config.ConfigData;
 import com.nisovin.magicspells.events.SpellTargetLocationEvent;
 
 public final class TargetedMultiSpell extends TargetedSpell implements TargetedEntitySpell, TargetedLocationSpell, TargetedEntityFromLocationSpell {
 
-	private static final Pattern DELAY_PATTERN = Pattern.compile("DELAY [0-9]+");
+	private static final Pattern DELAY_PATTERN = Pattern.compile("DELAY ([0-9]+)");
 
-	private List<String> spellList;
 	private final List<Action> actions;
 
 	private final ConfigData<Float> yOffset;
@@ -36,7 +38,6 @@ public final class TargetedMultiSpell extends TargetedSpell implements TargetedE
 		super(config, spellName);
 
 		actions = new ArrayList<>();
-		spellList = getConfigStringList("spells", null);
 
 		yOffset = getConfigDataFloat("y-offset", 0F);
 
@@ -52,22 +53,44 @@ public final class TargetedMultiSpell extends TargetedSpell implements TargetedE
 	public void initialize() {
 		super.initialize();
 
-		if (spellList == null) return;
-
-		for (int i = 0; i < spellList.size(); i++) {
-			String s = spellList.get(i);
-
-			if (DELAY_PATTERN.asMatchPredicate().test(s)) {
-				int delay = Integer.parseInt(s.split(" ")[1]);
-				actions.add(new DelayAction(delay));
-				continue;
+		try (var ignored = MagicDebug.section("Resolving subspell list '%s'.", "spells")
+			.pushPath("spells", DebugPath.Type.LIST)
+		) {
+			List<?> data = getConfigList("spells", null);
+			if (data == null || data.isEmpty()) {
+				MagicDebug.info("No subspells found.");
+				return;
 			}
 
-			Subspell spell = initSubspell(s, false, "spells[" + i + "]");
-			if (spell != null) actions.add(new SpellAction(spell));
-		}
+			for (int i = 0; i < data.size(); i++) {
+				try (var ignored1 = MagicDebug.pushListEntry(i)) {
+					Object object = data.get(i);
+					if (!(object instanceof String string)) {
+						MagicDebug.warn("Invalid subspell or delay action '%s' %s.", object, MagicDebug.resolveFullPath());
+						continue;
+					}
 
-		spellList = null;
+					Matcher matcher = DELAY_PATTERN.matcher(string);
+					if (matcher.matches()) {
+						String delayString = matcher.group(1);
+
+						int delay;
+						try {
+							delay = Integer.parseInt(delayString);
+						} catch (NumberFormatException e) {
+							MagicDebug.warn("Invalid delay '%s' %s.", delayString, MagicDebug.resolveFullPath());
+							continue;
+						}
+
+						MagicDebug.info("Resolved delay action (%d ticks).", delay);
+						actions.add(new DelayAction(delay));
+					}
+
+					Subspell spell = initSubspell(string, false);
+					if (spell != null) actions.add(new SpellAction(spell));
+				}
+			}
+		}
 	}
 
 	@Override

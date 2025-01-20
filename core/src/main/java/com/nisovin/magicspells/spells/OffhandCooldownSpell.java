@@ -9,6 +9,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 
 import com.nisovin.magicspells.Spell;
+import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.util.*;
 import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.util.magicitems.MagicItem;
@@ -21,7 +22,6 @@ public class OffhandCooldownSpell extends InstantSpell {
 	private ItemStack item;
 
 	private Spell spellToCheck;
-	private String spellToCheckName;
 
 	public OffhandCooldownSpell(MagicConfig config, String spellName) {
 		super(config, spellName);
@@ -33,19 +33,24 @@ public class OffhandCooldownSpell extends InstantSpell {
 			MagicItem magicItem = MagicItems.getMagicItemFromSection(getConfigSection("item"));
 			if (magicItem != null) item = magicItem.getItemStack();
 		}
-
-		spellToCheckName = getConfigString("spell", "");
 	}
 	
 	@Override
 	public void initialize() {
 		super.initialize();
 
-		spellToCheck = MagicSpells.getSpellByInternalName(spellToCheckName);
-		spellToCheckName = null;
+		if (item == null) {
+			MagicDebug.warn("Invalid 'item' specified for OffhandCooldownSpell %s.", MagicDebug.resolveFullPath());
+			return;
+		}
 
-		if (spellToCheck == null || item == null) return;
-		
+		String spellToCheckName = getConfigString("spell", "");
+		spellToCheck = MagicSpells.getSpellByInternalName(spellToCheckName);
+		if (spellToCheck == null) {
+			MagicDebug.warn("Invalid spell '%s' %s.", spellToCheckName, MagicDebug.resolveFullPath("spell"));
+			return;
+		}
+
 		MagicSpells.scheduleRepeatingTask(() -> {
 			Iterator<Player> iter = players.iterator();
 			while (iter.hasNext()) {
@@ -73,7 +78,7 @@ public class OffhandCooldownSpell extends InstantSpell {
 
 	@Override
 	public CastResult cast(SpellData data) {
-		if (!(data.caster() instanceof Player caster)) return new CastResult(PostCastAction.ALREADY_HANDLED, data);
+		if (item == null || !(data.caster() instanceof Player caster)) return new CastResult(PostCastAction.ALREADY_HANDLED, data);
 
 		players.add(caster);
 		playSpellEffects(data);
