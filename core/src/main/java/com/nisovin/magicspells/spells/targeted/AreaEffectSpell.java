@@ -11,6 +11,7 @@ import org.bukkit.util.NumberConversions;
 import com.nisovin.magicspells.util.*;
 import com.nisovin.magicspells.Subspell;
 import com.nisovin.magicspells.MagicSpells;
+import com.nisovin.magicspells.debug.DebugPath;
 import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.spells.TargetedSpell;
 import com.nisovin.magicspells.util.config.ConfigData;
@@ -24,7 +25,6 @@ import org.apache.commons.math4.core.jdkmath.AccurateMath;
 public class AreaEffectSpell extends TargetedSpell implements TargetedLocationSpell {
 
 	private List<Subspell> spells;
-	private List<String> spellNames;
 
 	private final ConfigData<Integer> maxTargets;
 
@@ -47,8 +47,6 @@ public class AreaEffectSpell extends TargetedSpell implements TargetedLocationSp
 
 	public AreaEffectSpell(MagicConfig config, String spellName) {
 		super(config, spellName);
-
-		spellNames = getConfigStringList("spells", null);
 
 		maxTargets = getConfigDataInt("max-targets", 0);
 
@@ -76,22 +74,24 @@ public class AreaEffectSpell extends TargetedSpell implements TargetedLocationSp
 
 		spells = new ArrayList<>();
 
+		List<String> spellNames = getConfigStringList("spells", null);
 		if (spellNames == null || spellNames.isEmpty()) {
-			MagicDebug.warn("AreaEffectSpell '%s' has no spells defined!", internalName);
+			MagicDebug.warn("No 'spells' defined for AreaEffectSpell %s", MagicDebug.resolveFullPath());
 			return;
 		}
 
-		for (int i = 0; i < spellNames.size(); i++) {
-			String spellName = spellNames.get(i);
+		try (var ignored = MagicDebug.section("Resolving 'spells'.")
+			.pushPath("spells", DebugPath.Type.LIST)
+		) {
+			for (int i = 0; i < spellNames.size(); i++) {
+				try (var ignored1 = MagicDebug.pushListEntry(i)) {
+					Subspell spell = initSubspell(spellNames.get(i), false);
+					if (spell == null) continue;
 
-			Subspell spell = initSubspell(spellName, false, "spells[" + i + "]");
-			if (spell == null) continue;
-
-			spells.add(spell);
+					spells.add(spell);
+				}
+			}
 		}
-
-		spellNames.clear();
-		spellNames = null;
 	}
 
 	@Override

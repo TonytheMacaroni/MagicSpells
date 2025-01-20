@@ -26,7 +26,6 @@ public class BombSpell extends TargetedSpell implements TargetedLocationSpell {
 	private final ConfigData<Integer> interval;
 
 	private Subspell targetSpell;
-	private String targetSpellName;
 	
 	public BombSpell(MagicConfig config, String spellName) {
 		super(config, spellName);
@@ -36,17 +35,15 @@ public class BombSpell extends TargetedSpell implements TargetedLocationSpell {
 		fuse = getConfigDataInt("fuse", 100);
 		interval = getConfigDataInt("interval", 20);
 
-		targetSpellName = getConfigString("spell", "");
 
 		blocks = new HashSet<>();
 	}
-	
+
 	@Override
 	public void initialize() {
 		super.initialize();
 
-		targetSpell = initSubspell(targetSpellName, true, "spell");
-		targetSpellName = null;
+		targetSpell = initSubspell("spell", "", true);
 	}
 
 	@Override

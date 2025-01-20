@@ -66,10 +66,6 @@ public class OrbitSpell extends TargetedSpell implements TargetedEntitySpell, Ta
 	private final ConfigData<Boolean> constantImmuneTicks;
 	private final ConfigData<Boolean> requireEntityTarget;
 
-	private String orbitSpellName;
-	private String groundSpellName;
-	private String entitySpellName;
-
 	private final List<?> interactionData;
 	private List<Interaction> interactions;
 
@@ -115,10 +111,6 @@ public class OrbitSpell extends TargetedSpell implements TargetedEntitySpell, Ta
 		constantImmuneTicks = getConfigDataBoolean("constant-immune-ticks", true);
 		requireEntityTarget = getConfigDataBoolean("require-entity-target", true);
 
-		orbitSpellName = getConfigString("spell", "");
-		groundSpellName = getConfigString("spell-on-hit-ground", "");
-		entitySpellName = getConfigString("spell-on-hit-entity", "");
-
 		interactionData = getConfigList("interactions", null);
 	}
 
@@ -126,13 +118,9 @@ public class OrbitSpell extends TargetedSpell implements TargetedEntitySpell, Ta
 	public void initialize() {
 		super.initialize();
 
-		orbitSpell = initSubspell(orbitSpellName, true, "spell");
-		groundSpell = initSubspell(groundSpellName, true, "spell-on-hit-ground");
-		entitySpell = initSubspell(entitySpellName, true, "spell-on-hit-entity");
-
-		orbitSpellName = null;
-		groundSpellName = null;
-		entitySpellName = null;
+		orbitSpell = initSubspell("spell", "", true);
+		groundSpell = initSubspell("spell-on-hit-ground", "", true);
+		entitySpell = initSubspell("spell-on-hit-entity", "", true);
 
 		if (interactionData == null || interactionData.isEmpty()) return;
 		interactions = Interaction.read(this, interactionData);

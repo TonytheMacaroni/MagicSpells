@@ -13,9 +13,6 @@ import com.nisovin.magicspells.spells.InstantSpell;
 
 public class CastAtMarkSpell extends InstantSpell {
 
-	private String markSpellName;
-	private String spellToCastName;
-
 	private String strNoMark;
 
 	private MarkSpell markSpell;
@@ -27,8 +24,6 @@ public class CastAtMarkSpell extends InstantSpell {
 		super(config, spellName);
 
 		strNoMark = getConfigString("str-no-mark", "You do not have a mark specified");
-		markSpellName = getConfigString("mark-spell", "");
-		spellToCastName = getConfigString("spell", "");
 	}
 	
 	@Override
@@ -37,17 +32,16 @@ public class CastAtMarkSpell extends InstantSpell {
 
 		if (initialized) return;
 
+		String markSpellName = getConfigString("mark-spell", "");
+
 		Spell spell = MagicSpells.getSpellByInternalName(markSpellName);
 		if (!(spell instanceof MarkSpell mark)) {
-			MagicDebug.warn("Invalid spell '%s' for 'mark-spell' %s.", markSpellName, MagicDebug.resolveFullPath());
+			MagicDebug.warn("Invalid spell '%s' %s.", markSpellName, MagicDebug.resolveFullPath("mark-spell"));
 			return;
 		}
 		markSpell = mark;
 
-		spellToCast = initSubspell(spellToCastName, false, "spell");
-
-		markSpellName = null;
-		spellToCastName = null;
+		spellToCast = initSubspell("spell", "", false);
 
 		initialized = true;
 	}

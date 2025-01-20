@@ -73,10 +73,6 @@ public class BlockBeamSpell extends InstantSpell implements TargetedLocationSpel
 	private Subspell endSpell;
 	private Subspell groundSpell;
 
-	private String hitSpellName;
-	private String endSpellName;
-	private String groundSpellName;
-
 	private NoMagicZoneManager zoneManager;
 
 	public BlockBeamSpell(MagicConfig config, String spellName) {
@@ -118,23 +114,15 @@ public class BlockBeamSpell extends InstantSpell implements TargetedLocationSpel
 		changePitch = getConfigDataBoolean("change-pitch", true);
 		stopOnHitEntity = getConfigDataBoolean("stop-on-hit-entity", false);
 		stopOnHitGround = getConfigDataBoolean("stop-on-hit-ground", false);
-
-		hitSpellName = getConfigString("spell", "");
-		endSpellName = getConfigString("spell-on-end", "");
-		groundSpellName = getConfigString("spell-on-hit-ground", "");
 	}
 
 	@Override
 	public void initialize() {
 		super.initialize();
 
-		hitSpell = initSubspell(hitSpellName, true, "spell");
-		endSpell = initSubspell(endSpellName, true, "spell-on-end");
-		groundSpell = initSubspell(groundSpellName, true, "spell-on-hit-ground");
-
-		hitSpellName = null;
-		endSpellName = null;
-		groundSpellName = null;
+		hitSpell = initSubspell("spell", "", true);
+		endSpell = initSubspell("spell-on-end", "", true);
+		groundSpell = initSubspell("spell-on-hit-ground", "", true);
 
 		zoneManager = MagicSpells.getNoMagicZoneManager();
 	}

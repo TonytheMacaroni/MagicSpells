@@ -36,7 +36,6 @@ public class RewindSpell extends TargetedSpell implements TargetedEntitySpell {
 	private final ConfigData<Boolean> allowForceRewind;
 
 	private Subspell rewindSpell;
-	private String rewindSpellName;
 
 	public RewindSpell(MagicConfig config, String spellName) {
 		super(config, spellName);
@@ -51,8 +50,6 @@ public class RewindSpell extends TargetedSpell implements TargetedEntitySpell {
 		rewindHealth = getConfigDataBoolean("rewind-health", true);
 		allowForceRewind = getConfigDataBoolean("allow-force-rewind", true);
 
-		rewindSpellName = getConfigString("spell-on-rewind", "");
-
 		entities = LinkedHashMultimap.create();
 	}
 
@@ -60,8 +57,7 @@ public class RewindSpell extends TargetedSpell implements TargetedEntitySpell {
 	public void initialize() {
 		super.initialize();
 
-		rewindSpell = initSubspell(rewindSpellName, true, "spell-on-rewind");
-		rewindSpellName = null;
+		rewindSpell = initSubspell("spell-on-rewind", "", true);
 	}
 
 	@Override

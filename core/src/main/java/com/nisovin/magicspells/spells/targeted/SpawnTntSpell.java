@@ -33,7 +33,6 @@ public class SpawnTntSpell extends TargetedSpell implements TargetedLocationSpel
 	private final ConfigData<Boolean> cancelExplosion;
 	private final ConfigData<Boolean> preventBlockDamage;
 
-	private String spellToCastName;
 	private Subspell spellToCast;
 
 	public SpawnTntSpell(MagicConfig config, String spellName) {
@@ -48,8 +47,6 @@ public class SpawnTntSpell extends TargetedSpell implements TargetedLocationSpel
 		cancelExplosion = getConfigDataBoolean("cancel-explosion", false);
 		preventBlockDamage = getConfigDataBoolean("prevent-block-damage", false);
 
-		spellToCastName = getConfigString("spell", "");
-
 		tnts = new HashMap<>();
 	}
 
@@ -57,8 +54,7 @@ public class SpawnTntSpell extends TargetedSpell implements TargetedLocationSpel
 	public void initialize() {
 		super.initialize();
 
-		spellToCast = initSubspell(spellToCastName, true, "spell");
-		spellToCastName = null;
+		spellToCast = initSubspell("spell", "", true);
 	}
 
 	@Override

@@ -104,10 +104,7 @@ public abstract class Spell implements Comparable<Spell>, Debuggable, Listener {
 	protected List<String> precludes;
 	protected List<String> incantations;
 	protected List<String> prerequisites;
-	protected List<String> modifierStrings;
 	protected List<String> worldRestrictions;
-	protected List<String> targetModifierStrings;
-	protected List<String> locationModifierStrings;
 
 	protected boolean debug;
 	protected boolean obeyLos;
@@ -146,10 +143,8 @@ public abstract class Spell implements Comparable<Spell>, Debuggable, Listener {
 	protected String strCastTarget;
 	protected String rechargeSound;
 	protected String soundOnCooldown;
-	protected String spellNameOnFail;
 	protected String danceCastSequence;
 	protected String soundMissingReagents;
-	protected String spellNameOnInterrupt;
 
 	protected String strCost;
 	protected String strCastSelf;
@@ -305,7 +300,6 @@ public abstract class Spell implements Comparable<Spell>, Debuggable, Listener {
 		interruptOnCast = getConfigDataBoolean("interrupt-on-cast", true);
 		interruptOnDamage = getConfigDataBoolean("interrupt-on-damage", false);
 		interruptOnTeleport = getConfigDataBoolean("interrupt-on-teleport", true);
-		spellNameOnInterrupt = config.getString(internalKey + "spell-on-interrupt", null);
 
 		// Targeting
 		minRange = getConfigDataInt("min-range", 0);
@@ -347,7 +341,6 @@ public abstract class Spell implements Comparable<Spell>, Debuggable, Listener {
 		playFizzleSound = getConfigDataBoolean("play-fizzle-sound", false);
 		strNoTarget = getConfigString("str-no-target", "");
 		strCastTarget = getConfigString("str-cast-target", "");
-		spellNameOnFail = getConfigString("spell-on-fail", "");
 
 		// Cooldowns
 		String cooldownString = config.getString(internalKey + "cooldown", null);
@@ -675,9 +668,6 @@ public abstract class Spell implements Comparable<Spell>, Debuggable, Listener {
 								sharedCooldowns.add(new SharedCooldown(filter.getMatchingSpells(), cooldown));
 								continue;
 							}
-
-							sharedCooldowns.add(new SharedCooldown(filter.getMatchingSpells(), cooldown));
-							continue;
 						}
 
 						MagicDebug.warn("Invalid shared cooldown '%s' on %s.", object, MagicDebug.resolveFullPath());
@@ -690,11 +680,8 @@ public abstract class Spell implements Comparable<Spell>, Debuggable, Listener {
 		registerEvents();
 
 		// Other processing
-		initSubspell(spellNameOnFail, true, "spell-on-fail");
-		initSubspell(spellNameOnInterrupt, true, "spell-on-interrupt");
-
-		spellNameOnFail = null;
-		spellNameOnInterrupt = null;
+		spellOnFail = initSubspell("spell-on-fail", "", true);
+		spellOnInterrupt = initSubspell("spell-on-interrupt", "", true);
 
 		interruptFilter = getConfigSpellFilter("interrupt-filter");
 	}
@@ -1055,10 +1042,8 @@ public abstract class Spell implements Comparable<Spell>, Debuggable, Listener {
 
 			SpellCastEvent castEvent = new SpellCastEvent(this, state, data, cooldown.get(data), reagents.clone(), castTime.get(data));
 			try (var ignored1 = MagicDebug.section("Firing cast event.")) {
-				MagicDebug.info("Pre-fire cooldown: %s", castEvent.getCooldown());
-				MagicDebug.info("Pre-fire reagents: %s", castEvent.getReagents());
-				MagicDebug.info("Pre-fire cast time: %s", castEvent.getCastTime());
-				MagicDebug.info("Pre-fire power: %s", castEvent.getPower());
+				MagicDebug.info("Power: %s, Cooldown: %s, Cast time: %s", castEvent.getPower(), castEvent.getCooldown(), castEvent.getCastTime());
+				MagicDebug.info("Reagents: %s", castEvent.getReagents());
 
 				if (!castEvent.callEvent()) {
 					MagicDebug.info("Cast event cancelled.");
@@ -1066,10 +1051,8 @@ public abstract class Spell implements Comparable<Spell>, Debuggable, Listener {
 				}
 			}
 
-			MagicDebug.info("Post-fire cooldown: %s", castEvent.getCooldown());
-			MagicDebug.info("Post-fire reagents: %s", castEvent.getReagents());
-			MagicDebug.info("Post-fire cast time: %s", castEvent.getCastTime());
-			MagicDebug.info("Post-fire power: %s", castEvent.getPower());
+			MagicDebug.info("Power: %s, Cooldown: %s, Cast time: %s", castEvent.getPower(), castEvent.getCooldown(), castEvent.getCastTime());
+			MagicDebug.info("Reagents: %s", castEvent.getReagents());
 
 			if (castEvent.haveReagentsChanged()) {
 				boolean hasReagents = hasReagents(data.caster(), castEvent.getReagents());
@@ -1187,9 +1170,7 @@ public abstract class Spell implements Comparable<Spell>, Debuggable, Listener {
 				}
 			}
 
-			try (var ignored2 = MagicDebug.section("Firing spell casted event.")) {
-				new SpellCastedEvent(castEvent, action, data).callEvent();
-			}
+			new SpellCastedEvent(castEvent, action, data).callEvent();
 		}
 	}
 
@@ -2152,21 +2133,57 @@ public abstract class Spell implements Comparable<Spell>, Debuggable, Listener {
 	/**
 	 * Attempts to initialise a subspell.
 	 */
-	protected Subspell initSubspell(String subspellName, boolean ignoreEmptyName, String location) {
-		if (ignoreEmptyName && (subspellName == null || subspellName.isEmpty())) return null;
+	protected Subspell initSubspell(String path, String def, boolean ignoreEmpty) {
+		try (var ignored = MagicDebug.section("Resolving subspell option '%s'.", path)
+			.pushPath(path, DebugPath.Type.SCALAR)
+		) {
+			String value = getConfigString(path, def);
+			return initSubspell(value, ignoreEmpty);
+		}
+	}
 
-		if (subspellName == null || subspellName.isEmpty()) {
-			MagicDebug.warn("No subspell defined %s.", MagicDebug.resolveFullPath(location));
+	/**
+	 * Attempts to initialise a subspell.
+	 */
+	protected Subspell initSubspell(String value, boolean ignoreEmpty) {
+		if (value == null || value.isEmpty()) {
+			if (!ignoreEmpty)
+				MagicDebug.warn("No subspell defined %s.", MagicDebug.resolveFullPath());
+
 			return null;
 		}
 
-		Subspell subspell = new Subspell(subspellName);
-		if (!subspell.process()) {
-			MagicDebug.warn("Invalid subspell '%s' defined %s.", subspellName, MagicDebug.resolveFullPath(location));
-			return null;
-		}
+		Subspell subspell = new Subspell(value);
+		return subspell.process() ? subspell : null;
+	}
 
-		return subspell;
+	protected List<Subspell> initSubspells(String path) {
+		try (var ignored = MagicDebug.section("Resolving subspell list '%s'.", path)
+			.pushPath(path, DebugPath.Type.LIST)
+		) {
+			List<?> data = getConfigList(path, null);
+			if (data == null || data.isEmpty()) {
+				MagicDebug.info("No subspells found.");
+				return Collections.emptyList();
+			}
+
+			List<Subspell> subspells = new ArrayList<>();
+
+			for (int i = 0; i < data.size(); i++) {
+				try (var ignored1 = MagicDebug.pushListEntry(i)) {
+					Object object = data.get(i);
+					if (!(object instanceof String string)) {
+						MagicDebug.warn("Invalid subspell '%s' %s.", object, MagicDebug.resolveFullPath());
+						continue;
+					}
+
+					Subspell subspell = initSubspell(string, false);
+					if (subspell != null) subspells.add(subspell);
+				}
+			}
+
+			return subspells;
+		}
 	}
 
 	protected VariableModSet initVariableModSet(String key) {

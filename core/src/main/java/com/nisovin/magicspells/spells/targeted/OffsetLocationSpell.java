@@ -19,7 +19,6 @@ public class OffsetLocationSpell extends TargetedSpell implements TargetedLocati
 	private final ConfigData<Angle> pitch;
 
 	private Subspell spellToCast;
-	private String spellToCastName;
 
 	public OffsetLocationSpell(MagicConfig config, String spellName) {
 		super(config, spellName);
@@ -29,15 +28,12 @@ public class OffsetLocationSpell extends TargetedSpell implements TargetedLocati
 
 		yaw = getConfigDataAngle("yaw", Angle.DEFAULT);
 		pitch = getConfigDataAngle("pitch", Angle.DEFAULT);
-
-		spellToCastName = getConfigString("spell", "");
 	}
 
 	public void initialize() {
 		super.initialize();
 
-		spellToCast = initSubspell(spellToCastName, false, "spell");
-		spellToCastName = null;
+		spellToCast = initSubspell("spell", "", false);
 	}
 
 	@Override

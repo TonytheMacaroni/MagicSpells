@@ -55,7 +55,6 @@ public class SteedSpell extends InstantSpell {
 	private ItemStack armor;
 
 	private Subspell spellOnSpawn;
-	private String spellOnSpawnName;
 
 	public SteedSpell(MagicConfig config, String spellName) {
 		super(config, spellName);
@@ -68,7 +67,6 @@ public class SteedSpell extends InstantSpell {
 		jumpStrength = getConfigDataDouble("jump-strength", 1);
 
 		strInvalidType = getConfigString("str-invalid-type", "Invalid entity type.");
-		spellOnSpawnName = getConfigString("spell-on-spawn", "");
 		strAlreadyMounted = getConfigString("str-already-mounted", "You are already mounted!");
 
 		type = getConfigDataEntityType("type", EntityType.HORSE);
@@ -88,8 +86,7 @@ public class SteedSpell extends InstantSpell {
 	protected void initialize() {
 		super.initialize();
 
-		spellOnSpawn = initSubspell(spellOnSpawnName, true, "spell-on-spawn");
-		spellOnSpawnName = null;
+		spellOnSpawn = initSubspell("spell-on-spawn", "", true);
 	}
 
 	@Override

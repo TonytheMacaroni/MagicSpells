@@ -34,9 +34,6 @@ public class DodgeSpell extends BuffSpell {
 	private Subspell spellBeforeDodge;
 	private Subspell spellAfterDodge;
 
-	private String spellBeforeDodgeName;
-	private String spellAfterDodgeName;
-
 	public DodgeSpell(MagicConfig config, String spellName) {
 		super(config, spellName);
 
@@ -46,19 +43,14 @@ public class DodgeSpell extends BuffSpell {
 
 		distance = getConfigDataDouble("distance", 2);
 
-		spellBeforeDodgeName = getConfigString("spell-before-dodge", "");
-		spellAfterDodgeName = getConfigString("spell-after-dodge", "");
 	}
 
 	@Override
 	public void initialize() {
 		super.initialize();
 
-		spellBeforeDodge = initSubspell(spellBeforeDodgeName, true, "spell-before-dodge");
-		spellAfterDodge = initSubspell(spellAfterDodgeName, true, "spell-after-dodge");
-
-		spellBeforeDodgeName = null;
-		spellAfterDodgeName = null;
+		spellBeforeDodge = initSubspell("spell-before-dodge", "", true);
+		spellAfterDodge = initSubspell("spell-after-dodge", "", true);
 
 		filter = getConfigSpellFilter();
 	}

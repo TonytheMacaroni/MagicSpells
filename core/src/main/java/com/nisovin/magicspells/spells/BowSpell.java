@@ -52,11 +52,6 @@ public class BowSpell extends Spell {
 
 	private final ValidTargetList triggerList;
 
-	private String spellOnShootName;
-	private String spellOnHitEntityName;
-	private String spellOnHitGroundName;
-	private String spellOnEntityLocationName;
-
 	private Subspell spellOnShoot;
 	private Subspell spellOnHitEntity;
 	private Subspell spellOnHitGround;
@@ -105,11 +100,6 @@ public class BowSpell extends Spell {
 		disallowedBowItems = getFilter("disallowed-bow-items");
 		disallowedAmmoItems = getFilter("disallowed-ammo-items");
 
-		spellOnShootName = getConfigString("spell", "");
-		spellOnHitEntityName = getConfigString("spell-on-hit-entity", "");
-		spellOnHitGroundName = getConfigString("spell-on-hit-ground", "");
-		spellOnEntityLocationName = getConfigString("spell-on-entity-location", "");
-
 		bindable = getConfigBoolean("bindable", false);
 		requireBind = getConfigBoolean("require-bind", false);
 		cancelShot = getConfigDataBoolean("cancel-shot", true);
@@ -144,15 +134,10 @@ public class BowSpell extends Spell {
 	public void initialize() {
 		super.initialize();
 
-		spellOnShoot = initSubspell(spellOnShootName, true, "spell");
-		spellOnHitEntity = initSubspell(spellOnHitEntityName, true, "spell-on-hit-entity");
-		spellOnHitGround = initSubspell(spellOnHitGroundName, true, "spell-on-hit-ground");
-		spellOnEntityLocation = initSubspell(spellOnEntityLocationName, true, "spell-on-entity-location");
-
-		spellOnShootName = null;
-		spellOnHitEntityName = null;
-		spellOnHitGroundName = null;
-		spellOnEntityLocationName = null;
+		spellOnShoot = initSubspell("spell", "", true);
+		spellOnHitEntity = initSubspell("spell-on-hit-entity", "", true);
+		spellOnHitGround = initSubspell("spell-on-hit-ground", "", true);
+		spellOnEntityLocation = initSubspell("spell-on-entity-location", "", true);
 
 		if (hitListener == null) {
 			hitListener = new HitListener();

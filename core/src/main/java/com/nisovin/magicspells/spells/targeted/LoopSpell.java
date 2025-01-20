@@ -59,10 +59,8 @@ public class LoopSpell extends TargetedSpell implements TargetedEntitySpell, Tar
 	private final String strFadeTarget;
 
 	private Subspell spellOnEnd;
-	private String spellOnEndName;
 
 	private List<Subspell> spells;
-	private List<String> spellNames;
 
 	private VariableModSet variableModsLoop;
 	private VariableModSet variableModsTargetLoop;
@@ -101,9 +99,6 @@ public class LoopSpell extends TargetedSpell implements TargetedEntitySpell, Tar
 
 		strFadeSelf = getConfigString("str-fade-self", "");
 		strFadeTarget = getConfigString("str-fade-target", "");
-		spellOnEndName = getConfigString("spell-on-end", "");
-
-		spellNames = getConfigStringList("spells", null);
 	}
 
 	@Override
@@ -115,24 +110,8 @@ public class LoopSpell extends TargetedSpell implements TargetedEntitySpell, Tar
 			registerEvents(deathListener);
 		}
 
-		spellOnEnd = initSubspell(spellOnEndName, true, "spell-on-end");
-		spellOnEndName = null;
-
-		if (spellNames != null && !spellNames.isEmpty()) {
-			spells = new ArrayList<>();
-
-			for (int i = 0; i < spellNames.size(); i++) {
-				String spellName = spellNames.get(i);
-
-				Subspell spell = initSubspell(spellName, false, "spells[" + i + "]");
-				if (spell == null) continue;
-
-				spells.add(spell);
-			}
-
-			if (spells.isEmpty()) spells = null;
-		}
-		spellNames = null;
+		spells = initSubspells("spells");
+		spellOnEnd = initSubspell("spell-on-end", "", true);
 	}
 
 	@Override
@@ -344,7 +323,7 @@ public class LoopSpell extends TargetedSpell implements TargetedEntitySpell, Tar
 			firstIteration = false;
 
 			boolean activated = false;
-			if (spells != null) {
+			if (!spells.isEmpty()) {
 				if (castRandomSpellInstead) {
 					Subspell spell = spells.get(random.nextInt(spells.size()));
 					activated = cast(spell);

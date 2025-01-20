@@ -51,15 +51,6 @@ public class PlayerMenuSpell extends TargetedSpell implements TargetedEntitySpel
 	private final ConfigData<Boolean> addOpener;
 	private final ConfigData<Boolean> castSpellsOnTarget;
 
-	private String spellRangeName;
-	private String spellOfflineName;
-	private String spellOnLeftName;
-	private String spellOnRightName;
-	private String spellOnDropName;
-	private String spellOnSwapName;
-	private String spellOnSneakLeftName;
-	private String spellOnSneakRightName;
-
 	private Subspell spellRange;
 	private Subspell spellOffline;
 	private Subspell spellOnLeft;
@@ -94,15 +85,6 @@ public class PlayerMenuSpell extends TargetedSpell implements TargetedEntitySpel
 		addOpener = getConfigDataBoolean("add-opener", false);
 		castSpellsOnTarget = getConfigDataBoolean("cast-spells-on-target", true);
 
-		spellRangeName = getConfigString("spell-range", "");
-		spellOfflineName = getConfigString("spell-offline", "");
-		spellOnLeftName = getConfigString("spell-on-left", "");
-		spellOnRightName = getConfigString("spell-on-right", "");
-		spellOnDropName = getConfigString("spell-on-drop", "");
-		spellOnSwapName = getConfigString("spell-on-swap", "");
-		spellOnSneakLeftName = getConfigString("spell-on-sneak-left", "");
-		spellOnSneakRightName = getConfigString("spell-on-sneak-right", "");
-
 		previousPageItem = createItem("previous-page-item", "Previous Page");
 		nextPageItem = createItem("next-page-item", "Next Page");
 	}
@@ -118,23 +100,14 @@ public class PlayerMenuSpell extends TargetedSpell implements TargetedEntitySpel
 	public void initialize() {
 		super.initialize();
 
-		spellRange = initSubspell(spellRangeName, true, "spell-range");
-		spellOffline = initSubspell(spellOfflineName, true, "spell-offline");
-		spellOnLeft = initSubspell(spellOnLeftName, true, "spell-on-left");
-		spellOnRight = initSubspell(spellOnRightName, true, "spell-on-right");
-		spellOnDrop = initSubspell(spellOnDropName, true, "spell-on-drop");
-		spellOnSwap = initSubspell(spellOnSwapName, true, "spell-on-swap");
-		spellOnSneakLeft = initSubspell(spellOnSneakLeftName, true, "spell-on-sneak-left");
-		spellOnSneakRight = initSubspell(spellOnSneakRightName, true, "spell-on-sneak-right");
-
-		spellRangeName = null;
-		spellOfflineName = null;
-		spellOnLeftName = null;
-		spellOnRightName = null;
-		spellOnDropName = null;
-		spellOnSwapName = null;
-		spellOnSneakLeftName = null;
-		spellOnSneakRightName = null;
+		spellRange = initSubspell("spell-range", "", true);
+		spellOffline = initSubspell("spell-offline", "", true);
+		spellOnLeft = initSubspell("spell-on-left", "", true);
+		spellOnRight = initSubspell("spell-on-right", "", true);
+		spellOnDrop = initSubspell("spell-on-drop", "", true);
+		spellOnSwap = initSubspell("spell-on-swap", "", true);
+		spellOnSneakLeft = initSubspell("spell-on-sneak-left", "", true);
+		spellOnSneakRight = initSubspell("spell-on-sneak-right", "", true);
 	}
 
 	@Override

@@ -54,7 +54,6 @@ public class AreaScanSpell extends TargetedSpell implements TargetedLocationSpel
 	private final ConfigData<Boolean> powerAffectsRadius;
 	private final ConfigData<Boolean> powerAffectsMaxBlocks;
 
-	private String spellToCastName;
 	private Subspell spellToCast;
 
 	private ModifierSet scanModifiers;
@@ -85,7 +84,6 @@ public class AreaScanSpell extends TargetedSpell implements TargetedLocationSpel
 		xVariable = getConfigDataString("x-variable", null);
 		yVariable = getConfigDataString("y-variable", null);
 		zVariable = getConfigDataString("z-variable", null);
-		spellToCastName = getConfigString("spell", "");
 
 		pointBlank = getConfigDataBoolean("point-blank", false);
 		blockCoords = getConfigDataBoolean("block-coords", false);
@@ -129,8 +127,7 @@ public class AreaScanSpell extends TargetedSpell implements TargetedLocationSpel
 	public void initialize() {
 		super.initialize();
 
-		spellToCast = initSubspell(spellToCastName, false, "spell");
-		spellToCastName = null;
+		spellToCast = initSubspell("spell", "", false);
 	}
 
 	@Override

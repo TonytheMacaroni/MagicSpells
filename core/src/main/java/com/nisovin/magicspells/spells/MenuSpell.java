@@ -127,12 +127,6 @@ public class MenuSpell extends TargetedSpell implements TargetedEntitySpell, Tar
 			option.item = item;
 			option.items = items;
 			option.quantity = getConfigString(path + "quantity", "");
-			option.spellName = getConfigString(path + "spell", "");
-			option.spellRightName = getConfigString(path + "spell-right", "");
-			option.spellSneakLeftName = getConfigString(path + "spell-sneak-left", "");
-			option.spellSneakRightName = getConfigString(path + "spell-sneak-right", "");
-			option.spellDropName = getConfigString(path + "spell-drop", "");
-			option.spellSwapName = getConfigString(path + "spell-swap", "");
 			option.power = getConfigFloat(path + "power", 1);
 			option.modifierList = getConfigStringList(path + "modifiers", null);
 			option.stayOpen = getConfigBoolean(path + "stay-open", false);
@@ -150,15 +144,16 @@ public class MenuSpell extends TargetedSpell implements TargetedEntitySpell, Tar
 			.pushPath("options", DebugPath.Type.SECTION)
 		) {
 			for (MenuOption option : options.values()) {
-			    try (var ignored1 = MagicDebug.section("Initializing option '%s'.", option.menuOptionName)
+			    try (var ignored1 = MagicDebug.section("Initializing subspells for option '%s'.", option.menuOptionName)
 					.pushPath(option.menuOptionName, DebugPath.Type.SECTION)
 				) {
-					option.spell = initSubspell(option.spellName, true, "spell");
-					option.spellRight = initSubspell(option.spellRightName, true, "spell-right");
-					option.spellSneakLeft = initSubspell(option.spellSneakLeftName, true, "spell-sneak-left");
-					option.spellSneakRight = initSubspell(option.spellSneakRightName, true, "spell-sneak-right");
-					option.spellDrop = initSubspell(option.spellDropName, true, "spell-drop");
-					option.spellSwap = initSubspell(option.spellSwapName, true, "spell-swap");
+					String path = "options." + option.menuOptionName + ".";
+					option.spell = initSubspell(path + "spell", "", true);
+					option.spellRight = initSubspell(path + "spell-right", "", true);
+					option.spellSneakLeft = initSubspell(path + "spell-sneak-left", "", true);
+					option.spellSneakRight = initSubspell(path + "spell-sneak-right", "", true);
+					option.spellDrop = initSubspell(path + "spell-drop", "", true);
+					option.spellSwap = initSubspell(path + "spell-swap", "", true);
 				}
 			}
 		}
@@ -447,12 +442,6 @@ public class MenuSpell extends TargetedSpell implements TargetedEntitySpell, Tar
 		private ItemStack item;
 		private List<ItemStack> items;
 		private String quantity;
-		private String spellName;
-		private String spellRightName;
-		private String spellSneakLeftName;
-		private String spellSneakRightName;
-		private String spellDropName;
-		private String spellSwapName;
 		private Subspell spell;
 		private Subspell spellRight;
 		private Subspell spellSneakLeft;

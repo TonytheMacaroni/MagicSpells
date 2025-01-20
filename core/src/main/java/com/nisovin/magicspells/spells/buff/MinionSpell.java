@@ -61,10 +61,6 @@ public class MinionSpell extends BuffSpell {
 
 	private String minionName;
 
-	private String spawnSpellName;
-	private String deathSpellName;
-	private String attackSpellName;
-
 	private Subspell spawnSpell;
 	private Subspell deathSpell;
 	private Subspell attackSpell;
@@ -194,10 +190,6 @@ public class MinionSpell extends BuffSpell {
 		leggingsDropChance = getConfigFloat("leggings-drop-chance", 0) / 100F;
 		bootsDropChance = getConfigFloat("boots-drop-chance", 0) / 100F;
 
-		spawnSpellName = getConfigString("spell-on-spawn", "");
-		attackSpellName = getConfigString("spell-on-attack", "");
-		deathSpellName = getConfigString("spell-on-death", "");
-
 		spawnOffset = getConfigDataVector("spawn-offset", new Vector(1, 0, 0));
 		followRange = getConfigDouble("follow-range", 1.5) * -1;
 		followSpeed = getConfigDouble("follow-speed", 1);
@@ -216,13 +208,9 @@ public class MinionSpell extends BuffSpell {
 	public void initialize() {
 		super.initialize();
 
-		spawnSpell = initSubspell(spawnSpellName, true, "spell-on-spawn");
-		attackSpell = initSubspell(attackSpellName, true, "spell-on-attack");
-		deathSpell = initSubspell(deathSpellName, true, "spell-on-death");
-
-		spawnSpellName = null;
-		attackSpellName = null;
-		deathSpellName = null;
+		spawnSpell = initSubspell("spell-on-spawn", "", true);
+		attackSpell = initSubspell("spell-on-attack", "", true);
+		deathSpell = initSubspell("spell-on-death", "", true);
 	}
 
 	@Override

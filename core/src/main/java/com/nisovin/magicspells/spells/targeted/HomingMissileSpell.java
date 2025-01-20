@@ -48,13 +48,6 @@ public class HomingMissileSpell extends TargetedSpell implements TargetedEntityS
 	private final ConfigData<Boolean> stopOnModifierFail;
 	private final ConfigData<Boolean> hitAirAfterDuration;
 
-	private String hitSpellName;
-	private String airSpellName;
-	private String groundSpellName;
-	private String modifierSpellName;
-	private String durationSpellName;
-	private String entityLocationSpellName;
-
 	private Subspell hitSpell;
 	private Subspell airSpell;
 	private Subspell groundSpell;
@@ -95,13 +88,6 @@ public class HomingMissileSpell extends TargetedSpell implements TargetedEntityS
 		stopOnModifierFail = getConfigDataBoolean("stop-on-modifier-fail", true);
 		hitAirAfterDuration = getConfigDataBoolean("hit-air-after-duration", false);
 
-		hitSpellName = getConfigString("spell", "");
-		airSpellName = getConfigString("spell-on-hit-air", "");
-		groundSpellName = getConfigString("spell-on-hit-ground", "");
-		modifierSpellName = getConfigString("spell-on-modifier-fail", "");
-		durationSpellName = getConfigString("spell-after-duration", "");
-		entityLocationSpellName = getConfigString("spell-on-entity-location", "");
-
 		yOffset = getConfigDataDouble("y-offset", 0.6D);
 		maxDuration = getConfigDataDouble("max-duration", 20);
 
@@ -133,19 +119,12 @@ public class HomingMissileSpell extends TargetedSpell implements TargetedEntityS
 	public void initialize() {
 		super.initialize();
 
-		hitSpell = initSubspell(hitSpellName, true, "spell");
-		groundSpell = initSubspell(groundSpellName, true, "spell-on-hit-ground");
-		airSpell = initSubspell(airSpellName, true, "spell-on-hit-air");
-		durationSpell = initSubspell(durationSpellName, true, "spell-after-duration");
-		modifierSpell = initSubspell(modifierSpellName, true, "spell-on-modifier-fail");
-		entityLocationSpell = initSubspell(entityLocationSpellName, true, "spell-on-entity-location");
-
-		hitSpellName = null;
-		groundSpellName = null;
-		airSpellName = null;
-		durationSpellName = null;
-		modifierSpellName = null;
-		entityLocationSpellName = null;
+		hitSpell = initSubspell("spell", "", true);
+		groundSpell = initSubspell("spell-on-hit-ground", "", true);
+		airSpell = initSubspell("spell-on-hit-air", "", true);
+		durationSpell = initSubspell("spell-after-duration", "", true);
+		modifierSpell = initSubspell("spell-on-modifier-fail", "", true);
+		entityLocationSpell = initSubspell("spell-on-entity-location", "", true);
 
 		zoneManager = MagicSpells.getNoMagicZoneManager();
 	}
