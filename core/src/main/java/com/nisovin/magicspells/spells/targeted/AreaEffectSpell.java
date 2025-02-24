@@ -197,34 +197,28 @@ public class AreaEffectSpell extends TargetedSpell implements TargetedLocationSp
 			entities.sort(comparator);
 		}
 
-		Location targetLocation;
-		double hDistance;
-		Vector dir;
-		SpellTargetEvent event;
-		SpellData subData;
-		boolean success;
 		for (LivingEntity target : entities) {
 			if (target.isDead()) continue;
 			if (!validTargetList.canTarget(caster, target)) continue;
 
 			if (circleShape && !ignoreRadius) {
-				targetLocation = target.getLocation();
+				Location targetLocation = target.getLocation();
 
-				hDistance = NumberConversions.square(targetLocation.getX() - location.getX()) + NumberConversions.square(targetLocation.getZ() - location.getZ());
+				double hDistance = NumberConversions.square(targetLocation.getX() - location.getX()) + NumberConversions.square(targetLocation.getZ() - location.getZ());
 				if (hDistance > hRadiusSquared || hDistance < minHRadiusSquared) continue;
 			}
 
 			if (horizontalCone > 0 && horizontalAngle(location, target.getLocation()) > horizontalCone) continue;
 
 			if (cone > 0) {
-				dir = target.getLocation().toVector().subtract(location.toVector());
+				Vector dir = target.getLocation().toVector().subtract(location.toVector());
 				if (AccurateMath.toDegrees(AccurateMath.abs(dir.angle(location.getDirection()))) > cone) continue;
 			}
 
-			event = new SpellTargetEvent(this, data, target);
+			SpellTargetEvent event = new SpellTargetEvent(this, data, target);
 			if (!event.callEvent()) continue;
 
-			subData = event.getSpellData();
+			SpellData subData = event.getSpellData();
 			target = subData.target();
 
 			castSpells(subData, passTargeting);
@@ -244,7 +238,7 @@ public class AreaEffectSpell extends TargetedSpell implements TargetedLocationSp
 			if (maxTargets > 0 && count >= maxTargets) break;
 		}
 
-		success = count > 0 || !failIfNoTargets;
+		boolean success = count > 0 || !failIfNoTargets;
 		if (success) {
 			playSpellEffects(EffectPosition.SPECIAL, location, data);
 			if (caster != null) playSpellEffects(EffectPosition.CASTER, caster, data);
