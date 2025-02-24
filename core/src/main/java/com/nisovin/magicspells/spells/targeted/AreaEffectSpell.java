@@ -180,21 +180,20 @@ public class AreaEffectSpell extends TargetedSpell implements TargetedLocationSp
 		}
 
 		List<LivingEntity> entities = new ArrayList<>();
-		if (ignoreRadius) Bukkit.getWorlds().forEach(world -> entities.addAll(world.getLivingEntities()));
-		else entities.addAll(location.getWorld().getNearbyLivingEntities(location, hRadius, vRadius, hRadius));
+		if (ignoreRadius) {
+			if (useProximity) entities.addAll(location.getWorld().getLivingEntities());
+			else Bukkit.getWorlds().forEach(world -> entities.addAll(world.getLivingEntities()));
+		} else entities.addAll(location.getWorld().getNearbyLivingEntities(location, hRadius, vRadius, hRadius));
 
-		if (!circleShape && (minHRadius != 0 || minVRadius != 0)) {
+		if (!circleShape && (minHRadius != 0 || minVRadius != 0))
 			entities.removeAll(location.getWorld().getNearbyLivingEntities(location, minHRadius, minVRadius, minHRadius));
-		}
+
+		Collections.shuffle(entities);
 
 		if (useProximity) {
-			// check world before distance
-			for (LivingEntity entity : new ArrayList<>(entities)) {
-				if (entity.getWorld().equals(location.getWorld())) continue;
-				entities.remove(entity);
-			}
-			Comparator<LivingEntity> comparator = Comparator.comparingDouble(entity -> entity.getLocation().distanceSquared(location));
+			Comparator<LivingEntity> comparator = Comparator.comparingDouble(e -> e.getLocation().distanceSquared(location));
 			if (reverseProximity) comparator = comparator.reversed();
+
 			entities.sort(comparator);
 		}
 
