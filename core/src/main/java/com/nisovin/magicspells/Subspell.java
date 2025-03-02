@@ -43,6 +43,7 @@ public class Subspell {
 
 	private boolean invert = false;
 	private boolean passPower = true;
+	private boolean passArguments = false;
 	private ConfigData<Integer> delay = data -> -1;
 	private ConfigData<Double> chance = data -> -1D;
 	private ConfigData<Float> subPower = data -> 1F;
@@ -83,6 +84,7 @@ public class Subspell {
 					}
 					case "invert" -> invert = Boolean.parseBoolean(value);
 					case "pass-power" -> passPower = Boolean.parseBoolean(value);
+					case "pass-arguments" -> passArguments = Boolean.parseBoolean(value);
 					case "pass-targeting" -> {
 						ConfigData<String> supplier = ConfigDataUtil.getString(value);
 
@@ -335,7 +337,11 @@ public class Subspell {
 
 	@NotNull
 	private SpellCastResult cast(@NotNull SpellData data) {
-		data = data.builder().recipient(null).power((passPower ? data.power() : 1) * subPower.get(data)).args(args.get(data)).build();
+		data = data.builder()
+			.recipient(null)
+			.power((passPower ? data.power() : 1) * subPower.get(data))
+			.args(passArguments ? data.args() : args.get(data))
+			.build();
 
 		double chance = this.chance.get(data);
 		if ((chance > 0 && chance < 1) && random.nextDouble() > chance) return fail(data);
@@ -381,7 +387,11 @@ public class Subspell {
 			return fail(data);
 		}
 
-		data = data.builder().recipient(null).power((passPower ? data.power() : 1) * subPower.get(data)).args(args.get(data)).build();
+		data = data.builder()
+			.recipient(null)
+			.power((passPower ? data.power() : 1) * subPower.get(data))
+			.args(passArguments ? data.args() : args.get(data))
+			.build();
 
 		if (mode != CastMode.HARD && !this.passTargeting.getOr(data, passTargeting)) {
 			ValidTargetList canTarget = spell.getValidTargetList();
@@ -458,7 +468,11 @@ public class Subspell {
 	private SpellCastResult castAtLocation(@NotNull SpellData data) {
 		if (!isTargetedLocation) return fail(data);
 
-		data = data.builder().recipient(null).power((passPower ? data.power() : 1) * subPower.get(data)).args(args.get(data)).build();
+		data = data.builder()
+			.recipient(null)
+			.power((passPower ? data.power() : 1) * subPower.get(data))
+			.args(passArguments ? data.args() : args.get(data))
+			.build();
 
 		double chance = this.chance.get(data);
 		if ((chance > 0 && chance < 1) && random.nextDouble() > chance) return fail(data);
@@ -535,7 +549,11 @@ public class Subspell {
 	private SpellCastResult castAtEntityFromLocation(@NotNull SpellData data, boolean passTargeting) {
 		if (!isTargetedEntityFromLocation) return fail(data);
 
-		data = data.builder().recipient(null).power((passPower ? data.power() : 1) * subPower.get(data)).args(args.get(data)).build();
+		data = data.builder()
+			.recipient(null)
+			.power((passPower ? data.power() : 1) * subPower.get(data))
+			.args(passArguments ? data.args() : args.get(data))
+			.build();
 
 		if (mode != CastMode.HARD && !this.passTargeting.getOr(data, passTargeting)) {
 			ValidTargetList canTarget = spell.getValidTargetList();
