@@ -192,7 +192,7 @@ public class ValidTargetList {
 		if (targetCasterPassenger && target instanceof LivingEntity && target.isInsideVehicle() && caster.equals(target.getVehicle())) return true;
 		if (targetCasterMount && target instanceof LivingEntity && caster.isInsideVehicle() && target.equals(caster.getVehicle())) return true;
 
-		if (targetEntityTarget && (caster instanceof Creature creature) && creature.getTarget() != null && ((Creature) caster).getTarget().equals(target)) return true;
+		if (targetEntityTarget && (caster instanceof Creature creature) && creature.getTarget() != null && creature.getTarget().equals(target)) return true;
 		if (types.contains(target.getType())) return true;
 		return false;
 	}
