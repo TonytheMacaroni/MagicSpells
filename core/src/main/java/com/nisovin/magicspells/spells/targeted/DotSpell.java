@@ -67,7 +67,7 @@ public class DotSpell extends TargetedSpell implements TargetedEntitySpell {
 		activeDots = new HashMap<>();
 
 		MagicSpells.getDeprecationManager().addDeprecation(this, DAMAGE_TYPE_DEPRECATION_NOTICE,
-			!damage.isConstant() || damage.get() > 0
+			!damageType.isConstant() || damageType.get() != DamageCause.ENTITY_ATTACK
 		);
 	}
 
