@@ -146,6 +146,9 @@ public class EntityData {
 
 		addOptInteger(transformers, config, "age", Ageable.class, Ageable::setAge);
 
+		// Damageable
+		addOptDouble(transformers, config, "health", Damageable.class, Damageable::setHealth);
+
 		// LivingEntity
 		addOptBoolean(transformers, config, "ai", LivingEntity.class, LivingEntity::setAI);
 		addOptEquipment(transformers, config, "equipment.main-hand", EquipmentSlot.HAND);
@@ -619,6 +622,11 @@ public class EntityData {
 
 	private <T> void addOptFloat(Multimap<Class<?>, Transformer<?>> transformers, ConfigurationSection config, String name, Class<T> type, BiConsumer<T, Float> setter) {
 		ConfigData<Float> supplier = ConfigDataUtil.getFloat(config, name);
+		transformers.put(type, new TransformerImpl<>(supplier, setter, true));
+	}
+
+	private <T> void addOptDouble(Multimap<Class<?>, Transformer<?>> transformers, ConfigurationSection config, String name, Class<T> type, BiConsumer<T, Double> setter) {
+		ConfigData<Double> supplier = ConfigDataUtil.getDouble(config, name);
 		transformers.put(type, new TransformerImpl<>(supplier, setter, true));
 	}
 
