@@ -24,11 +24,15 @@ import org.bukkit.*;
 import org.bukkit.entity.*;
 import org.bukkit.util.Vector;
 import org.bukkit.util.EulerAngle;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Transformation;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.attribute.Attributable;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.EntityEquipment;
+import org.bukkit.attribute.AttributeInstance;
+import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.configuration.ConfigurationSection;
 
 import io.papermc.paper.registry.RegistryKey;
@@ -42,6 +46,7 @@ import com.nisovin.magicspells.util.config.FunctionData;
 import com.nisovin.magicspells.util.magicitems.MagicItem;
 import com.nisovin.magicspells.util.config.ConfigDataUtil;
 import com.nisovin.magicspells.util.magicitems.MagicItems;
+import com.nisovin.magicspells.util.itemreader.AttributeHandler;
 
 public class EntityData {
 
@@ -145,6 +150,24 @@ public class EntityData {
 		}, forceOptional);
 
 		addOptInteger(transformers, config, "age", Ageable.class, Ageable::setAge);
+
+		// Attributable
+		List<?> attributeModifierStrings = config.getList("attribute-modifiers");
+		if (attributeModifierStrings != null && !attributeModifierStrings.isEmpty()) {
+			Multimap<Attribute, AttributeModifier> attributeModifiers = AttributeHandler.getAttributeModifiers(attributeModifierStrings, null);
+
+			transformers.put(Attributable.class, (Attributable entity, SpellData data) -> {
+				attributeModifiers.asMap().forEach((attribute, modifiers) -> {
+					AttributeInstance attributeInstance = entity.getAttribute(attribute);
+					if (attributeInstance == null) return;
+
+					modifiers.forEach(attributeInstance::addModifier);
+				});
+			});
+		}
+
+		// Damageable
+		addOptDouble(transformers, config, "health", Damageable.class, Damageable::setHealth);
 
 		// LivingEntity
 		addOptBoolean(transformers, config, "ai", LivingEntity.class, LivingEntity::setAI);
@@ -619,6 +642,11 @@ public class EntityData {
 
 	private <T> void addOptFloat(Multimap<Class<?>, Transformer<?>> transformers, ConfigurationSection config, String name, Class<T> type, BiConsumer<T, Float> setter) {
 		ConfigData<Float> supplier = ConfigDataUtil.getFloat(config, name);
+		transformers.put(type, new TransformerImpl<>(supplier, setter, true));
+	}
+
+	private <T> void addOptDouble(Multimap<Class<?>, Transformer<?>> transformers, ConfigurationSection config, String name, Class<T> type, BiConsumer<T, Double> setter) {
+		ConfigData<Double> supplier = ConfigDataUtil.getDouble(config, name);
 		transformers.put(type, new TransformerImpl<>(supplier, setter, true));
 	}
 
