@@ -164,7 +164,7 @@ public class ResistSpell extends BuffSpell {
 			if (damageTypes == null && normalDamageTypes == null) return;
 
 			if (damageTypes != null) {
-				if (!damageTypes.contains(event.getDamageSource().getDamageType())) return;
+				if (!damageTypes.contains(event.getDamageSource().getDamageType().key())) return;
 			} else if (!normalDamageTypes.contains(event.getCause())) return;
 		}
 
