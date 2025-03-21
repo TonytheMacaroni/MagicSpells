@@ -445,7 +445,7 @@ public class EntityData {
 		addOptBlockData(transformers, config, "block", BlockDisplay.class, BlockDisplay::setBlock);
 
 		// ItemDisplay
-		addOptMagicItem(transformers, config, "item", ItemDisplay.class, ItemDisplay::setItemStack);
+		addOptItemStack(transformers, config, "item", ItemDisplay.class, ItemDisplay::setItemStack);
 
 		addOptEnum(transformers, config, "item-display-transform", ItemDisplay.class, ItemDisplay.ItemDisplayTransform.class, ItemDisplay::setItemDisplayTransform);
 
@@ -686,12 +686,29 @@ public class EntityData {
 		return supplier;
 	}
 
-	private <T> void addOptMagicItem(Multimap<Class<?>, Transformer<?>> transformers, ConfigurationSection config, String name, Class<T> type, BiConsumer<T, ItemStack> setter) {
-		MagicItem magicItem = MagicItems.getMagicItemFromString(config.getString(name));
-		if (magicItem == null) return;
+	private <T> void addOptItemStack(Multimap<Class<?>, Transformer<?>> transformers, ConfigurationSection config, String name, Class<T> type, BiConsumer<T, ItemStack> setter) {
+		ConfigData<String> supplier = ConfigDataUtil.getString(config, name, null);
+		if (supplier.isConstant()) {
+			ItemStack item = getItemStack(supplier.get());
+			if (item == null) return;
 
-		ItemStack item = magicItem.getItemStack();
-		transformers.put(type, new TransformerImpl<>(data -> item, setter, true));
+			transformers.put(type, new TransformerImpl<>(data -> item, setter, true));
+			return;
+		}
+
+		transformers.put(type, new TransformerImpl<>(data -> getItemStack(supplier.get(data)), setter, true));
+	}
+
+	private ItemStack getItemStack(String string) {
+		if (string == null) return null;
+
+		try {
+			return Bukkit.getItemFactory().createItemStack(string);
+		} catch (IllegalArgumentException ignored) {
+		}
+
+		MagicItem magicItem = MagicItems.getMagicItemFromString(string);
+		return magicItem == null ? null : magicItem.getItemStack();
 	}
 
 	private void addOptEquipment(Multimap<Class<?>, Transformer<?>> transformers, ConfigurationSection config, String name, EquipmentSlot slot) {
@@ -699,7 +716,7 @@ public class EntityData {
 	}
 
 	private <T extends LivingEntity> void addOptEquipment(Multimap<Class<?>, Transformer<?>> transformers, ConfigurationSection config, String name, Class<T> type, EquipmentSlot slot) {
-		addOptMagicItem(transformers, config, name, type, (entity, item) -> {
+		addOptItemStack(transformers, config, name, type, (entity, item) -> {
 			EntityEquipment equipment = entity.getEquipment();
 			if (equipment == null) return;
 
