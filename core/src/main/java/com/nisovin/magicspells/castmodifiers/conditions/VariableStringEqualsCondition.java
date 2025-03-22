@@ -10,6 +10,7 @@ import org.jetbrains.annotations.NotNull;
 
 import com.nisovin.magicspells.util.Name;
 import com.nisovin.magicspells.MagicSpells;
+import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.castmodifiers.Condition;
 
 @Name("variablestringequals")
@@ -31,7 +32,8 @@ public class VariableStringEqualsCondition extends Condition {
 
 		//Variable cannot be null or empty.
 		if (variable.isEmpty()) {
-			MagicSpells.error("No variable stated for comparison within this modifier!");
+			MagicDebug.warn("No variable stated for variablestringequals modifier %s.", MagicDebug.resolveFullPath());
+//			MagicSpells.error("No variable stated for comparison within this modifier!");
 			return false;
 		}
 

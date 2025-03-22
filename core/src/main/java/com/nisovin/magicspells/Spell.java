@@ -11,6 +11,7 @@ import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 
 import java.util.*;
+import java.util.function.Supplier;
 import java.util.function.Predicate;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -60,11 +61,13 @@ import com.nisovin.magicspells.spelleffects.*;
 import com.nisovin.magicspells.mana.ManaHandler;
 import com.nisovin.magicspells.spells.BuffSpell;
 import com.nisovin.magicspells.spells.PassiveSpell;
+import com.nisovin.magicspells.util.conversion.Converter;
 import com.nisovin.magicspells.util.magicitems.MagicItem;
 import com.nisovin.magicspells.castmodifiers.ModifierSet;
 import com.nisovin.magicspells.spelleffects.effecttypes.*;
 import com.nisovin.magicspells.util.magicitems.MagicItems;
 import com.nisovin.magicspells.util.magicitems.MagicItemData;
+import com.nisovin.magicspells.util.conversion.CollectionUtil;
 import com.nisovin.magicspells.util.magicitems.MagicItemDataParser;
 import com.nisovin.magicspells.spelleffects.trackers.EffectTracker;
 import com.nisovin.magicspells.spelleffects.effecttypes.EntityEffect;
@@ -258,24 +261,33 @@ public abstract class Spell implements Comparable<Spell>, Debuggable, Listener {
 		danceCastSequence = config.getString(internalKey + "dance-cast-sequence", null);
 		requireCastItemOnCommand = config.getBoolean(internalKey + "require-cast-item-on-command", false);
 		bindable = config.getBoolean(internalKey + "bindable", true);
-		List<String> bindables = config.getStringList(internalKey + "bindable-items", null);
-		if (bindables != null) {
-			bindableItems = new HashSet<>();
-			for (String str : bindables) {
-				MagicItem magicItem = MagicItems.getMagicItemFromString(str);
-				if (magicItem == null) {
-					MagicSpells.error("Spell '" + internalName + "' has an invalid bindable cast item specified: " + str);
-					continue;
-				}
 
-				ItemStack item = magicItem.getItemStack();
-				if (item == null) {
-					MagicSpells.error("Spell '" + internalName + "' has an invalid bindable cast item specified: " + str);
-					continue;
+		List<?> bindables = config.getList(internalKey + "bindable-items", null);
+		if (bindables != null) {
+			try (var ignored = MagicDebug.section("Resolving 'bindable-items'.")
+				.pushPath("bindable-items", DebugPath.Type.LIST)
+			) {
+				for (int i = 0; i < bindables.size(); i++) {
+					Object object = bindables.get(i);
+
+					try (var ignored1 = MagicDebug.section("Resolving '%s'.", object).pushListEntry(i)) {
+						if (!(object instanceof String string)) {
+							MagicDebug.warn("Invalid cast item '%s' %s.", object, MagicDebug.resolveFullPath());
+							continue;
+						}
+
+						MagicItem magicItem = MagicItems.getMagicItemFromString(string);
+						if (magicItem == null) {
+							MagicDebug.warn("Invalid cast item '%s' %s.", string, MagicDebug.resolveFullPath());
+							continue;
+						}
+
+						bindableItems.add(new CastItem(magicItem.getMagicItemData()));
+					}
 				}
-				bindableItems.add(new CastItem(item));
 			}
 		}
+
 		String iconStr = config.getString(internalKey + "spell-icon", null);
 		if (iconStr != null) {
 			MagicItem magicItem = MagicItems.getMagicItemFromString(iconStr);
@@ -374,29 +386,67 @@ public abstract class Spell implements Comparable<Spell>, Debuggable, Listener {
 		replaces = config.getStringList(internalKey + "replaces", null);
 		precludes = config.getStringList(internalKey + "precludes", null);
 		worldRestrictions = config.getStringList(internalKey + "restrict-to-worlds", null);
-		List<String> sXpGranted = config.getStringList(internalKey + "xp-granted", null);
-		List<String> sXpRequired = config.getStringList(internalKey + "xp-required", null);
+
+		List<?> sXpGranted = config.getList(internalKey + "xp-granted", null);
 		if (sXpGranted != null) {
 			xpGranted = new LinkedHashMap<>();
-			for (String s : sXpGranted) {
-				String[] split = s.split(" ");
-				try {
-					int amt = Integer.parseInt(split[1]);
-					xpGranted.put(split[0], amt);
-				} catch (NumberFormatException e) {
-					MagicSpells.error("Error in xp-granted entry for spell '" + internalName + "': " + s);
+
+			try (var ignored = MagicDebug.section("Resolving 'xp-granted'.")
+				.pushPath("xp-granted", DebugPath.Type.LIST)
+			) {
+				for (int i = 0; i < sXpGranted.size(); i++) {
+					Object object = sXpGranted.get(i);
+
+					try (var ignored1 = MagicDebug.section("Resolving '%s'.", object).pushListEntry(i)) {
+						if (!(object instanceof String string)) {
+							MagicDebug.warn("Invalid 'xp-granted' entry '%s' %s.", object, MagicDebug.resolveFullPath());
+							continue;
+						}
+
+						String[] split = string.split(" ", 2);
+
+						int amount;
+						try {
+							amount = Integer.parseInt(split[1]);
+						} catch (NumberFormatException e) {
+							MagicDebug.warn("Invalid amount '%s' in 'xp-granted' entry '%s' %s.", split[1], string, MagicDebug.resolveFullPath());
+							continue;
+						}
+
+						xpGranted.put(split[0], amount);
+					}
 				}
 			}
 		}
+
+		List<String> sXpRequired = config.getStringList(internalKey + "xp-required", null);
 		if (sXpRequired != null) {
 			xpRequired = new LinkedHashMap<>();
-			for (String s : sXpRequired) {
-				String[] split = s.split(" ");
-				try {
-					int amt = Integer.parseInt(split[1]);
-					xpRequired.put(split[0], amt);
-				} catch (NumberFormatException e) {
-					MagicSpells.error("Error in xp-required entry for spell '" + internalName + "': " + s);
+
+			try (var ignored = MagicDebug.section("Resolving 'xp-required'.")
+				.pushPath("xp-required", DebugPath.Type.LIST)
+			) {
+				for (int i = 0; i < sXpRequired.size(); i++) {
+					Object object = sXpRequired.get(i);
+
+					try (var ignored1 = MagicDebug.section("Resolving '%s'.", object).pushListEntry(i)) {
+						if (!(object instanceof String string)) {
+							MagicDebug.warn("Invalid 'xp-required' entry '%s' %s.", object, MagicDebug.resolveFullPath());
+							continue;
+						}
+
+						String[] split = string.split(" ", 2);
+
+						int amount;
+						try {
+							amount = Integer.parseInt(split[1]);
+						} catch (NumberFormatException e) {
+							MagicDebug.warn("Invalid amount '%s' in 'xp-required' entry '%s' %s.", split[1], string, MagicDebug.resolveFullPath());
+							continue;
+						}
+
+						xpRequired.put(split[0], amount);
+					}
 				}
 			}
 		}
@@ -444,77 +494,91 @@ public abstract class Spell implements Comparable<Spell>, Debuggable, Listener {
 	}
 
 	protected SpellReagents getConfigReagents(String option) {
-		List<String> costList = config.getStringList(internalKey + option, null);
-		if (costList == null || costList.isEmpty()) return null;
-
-		SpellReagents reagents = new SpellReagents();
-		String[] data;
-
-		for (String costVal : costList) {
-			try {
-				// Parse cost data
-				data = costVal.trim().split(" ", 2);
-
-				switch (data[0].toLowerCase()) {
-					case "health" -> {
-						reagents.setHealth(Double.parseDouble(data[1]));
-						continue;
-					}
-					case "mana" -> {
-						reagents.setMana(Integer.parseInt(data[1]));
-						continue;
-					}
-					case "hunger" -> {
-						reagents.setHunger(Integer.parseInt(data[1]));
-						continue;
-					}
-					case "experience" -> {
-						reagents.setExperience(Integer.parseInt(data[1]));
-						continue;
-					}
-					case "levels" -> {
-						reagents.setLevels(Integer.parseInt(data[1]));
-						continue;
-					}
-					case "durability" -> {
-						reagents.setDurability(Integer.parseInt(data[1]));
-						continue;
-					}
-					case "money" -> {
-						reagents.setMoney(Float.parseFloat(data[1]));
-						continue;
-					}
-					case "variable" -> {
-						String[] variableData = data[1].split(" ", 2);
-						reagents.addVariable(variableData[0], Double.parseDouble(variableData[1]));
-						continue;
-					}
-				}
-
-				int i = costVal.lastIndexOf(' ');
-
-				int amount = 1;
-				if (i != -1) {
-					try {
-						amount = Integer.parseInt(costVal.substring(i + 1));
-					} catch (NumberFormatException e) {
-						i = -1;
-					}
-				}
-
-				MagicItemData itemData = MagicItems.getMagicItemDataFromString(i != -1 ? costVal.substring(0, i) : costVal);
-				if (itemData == null) {
-					MagicSpells.error("Failed to process cost value for " + internalName + " spell: " + costVal);
-					continue;
-				}
-
-				reagents.addItem(new SpellReagents.ReagentItem(itemData, amount));
-			} catch (Exception e) {
-				MagicSpells.error("Failed to process cost value for " + internalName + " spell: " + costVal);
+		try (var ignored = MagicDebug.section("Resolving cost option '%s'.", option)
+			.pushPath(option, DebugPath.Type.LIST)
+		){
+			List<?> costList = config.getList(internalKey + option, null);
+			if (costList == null || costList.isEmpty()) {
+				MagicDebug.info("No cost found.");
+				return null;
 			}
-		}
 
-		return reagents;
+			SpellReagents reagents = new SpellReagents();
+
+			for (int i = 0; i < costList.size(); i++) {
+				Object object = costList.get(i);
+
+				try (var ignored1 = MagicDebug.section("Resolving cost '%s'.", object)
+					.pushListEntry(i)
+				) {
+					if (!(object instanceof String string)) {
+						MagicDebug.warn("Invalid cost '%s' %s.", object, MagicDebug.resolveFullPath());
+						continue;
+					}
+
+					String[] data = string.trim().split(" ", 2);
+					try {
+						switch (data[0].toLowerCase()) {
+							case "health" -> {
+								reagents.setHealth(Double.parseDouble(data[1]));
+								continue;
+							}
+							case "mana" -> {
+								reagents.setMana(Integer.parseInt(data[1]));
+								continue;
+							}
+							case "hunger" -> {
+								reagents.setHunger(Integer.parseInt(data[1]));
+								continue;
+							}
+							case "experience" -> {
+								reagents.setExperience(Integer.parseInt(data[1]));
+								continue;
+							}
+							case "levels" -> {
+								reagents.setLevels(Integer.parseInt(data[1]));
+								continue;
+							}
+							case "durability" -> {
+								reagents.setDurability(Integer.parseInt(data[1]));
+								continue;
+							}
+							case "money" -> {
+								reagents.setMoney(Float.parseFloat(data[1]));
+								continue;
+							}
+							case "variable" -> {
+								String[] variableData = data[1].split(" ", 2);
+								reagents.addVariable(variableData[0], Double.parseDouble(variableData[1]));
+								continue;
+							}
+						}
+					} catch (NumberFormatException e) {
+						MagicDebug.warn("Invalid cost '%s' %s.", string, MagicDebug.resolveFullPath());
+						continue;
+					}
+
+					int index = string.lastIndexOf(' '), amount = 1;
+					if (index != -1) {
+						try {
+							amount = Integer.parseInt(string.substring(index + 1));
+						} catch (NumberFormatException e) {
+							index = -1;
+						}
+					}
+
+					MagicItemData itemData = MagicItems.getMagicItemDataFromString(index != -1 ? string.substring(0, index) : string);
+					if (itemData == null) {
+						MagicDebug.warn("Invalid cost '%s' %s.", object, MagicDebug.resolveFullPath());
+						continue;
+					}
+
+					reagents.addItem(new SpellReagents.ReagentItem(itemData, amount));
+				}
+			}
+
+			return reagents;
+		}
 	}
 
 	protected void initializeVariables() {
@@ -788,6 +852,10 @@ public abstract class Spell implements Comparable<Spell>, Debuggable, Listener {
 		return config.getSection(internalKey + key);
 	}
 
+	protected ItemStack getConfigItemStack(String key, ItemStack def) {
+		return ConfigReaderUtil.getConfigItemStack(config.getMainConfig(), internalKey + key, def);
+	}
+
 	protected ConfigData<Boolean> getConfigDataBoolean(String key, boolean def) {
 		return ConfigDataUtil.getBoolean(config.getMainConfig(), internalKey + key, def);
 	}
@@ -890,43 +958,110 @@ public abstract class Spell implements Comparable<Spell>, Debuggable, Listener {
 		return SpellFilter.fromSection(config.getMainConfig(), internalKey);
 	}
 
+	@SafeVarargs
+	public final <TValue, TCollection extends Collection<TValue>> TCollection getConfigCollection(
+		String key,
+		Supplier<TCollection> collectionFactory,
+		Converter<?, TValue>... converters
+	) {
+		return getConfigCollection(key, true, false, true, collectionFactory, null, converters);
+	}
+
+	@SafeVarargs
+	public final <TValue, TCollection extends Collection<TValue>> TCollection getConfigCollection(
+		String key,
+		Supplier<TCollection> collectionFactory,
+		Supplier<TCollection> defaultFactory,
+		Converter<?, TValue>... converters
+	) {
+		return getConfigCollection(key, true, false, true, collectionFactory, defaultFactory, converters);
+	}
+
+	@SafeVarargs
+	public final <TValue, TCollection extends Collection<TValue>> TCollection getConfigCollection(
+		String key,
+		boolean nullIfEmpty,
+		Supplier<TCollection> collectionFactory,
+		Converter<?, TValue>... converters
+	) {
+		return getConfigCollection(key, true, false, nullIfEmpty, collectionFactory, null, converters);
+	}
+
+	@SafeVarargs
+	public final <TValue, TCollection extends Collection<TValue>> TCollection getConfigCollection(
+		String key,
+		boolean nullIfAbsent,
+		boolean nullIfInvalid,
+		boolean nullIfEmpty,
+		Supplier<TCollection> collectionFactory,
+		Supplier<TCollection> defaultFactory,
+		Converter<?, TValue>... converters
+	) {
+		return CollectionUtil.getCollection(
+			config.getMainConfig(),
+			internalKey + key,
+			nullIfAbsent,
+			nullIfInvalid,
+			nullIfEmpty,
+			collectionFactory,
+			defaultFactory,
+			converters
+		);
+	}
+
 	@SuppressWarnings("UnstableApiUsage")
 	protected <T extends Keyed> Set<Key> getConfigRegistryKeys(String path, RegistryKey<T> registryKey) {
-		List<String> keyStrings = config.getStringList(internalKey + path, null);
-		if (keyStrings == null) return null;
+		try (var ignored = MagicDebug.section(DebugCategory.OPTIONS, "Resolving registry entry list '%s' for registry '%s'.", path, registryKey)
+			.pushPaths(path, DebugPath.Type.LIST)
+		) {
+			List<?> keyObjects = config.getList(internalKey + path, null);
+			if (keyObjects == null) {
+				MagicDebug.info("No values found.");
+				return null;
+			}
 
-		Set<Key> keys = new HashSet<>();
+			Registry<T> registry = RegistryAccess.registryAccess().getRegistry(registryKey);
+			Set<Key> keys = new HashSet<>();
 
-		Registry<T> registry = RegistryAccess.registryAccess().getRegistry(registryKey);
-		for (String keyString : keyStrings) {
-			if (!keyString.startsWith("#")) {
-				NamespacedKey key = NamespacedKey.fromString(keyString);
-				if (key == null || registry.get(key) == null) {
-					MagicSpells.error("Invalid registry entry '" + keyString + "' found on spell '" + internalName + "'.");
-					continue;
+			for (int i = 0; i < keyObjects.size(); i++) {
+				Object object = keyObjects.get(i);
+
+				try (var ignored1 = MagicDebug.section("Resolving entry '%s'.", object).pushListEntry(i)) {
+					if (!(object instanceof String keyString)) {
+						MagicDebug.warn("Invalid registry entry '%s' %s.", object, MagicDebug.resolveFullPath());
+						continue;
+					}
+
+					if (!keyString.startsWith("#")) {
+						NamespacedKey key = NamespacedKey.fromString(keyString);
+						if (key == null || registry.get(key) == null) {
+							MagicDebug.warn("Invalid registry entry '%s' %s.", keyString, MagicDebug.resolveFullPath());
+							continue;
+						}
+
+						keys.add(key);
+						continue;
+					}
+
+					NamespacedKey key = NamespacedKey.fromString(keyString.substring(1));
+					if (key == null) {
+						MagicDebug.warn("Invalid tag '%s' %s.", keyString, MagicDebug.resolveFullPath());
+						continue;
+					}
+
+					TagKey<T> tagKey = TagKey.create(registryKey, key);
+					if (!registry.hasTag(tagKey)) {
+						MagicDebug.warn("Invalid tag '%s' %s.", keyString, MagicDebug.resolveFullPath());
+						continue;
+					}
+
+					Tag<@NotNull T> tag = registry.getTag(tagKey);
+					tag.values().forEach(typedKey -> keys.add(typedKey.key()));
 				}
-
-				keys.add(key);
-				continue;
 			}
 
-			NamespacedKey key = NamespacedKey.fromString(keyString.substring(1));
-			if (key == null) {
-				MagicSpells.error("Invalid tag '" + keyString + "' found on spell '" + internalName + "'.");
-				continue;
-			}
-
-			TagKey<T> tagKey = TagKey.create(registryKey, key);
-			if (!registry.hasTag(tagKey)) {
-				MagicSpells.error("Invalid tag '" + keyString + "' found on spell '" + internalName + "'.");
-				continue;
-			}
-
-			Tag<@NotNull T> tag = registry.getTag(tagKey);
-			tag.values().forEach(typedKey -> keys.add(typedKey.key()));
+			return keys;
 		}
-
-		return keys;
 	}
 
 	protected boolean isConfigString(String key) {
@@ -996,7 +1131,7 @@ public abstract class Spell implements Comparable<Spell>, Debuggable, Listener {
 
 	@NotNull
 	public SpellCastResult hardCast(@NotNull SpellData data) {
-		try (var ignored = MagicDebug.section(DebugCategory.SPELLS, this, "Hard casting spell '%s'.", internalName)) {
+		try (var ignored = MagicDebug.section(DebugCategory.CAST, this, "Hard casting spell '%s'.", internalName)) {
 			data = data.noTargeting();
 			MagicDebug.info("Spell data: %s", data);
 
@@ -1036,7 +1171,7 @@ public abstract class Spell implements Comparable<Spell>, Debuggable, Listener {
 
 	@NotNull
 	public SpellCastEvent preCast(@NotNull SpellData data) {
-		try (var ignored = MagicDebug.section(DebugCategory.SPELLS, this, "Checking pre-cast.")) {
+		try (var ignored = MagicDebug.section(DebugCategory.CAST, this, "Checking pre-cast.")) {
 			SpellCastState state = getCastState(data.caster());
 			MagicDebug.info("Spell cast state: %s", state);
 
@@ -1080,7 +1215,7 @@ public abstract class Spell implements Comparable<Spell>, Debuggable, Listener {
 		long start = System.nanoTime();
 
 		CastResult result;
-		try (var ignored = MagicDebug.section(DebugCategory.SPELLS, "Calling spell cast logic.")) {
+		try (var ignored = MagicDebug.section(DebugCategory.CAST, "Calling spell cast logic.")) {
 			result = cast(castEvent.getSpellCastState(), data);
 		}
 
@@ -1106,7 +1241,7 @@ public abstract class Spell implements Comparable<Spell>, Debuggable, Listener {
 	}
 
 	public void postCast(@NotNull SpellCastEvent castEvent, @NotNull PostCastAction action, @NotNull SpellData data) {
-		try (var ignored = MagicDebug.section(DebugCategory.SPELLS, "Handling post cast actions.")) {
+		try (var ignored = MagicDebug.section(DebugCategory.CAST, "Handling post cast actions.")) {
 			MagicDebug.info("Post cast action: %s.", action);
 
 			if (action != PostCastAction.ALREADY_HANDLED) {
@@ -2111,23 +2246,66 @@ public abstract class Spell implements Comparable<Spell>, Debuggable, Listener {
 	}
 
 	protected CastItem[] setupCastItems(String stringKey, String listKey, String errorOptionName) {
-		String[] items = new String[0];
-		if (config.isString(internalKey + stringKey))
-			items = config.getString(internalKey + stringKey, "").split(MagicItemDataParser.DATA_REGEX);
-		else if (config.isList(internalKey + listKey))
-			items = config.getStringList(internalKey + listKey, new ArrayList<>()).toArray(new String[0]);
+		List<CastItem> castItems = new ArrayList<>();
 
-		CastItem[] castItems = new CastItem[items.length];
-		for (int i = 0; i < items.length; i++) {
-			MagicItem magicItem = MagicItems.getMagicItemFromString(items[i]);
-			ItemStack item = magicItem == null ? null : magicItem.getItemStack();
-			if (item == null) {
-				MagicSpells.error("Spell '" + internalName + "' has an invalid " + errorOptionName + " specified: " + items[i]);
-				continue;
+		String string = config.getString(internalKey + stringKey, null);
+		if (string != null) {
+			try (var ignored = MagicDebug.section("Resolving cast items string '%s', with value '%s'.", stringKey, string)
+				.pushPaths(stringKey, DebugPath.Type.SCALAR)
+			) {
+				String[] itemStrings = string.split(MagicItemDataParser.DATA_REGEX);
+				for (String itemString : itemStrings) {
+					CastItem item = setupCastItem(itemString);
+					if (item == null) continue;
+
+					castItems.add(item);
+				}
+
+				return castItems.toArray(new CastItem[0]);
 			}
-			castItems[i] = new CastItem(item);
 		}
-		return castItems;
+
+		List<?> list = config.getList(internalKey + listKey, null);
+		if (list != null) {
+			try (var ignored = MagicDebug.section("Resolving cast items list '%s'.", listKey)
+				.pushPaths(listKey, DebugPath.Type.LIST)
+			) {
+				for (int i = 0; i < list.size(); i++) {
+					Object object = list.get(i);
+					if (!(object instanceof String itemString)) {
+						MagicDebug.warn("Invalid cast item '%s' %s.", object, MagicDebug.resolveFullPath());
+						continue;
+					}
+
+					try (var ignored1 = MagicDebug.pushListEntry(i)) {
+						CastItem item = setupCastItem(itemString);
+						if (item == null) continue;
+
+						castItems.add(item);
+					}
+				}
+
+				return castItems.toArray(new CastItem[0]);
+			}
+		}
+
+		if (config.contains(internalKey + stringKey))
+			MagicDebug.warn("Invalid cast items string '%s' %s.", stringKey, MagicDebug.resolveFullPath());
+
+		if (config.contains(internalKey + listKey))
+			MagicDebug.warn("Invalid cast items list '%s' %s.", listKey, MagicDebug.resolveFullPath());
+
+		return new CastItem[0];
+	}
+
+	protected CastItem setupCastItem(String itemString) {
+		try (var ignored = MagicDebug.section("Resolving cast item '%s'.", itemString)) {
+			CastItem item = CastItem.fromString(itemString);
+			if (item != null) return item;
+
+			MagicDebug.warn("Invalid cast item '%s' %s.", itemString, MagicDebug.resolveFullPath());
+			return null;
+		}
 	}
 
 	/**

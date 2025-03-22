@@ -17,6 +17,7 @@ import org.bukkit.block.data.BlockData;
 import com.nisovin.magicspells.util.*;
 import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.spells.TargetedSpell;
+import com.nisovin.magicspells.util.conversion.Converters;
 import com.nisovin.magicspells.util.compat.EventUtil;
 import com.nisovin.magicspells.util.config.ConfigData;
 import com.nisovin.magicspells.spells.TargetedLocationSpell;
@@ -47,28 +48,8 @@ public class BuildSpell extends TargetedSpell implements TargetedLocationSpell {
 		checkPlugins = getConfigDataBoolean("check-plugins", true);
 		playBreakEffect = getConfigDataBoolean("show-effect", true);
 
-		List<String> materials = getConfigStringList("allowed-types", null);
-		if (materials == null) {
-			materials = new ArrayList<>();
-			materials.add("GRASS_BLOCK");
-			materials.add("STONE");
-			materials.add("DIRT");
-		}
-
-		allowedTypes = new HashSet<>();
-		for (String str : materials) {
-			Material material = Util.getMaterial(str);
-			if (material == null) {
-				MagicSpells.error("BuildSpell '" + internalName + "' has an invalid material '" + str + "' defined!");
-				continue;
-			}
-			if (!material.isBlock()) {
-				MagicSpells.error("BuildSpell '" + internalName + "' has a non block material '" + str + "' defined!");
-				continue;
-			}
-
-			allowedTypes.add(material);
-		}
+		allowedTypes = getConfigCollection("allowed-types", HashSet::new, () -> Set.of(Material.GRASS_BLOCK,
+			Material.STONE, Material.DIRT), Converters.MATERIAL_BLOCK);
 	}
 
 	@Override

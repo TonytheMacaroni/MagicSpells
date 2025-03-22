@@ -1,5 +1,8 @@
 package com.nisovin.magicspells.util;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.util.Map;
 import java.util.List;
 import java.util.Objects;
@@ -10,6 +13,7 @@ import com.google.gson.JsonObject;
 
 import org.bukkit.Color;
 import org.bukkit.Material;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.potion.PotionType;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -20,6 +24,8 @@ import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 
 import com.nisovin.magicspells.MagicSpells;
+import com.nisovin.magicspells.debug.DebugPath;
+import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.util.magicitems.MagicItems;
 import com.nisovin.magicspells.util.magicitems.MagicItemData;
 import com.nisovin.magicspells.util.itemreader.PotionHandler;
@@ -81,50 +87,61 @@ public class CastItem {
 	}
 
 	public CastItem(String string) {
-		MagicItemData data = MagicItems.getMagicItemDataFromString(string);
-		if (data != null) {
-			type = data.getAttribute(TYPE);
-			if (isTypeValid()) {
-				if (!MagicSpells.ignoreCastItemNames() && data.hasAttribute(NAME)) {
-					if (MagicSpells.ignoreCastItemNameColors())
-						name = PlainTextComponentSerializer.plainText().serialize(data.getAttribute(NAME));
-					else
-						name = LegacyComponentSerializer.legacySection().serialize(data.getAttribute(NAME));
-				}
+		this(MagicItems.getMagicItemDataFromString(string));
+	}
 
-				if (!MagicSpells.ignoreCastItemAmount() && data.hasAttribute(AMOUNT))
-					amount = data.getAttribute(AMOUNT);
+	public CastItem(MagicItemData data) {
+		if (data == null) return;
 
-				if (!MagicSpells.ignoreCastItemDurability(type) && type.getMaxDurability() > 0 && data.hasAttribute(DURABILITY))
-					durability = data.getAttribute(DURABILITY);
+		type = data.getAttribute(TYPE);
+		if (isTypeValid()) {
+			if (!MagicSpells.ignoreCastItemNames() && data.hasAttribute(NAME)) {
+				if (MagicSpells.ignoreCastItemNameColors())
+					name = PlainTextComponentSerializer.plainText().serialize(data.getAttribute(NAME));
+				else
+					name = LegacyComponentSerializer.legacySection().serialize(data.getAttribute(NAME));
+			}
 
-				if (!MagicSpells.ignoreCastItemCustomModelData() && data.hasAttribute(CUSTOM_MODEL_DATA))
-					customModelData = data.getAttribute(CUSTOM_MODEL_DATA);
+			if (!MagicSpells.ignoreCastItemAmount() && data.hasAttribute(AMOUNT))
+				amount = data.getAttribute(AMOUNT);
 
-				if (!MagicSpells.ignoreCastItemBreakability() && data.hasAttribute(UNBREAKABLE))
-					unbreakable = data.getAttribute(UNBREAKABLE);
+			if (!MagicSpells.ignoreCastItemDurability(type) && type.getMaxDurability() > 0 && data.hasAttribute(DURABILITY))
+				durability = data.getAttribute(DURABILITY);
 
-				if (!MagicSpells.ignoreCastItemColor() && data.hasAttribute(COLOR))
-					color = data.getAttribute(COLOR);
+			if (!MagicSpells.ignoreCastItemCustomModelData() && data.hasAttribute(CUSTOM_MODEL_DATA))
+				customModelData = data.getAttribute(CUSTOM_MODEL_DATA);
 
-				if (!MagicSpells.ignoreCastItemPotionType() && data.hasAttribute(POTION_TYPE))
-					potionType = data.getAttribute(POTION_TYPE);
+			if (!MagicSpells.ignoreCastItemBreakability() && data.hasAttribute(UNBREAKABLE))
+				unbreakable = data.getAttribute(UNBREAKABLE);
 
-				if (!MagicSpells.ignoreCastItemTitle() && data.hasAttribute(TITLE))
-					title = LegacyComponentSerializer.legacySection().serialize(data.getAttribute(TITLE));
+			if (!MagicSpells.ignoreCastItemColor() && data.hasAttribute(COLOR))
+				color = data.getAttribute(COLOR);
 
-				if (!MagicSpells.ignoreCastItemAuthor() && data.hasAttribute(AUTHOR))
-					author = LegacyComponentSerializer.legacySection().serialize(data.getAttribute(AUTHOR));
+			if (!MagicSpells.ignoreCastItemPotionType() && data.hasAttribute(POTION_TYPE))
+				potionType = data.getAttribute(POTION_TYPE);
 
-				if (!MagicSpells.ignoreCastItemEnchants() && data.hasAttribute(ENCHANTS))
-					enchants = data.getAttribute(ENCHANTS);
+			if (!MagicSpells.ignoreCastItemTitle() && data.hasAttribute(TITLE))
+				title = LegacyComponentSerializer.legacySection().serialize(data.getAttribute(TITLE));
 
-				if (!MagicSpells.ignoreCastItemLore() && data.hasAttribute(LORE)) {
-					List<Component> itemLore = data.getAttribute(LORE);
-					lore = itemLore.stream().map(LegacyComponentSerializer.legacySection()::serialize).collect(Collectors.toList());
-				}
+			if (!MagicSpells.ignoreCastItemAuthor() && data.hasAttribute(AUTHOR))
+				author = LegacyComponentSerializer.legacySection().serialize(data.getAttribute(AUTHOR));
+
+			if (!MagicSpells.ignoreCastItemEnchants() && data.hasAttribute(ENCHANTS))
+				enchants = data.getAttribute(ENCHANTS);
+
+			if (!MagicSpells.ignoreCastItemLore() && data.hasAttribute(LORE)) {
+				List<Component> itemLore = data.getAttribute(LORE);
+				lore = itemLore.stream().map(LegacyComponentSerializer.legacySection()::serialize).collect(Collectors.toList());
 			}
 		}
+	}
+
+	@Nullable
+	public static CastItem fromString(@NotNull String value) {
+		MagicItemData data = MagicItems.getMagicItemDataFromString(value);
+		if (data == null || data.getAttribute(TYPE).isAir()) return null;
+
+		return new CastItem(data);
 	}
 
 	public boolean isTypeValid() {

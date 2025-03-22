@@ -10,6 +10,7 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.bukkit.Input;
 
 import com.nisovin.magicspells.MagicSpells;
+import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.util.grammars.*;
 
 @SuppressWarnings("UnstableApiUsage")
@@ -43,9 +44,7 @@ public class InputPredicate implements Predicate<Input> {
 
 			return new InputPredicate(predicate);
 		} catch (Exception e) {
-			MagicSpells.error("Encountered an error while parsing input predicate '" + inputString + "'");
-			e.printStackTrace();
-
+			MagicDebug.warn(e, "Encountered an error while parsing input predicate '%s' %s.", inputString, MagicDebug.resolveFullPath());
 			return null;
 		}
 	}

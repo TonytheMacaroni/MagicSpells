@@ -128,6 +128,7 @@ public class MagicItems {
 		return data;
 	}
 
+	// TODO: Replace usages with some method in ConfigReaderUtil that properly supplies debug path.
 	public static MagicItemData getMagicItemDataFromString(String str) {
 		if (str == null) return null;
 		if (magicItems.containsKey(str)) return magicItems.get(str).getMagicItemData();
@@ -135,6 +136,7 @@ public class MagicItems {
 		return MagicItemDataParser.parseMagicItemData(str);
 	}
 
+	// TODO: Replace usages with some method in ConfigReaderUtil that properly supplies debug path.
 	public static MagicItem getMagicItemFromString(String str) {
 		if (str == null) return null;
 		if (magicItems.containsKey(str)) return magicItems.get(str);

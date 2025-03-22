@@ -22,6 +22,7 @@ import de.slikey.effectlib.effect.ModifiedEffect;
 import com.nisovin.magicspells.util.Name;
 import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.util.SpellData;
+import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.util.config.ConfigData;
 import com.nisovin.magicspells.spelleffects.SpellEffect;
 import com.nisovin.magicspells.util.config.ConfigDataUtil;
@@ -47,7 +48,7 @@ public class EffectLibEffect extends SpellEffect {
 
 		Effect effect = manager.getEffectByClassName(className);
 		if (effect == null) {
-			MagicSpells.error("Invalid EffectLib effect class '" + className + "' defined!");
+			MagicDebug.warn("Invalid EffectLib effect class '%s' defined %s.", className, MagicDebug.resolveFullPath());
 			return;
 		}
 		Class<? extends Effect> effectClass = effect.getClass();
@@ -69,8 +70,7 @@ public class EffectLibEffect extends SpellEffect {
 			try {
 				field = effectClass.getField(key);
 			} catch (NoSuchFieldException e) {
-				MagicSpells.error("Invalid option '" + actualKey + "' on EffectLib effect.");
-				e.printStackTrace();
+				MagicDebug.warn("Invalid effect option %s.", MagicDebug.resolvePath(section, actualKey));
 				continue;
 			}
 

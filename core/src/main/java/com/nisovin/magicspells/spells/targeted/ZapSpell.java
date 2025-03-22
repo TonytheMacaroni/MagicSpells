@@ -12,6 +12,7 @@ import com.nisovin.magicspells.util.*;
 import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.spells.TargetedSpell;
 import com.nisovin.magicspells.util.config.ConfigData;
+import com.nisovin.magicspells.util.conversion.Converters;
 import com.nisovin.magicspells.spells.TargetedLocationSpell;
 import com.nisovin.magicspells.events.MagicSpellsBlockBreakEvent;
 
@@ -30,31 +31,8 @@ public class ZapSpell extends TargetedSpell implements TargetedLocationSpell {
 	public ZapSpell(MagicConfig config, String spellName) {
 		super(config, spellName);
 
-		List<String> allowed = getConfigStringList("allowed-block-types", null);
-		if (allowed != null && !allowed.isEmpty()) {
-			allowedBlockTypes = new HashSet<>();
-			for (String s : allowed) {
-				try {
-					BlockData bd = Bukkit.createBlockData(s.toLowerCase());
-					allowedBlockTypes.add(bd);
-				} catch (IllegalArgumentException e) {
-					MagicSpells.error("Invalid allowed block type '" + s + "' in ZapSpell '" + internalName + "'.");
-				}
-			}
-		} else allowedBlockTypes = null;
-
-		List<String> disallowed = getConfigStringList("disallowed-block-types", Arrays.asList("bedrock", "lava", "water"));
-		if (disallowed != null && !disallowed.isEmpty()) {
-			disallowedBlockTypes = new HashSet<>();
-			for (String s : disallowed) {
-				try {
-					BlockData bd = Bukkit.createBlockData(s.toLowerCase());
-					disallowedBlockTypes.add(bd);
-				} catch (IllegalArgumentException e) {
-					MagicSpells.error("Invalid disallowed block type '" + s + "' in ZapSpell '" + internalName + "'.");
-				}
-			}
-		} else disallowedBlockTypes = null;
+		allowedBlockTypes = getConfigCollection("allowed-block-types", true, HashSet::new, Converters.BLOCK_DATA);
+		disallowedBlockTypes = getConfigCollection("disallowed-block-types", true, HashSet::new, Converters.BLOCK_DATA);
 
 		strCantZap = getConfigString("str-cant-zap", "");
 

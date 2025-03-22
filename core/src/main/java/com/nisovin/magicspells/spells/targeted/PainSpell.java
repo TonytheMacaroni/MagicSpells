@@ -48,7 +48,7 @@ public class PainSpell extends TargetedSpell implements TargetedEntitySpell {
 		avoidDamageModification = getConfigDataBoolean("avoid-damage-modification", true);
 		tryAvoidingAntiCheatPlugins = getConfigDataBoolean("try-avoiding-anticheat-plugins", false);
 
-		MagicSpells.getDeprecationManager().addDeprecation(this, DAMAGE_TYPE_DEPRECATION_NOTICE,
+		MagicSpells.getDeprecationManager().addDeprecation(DAMAGE_TYPE_DEPRECATION_NOTICE,
 			!damageType.isConstant() || damageType.get() != DamageCause.ENTITY_ATTACK
 		);
 	}

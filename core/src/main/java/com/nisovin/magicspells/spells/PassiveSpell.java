@@ -12,6 +12,8 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.configuration.ConfigurationSection;
 
 import com.nisovin.magicspells.Spell;
+import com.nisovin.magicspells.debug.DebugCategory;
+import com.nisovin.magicspells.debug.DebugPath;
 import com.nisovin.magicspells.util.*;
 import com.nisovin.magicspells.Subspell;
 import com.nisovin.magicspells.MagicSpells;
@@ -88,88 +90,109 @@ public class PassiveSpell extends Spell {
 	public void initializeListeners() {
 		List<?> triggers = getConfigList("triggers", null);
 		if (triggers == null) {
-			MagicSpells.error("PassiveSpell '" + internalName + "' has no triggers defined!");
+			MagicDebug.warn("No 'triggers' defined for PassiveSpell %s.", MagicDebug.resolveFullPath());
 			return;
 		}
 
 		int count = 0;
-		for (int i = 0; i < triggers.size(); i++) {
-			Object trigger = triggers.get(i);
+		try (var ignored = MagicDebug.section("Processing 'triggers'.")
+			.pushPath("triggers", DebugPath.Type.LIST)
+		) {
+			for (int i = 0; i < triggers.size(); i++) {
+				try (var ignored1 = MagicDebug.pushListEntry(i)) {
+					Object trigger = triggers.get(i);
 
-			switch (trigger) {
-				case String string -> {
-					String type, args;
-					if (string.contains(" ")) {
-						String[] data = Util.splitParams(string, 2);
-						type = data[0].toLowerCase();
-						args = data.length > 1 ? data[1] : "";
-					} else {
-						type = string.toLowerCase();
-						args = "";
-					}
-
-					EventPriority priority = MagicSpells.getPassiveManager().getEventPriorityFromName(type);
-					if (priority == null) priority = EventPriority.NORMAL;
-
-					String priorityName = MagicSpells.getPassiveManager().getEventPriorityName(priority);
-					if (priorityName != null) type = type.replace(priorityName, "");
-
-					PassiveListener listener = MagicSpells.getPassiveManager().getListenerByName(type);
-					if (listener == null) {
-						MagicSpells.error("PassiveSpell '" + internalName + "' has an invalid trigger type defined: " + type);
-						continue;
-					}
-
-					listener.setPassiveSpell(this);
-					listener.setEventPriority(priority);
-					listener.initialize(args);
-					MagicSpells.registerEvents(listener, priority);
-					passiveListeners.add(listener);
-					count++;
-				}
-				case Map<?, ?> map -> {
-					ConfigurationSection config = ConfigReaderUtil.mapToSection(map);
-
-					String type = config.getString("trigger");
-					if (type == null) {
-						MagicSpells.error("PassiveSpell '" + internalName + "' has no 'trigger' defined for trigger at position " + i + ".");
-						continue;
-					}
-
-					PassiveListener listener = MagicSpells.getPassiveManager().getListenerByName(type);
-					if (listener == null) {
-						MagicSpells.error("PassiveSpell '" + internalName + "' has an invalid trigger type defined: " + type);
-						continue;
-					}
-
-					listener.setPassiveSpell(this);
-					if (!listener.initialize(config)) {
-						MagicSpells.error("PassiveSpell '" + internalName + "' has an invalid trigger defined at position " + i + ".");
-						continue;
-					}
-
-					EventPriority priority = EventPriority.NORMAL;
-
-					String priorityString = config.getString("priority");
-					if (priorityString != null) {
-						try {
-							priority = EventPriority.valueOf(priorityString.toUpperCase());
-						} catch (IllegalArgumentException e) {
-							MagicSpells.error("PassiveSpell '" + internalName + "' has an invalid 'priority' defined: " + priorityString);
+					// TODO: Add section for each list entry
+					PassiveListener listener = switch (trigger) {
+						case String string -> initializeListener(string);
+						case Map<?, ?> map -> initializeListener(map);
+						default -> {
+							MagicDebug.warn("Invalid value '%s' found for passive trigger %s.", trigger, MagicDebug.resolveFullPath());
+							yield null;
 						}
+					};
+
+					if (listener == null) {
+						MagicDebug.warn("Invalid passive trigger %s.", MagicDebug.resolveFullPath());
+						continue;
 					}
 
-					listener.setEventPriority(priority);
-					MagicSpells.registerEvents(listener, priority);
+					MagicSpells.registerEvents(listener, listener.getEventPriority());
 					passiveListeners.add(listener);
 					count++;
 				}
-				default ->
-					MagicSpells.error("PassiveSpell '" + internalName + "' has an invalid trigger defined: " + trigger);
 			}
 		}
 
-		if (count == 0) MagicSpells.error("PassiveSpell '" + internalName + "' has no triggers defined!");
+		if (count == 0) MagicDebug.warn("No 'triggers' defined for PassiveSpell %s", MagicDebug.resolveFullPath());
+	}
+
+	private PassiveListener initializeListener(String string) {
+		String type, args;
+		if (string.contains(" ")) {
+			String[] data = Util.splitParams(string, 2);
+			type = data[0].toLowerCase();
+			args = data.length > 1 ? data[1] : "";
+		} else {
+			type = string.toLowerCase();
+			args = "";
+		}
+
+		EventPriority priority = MagicSpells.getPassiveManager().getEventPriorityFromName(type);
+		if (priority == null) priority = EventPriority.NORMAL;
+
+		String priorityName = MagicSpells.getPassiveManager().getEventPriorityName(priority);
+		if (priorityName != null) type = type.replace(priorityName, "");
+
+		PassiveListener listener = MagicSpells.getPassiveManager().getListenerByName(type);
+		if (listener == null) {
+			MagicDebug.warn("Invalid passive trigger type '%s' %s.", type, MagicDebug.resolveFullPath());
+			return null;
+		}
+
+		listener.setPassiveSpell(this);
+		listener.setEventPriority(priority);
+		listener.initialize(args);
+
+		return listener;
+	}
+
+	private PassiveListener initializeListener(Map<?, ?> map) {
+		ConfigurationSection config = ConfigReaderUtil.mapToSection(map);
+
+		String type = config.getString("trigger");
+		if (type == null) {
+			MagicDebug.warn("No 'trigger' defined for passive trigger %s.", MagicDebug.resolveFullPath());
+			return null;
+		}
+
+		PassiveListener listener = MagicSpells.getPassiveManager().getListenerByName(type);
+		if (listener == null) {
+			MagicDebug.warn("Invalid 'trigger' value '%s' defined for passive trigger %s.", type, MagicDebug.resolveFullPath());
+			return null;
+		}
+
+		listener.setPassiveSpell(this);
+		if (!listener.initialize(config)) {
+			MagicDebug.warn("Invalid passive trigger defined at %s.", MagicDebug.resolveFullPath());
+			return null;
+		}
+
+		EventPriority priority = EventPriority.NORMAL;
+
+		String priorityString = config.getString("priority");
+		if (priorityString != null) {
+			try {
+				priority = EventPriority.valueOf(priorityString.toUpperCase());
+			} catch (IllegalArgumentException e) {
+				MagicDebug.warn("Invalid 'priority' value '%s' defined at %s.",priorityString, MagicDebug.resolveFullPath());
+				return null;
+			}
+		}
+
+		listener.setEventPriority(priority);
+
+		return listener;
 	}
 
 	public List<PassiveListener> getPassiveListeners() {
@@ -245,44 +268,58 @@ public class PassiveSpell extends Spell {
 	}
 
 	public boolean activate(SpellData data) {
-		if (disabled) return false;
+		try (var ignored = MagicDebug.section(DebugCategory.CAST, this, "Activating passive spell '%s'.", this)) {
+			MagicDebug.info("Spell data: %s", data);
 
-		int delay = this.delay.get(data);
-		if (delay < 0) return activateSpells(data);
-		MagicSpells.scheduleDelayedTask(() -> activateSpells(data), delay);
+			if (disabled) {
+				MagicDebug.info("Recursive passive activation detected - cast failed.");
+				return false;
+			}
 
-		return false;
+			int delay = this.delay.get(data);
+			if (delay < 0) {
+				MagicDebug.info("Casting with no delay.");
+				return activateSpells(data);
+			}
+
+			MagicDebug.info("Casting with a delay (%s ticks).", delay);
+			MagicSpells.scheduleDelayedTask(() -> {
+				try (var ignored1 = MagicDebug.section(DebugCategory.CAST, this, "Activating delayed passive spell '%s'.", this)) {
+					activateSpells(data);
+				}
+			}, delay);
+
+			return false;
+		}
 	}
-	
-	// DEBUG INFO: level 3, activating passive spell spellName for player playerName state state
-	// DEBUG INFO: level 3, casting spell effect spellName
-	// DEBUG INFO: level 3, casting without target
-	// DEBUG INFO: level 3, casting at entity
-	// DEBUG INFO: level 3, target cancelled (TE)
-	// DEBUG INFO: level 3, casting at location
-	// DEBUG INFO: level 3, target cancelled (TL)
-	// DEBUG INFO: level 3, casting normally
-	// DEBUG INFO: level 3, target cancelled (UE)
-	// DEBUG INFO: level 3, target cancelled (UL)
-	// DEBUG INFO: level 3, passive spell cancelled
-	private boolean activateSpells(SpellData data) {
-		if (disabled || !triggerList.canTarget(data.caster(), true)) return false;
 
-		float chance = this.chance.get(data) / 100;
-		if (chance < 1 && random.nextFloat() > chance) return false;
+	private boolean activateSpells(SpellData data) {
+		if (disabled) {
+			MagicDebug.info("Recursive passive activation detected - cast failed.");
+			return false;
+		}
+
+		if (!triggerList.canTarget(data.caster(), true)) {
+			MagicDebug.info("Invalid trigger entity - cast failed.");
+			return false;
+		}
+
+		float chance = this.chance.get(data) / 100, roll;
+		if (chance < 1 && (roll = random.nextFloat()) > chance) {
+			MagicDebug.info("Chance rolled too high (%s > %s) - casted failed.", roll, chance);
+			return false;
+		}
 
 		disabled = true;
-		try {
-			if (data.caster() instanceof Player) {
-				MagicSpells.debug(3, "Activating passive spell '" + name + "' for player " + data.caster().getName());
-			} else {
-				MagicSpells.debug(3, "Activating passive spell '" + name + "' for livingEntity " + data.caster().getUniqueId());
-			}
+		try (var ignored = MagicDebug.section(DebugCategory.CAST, "Casting passive spell '%s' with caster '%s'.", this, data.caster())) {
+			MagicDebug.info("Spell data: %s", data);
 
 			SpellCastEvent castEvent = preCast(data);
 			data = castEvent.getSpellData();
 
 			if (castEvent.getSpellCastState() != SpellCastState.NORMAL) {
+				MagicDebug.info("Spell cast state is %s - cast failed.", castEvent.getSpellCastState());
+
 				if (sendFailureMessages) postCast(castEvent, PostCastAction.HANDLE_NORMALLY, data);
 				else new SpellCastedEvent(castEvent, PostCastAction.HANDLE_NORMALLY, data).callEvent();
 
@@ -290,9 +327,14 @@ public class PassiveSpell extends Spell {
 			}
 
 			if (data.hasTarget()) {
+				if (!validTargetList.canTarget(data.caster(), data.target())) {
+					MagicDebug.info("Target failed 'can-target' check - cast failed.");
+					return false;
+				}
+
 				SpellTargetEvent targetEvent = new SpellTargetEvent(this, data);
-				if (!validTargetList.canTarget(data.caster(), data.target()) || !targetEvent.callEvent()) {
-					MagicSpells.debug(3, "    Target cancelled (TE)");
+				if (!targetEvent.callEvent()) {
+					MagicDebug.info("Entity targeting cancelled - cast failed.");
 					return false;
 				}
 
@@ -302,15 +344,17 @@ public class PassiveSpell extends Spell {
 			if (data.hasLocation()) {
 				SpellTargetLocationEvent targetEvent = new SpellTargetLocationEvent(this, data);
 				if (!targetEvent.callEvent()) {
-					MagicSpells.debug(3, "    Target cancelled (TL)");
+					MagicDebug.info("Location targeting cancelled - cast failed.");
 					return false;
 				}
 
 				data = targetEvent.getSpellData();
 			}
 
-			SpellData subData = castWithoutTarget ? data.noTargeting() : data;
-			for (Subspell spell : spells) spell.subcast(subData);
+			try (var ignored1 = MagicDebug.section("Casting subspells.")) {
+				SpellData subData = castWithoutTarget ? data.noTargeting() : data;
+				for (Subspell spell : spells) spell.subcast(subData);
+			}
 
 			playSpellEffects(data);
 

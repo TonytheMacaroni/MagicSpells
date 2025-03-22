@@ -35,6 +35,7 @@ public class MagicItemDataParser {
 		itemType{data}|itemType{data}...
 	*/
 	public static final String DATA_REGEX = "(?=(?:(?:[^\"]*\"){2})*[^\"]*$)(?![^{]*})(?![^\\[]*])\\|+";
+	public static final java.util.regex.Pattern DATA_REGEX_PATTERN = java.util.regex.Pattern.compile(DATA_REGEX);
 
 	public static MagicItemData parseMagicItemData(String str) {
 		try (var ignored = MagicDebug.section(DebugCategory.MAGIC_ITEMS, "Parsing string-based magic item '%s'.", str)) {
@@ -50,7 +51,7 @@ public class MagicItemDataParser {
 		if (args.length < 2) {
 			Material type = Util.getMaterial(str);
 			if (type == null) {
-				MagicDebug.warn("Invalid item type '%s' %s.", str, MagicDebug.resolveFullPath());
+				MagicDebug.warn("Invalid item type or magic item '%s' %s.", str, MagicDebug.resolveFullPath());
 				return null;
 			}
 
@@ -68,7 +69,7 @@ public class MagicItemDataParser {
 		Material type = Util.getMaterial(base);
 		if (type != null) {
 			if (!type.isItem()) {
-				MagicDebug.warn("Invalid item type '%s' %s.", base, MagicDebug.resolveFullPath());
+				MagicDebug.warn("Invalid item type or magic item '%s' %s.", base, MagicDebug.resolveFullPath());
 				return null;
 			}
 

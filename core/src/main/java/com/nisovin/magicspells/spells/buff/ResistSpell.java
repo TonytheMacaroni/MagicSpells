@@ -83,7 +83,7 @@ public class ResistSpell extends BuffSpell {
 				}
 			}
 
-			MagicSpells.getDeprecationManager().addDeprecation(this, DEPRECATION_NOTICE);
+			MagicSpells.getDeprecationManager().addDeprecation(DEPRECATION_NOTICE);
 		} else normalDamageTypes = null;
 
 		spellDamageTypes = new HashSet<>();

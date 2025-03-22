@@ -16,7 +16,9 @@ import com.nisovin.magicspells.util.Util;
 import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.util.DependsOn;
 import com.nisovin.magicspells.util.SpellData;
+import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.util.MagicConfig;
+import com.nisovin.magicspells.debug.DebugCategory;
 import com.nisovin.magicspells.zones.NoMagicZone.ZoneCheckResult;
 
 public class NoMagicZoneManager {
@@ -32,62 +34,60 @@ public class NoMagicZoneManager {
 		addZoneType(NoMagicZoneWorldGuard.class);
 	}
 
-	// DEBUG INFO: level 3, loaded no magic zone, zoneName
-	// DEBUG INFO: level 1, no magic zones loaded #
 	public void load(MagicConfig config) {
 		// Get zones
 		zones = new HashMap<>();
 		zonesOrdered = new TreeSet<>();
 
-		Set<String> zoneNodes = config.getKeys("no-magic-zones");
-		if (zoneNodes != null) {
-
-			ConfigurationSection zoneConfig;
-			String type;
-			Class<? extends NoMagicZone> clazz;
-			NoMagicZone zone;
+		try (var ignored = MagicDebug.section(DebugCategory.NO_MAGIC_ZONE, "Loading no-magic zones.")) {
+			Set<String> zoneNodes = config.getKeys("no-magic-zones");
+			if (zoneNodes == null) {
+				MagicDebug.info("No no-magic zones found.");
+				return;
+			}
 
 			for (String node : zoneNodes) {
-				zoneConfig = config.getSection("no-magic-zones." + node);
+				try (var ignored1 = MagicDebug.section("Loading no-magic zone '%s'.", node)) {
+					ConfigurationSection zoneConfig = config.getSection("no-magic-zones." + node);
+					if (!zoneConfig.getBoolean("enabled", true)) {
+						MagicDebug.info("Zone disabled - skipping.");
+						continue;
+					}
 
-				// Check enabled
-				if (!zoneConfig.getBoolean("enabled", true)) continue;
+					String type = zoneConfig.getString("type", null);
+					if (type == null) {
+						MagicDebug.warn("No 'type' specified for no-magic zone '%s'.", node);
+						continue;
+					}
 
-				// Get zone type
-				type = zoneConfig.getString("type", "");
-				if (type.isEmpty()) {
-					MagicSpells.error("Invalid no-magic zone type '" + type + "' on zone '" + node + "'");
-					continue;
+					Class<? extends NoMagicZone> clazz = zoneTypes.get(type);
+					if (clazz == null) {
+						MagicDebug.warn("Invalid no-magic zone type '%s' specified on no-magic zone '%s'.", type, node);
+						continue;
+					}
+
+					DependsOn dependsOn = clazz.getAnnotation(DependsOn.class);
+					if (dependsOn != null && !Util.checkPluginsEnabled(dependsOn.value())) {
+						MagicDebug.warn("Missing required dependencies to load no-magic zone type '%s'.", type);
+						continue;
+					}
+
+					NoMagicZone zone;
+					try {
+						zone = clazz.getDeclaredConstructor().newInstance();
+					} catch (Exception e) {
+						MagicDebug.warn(e, "Encountered an error while attempting to load no-magic zone '%s'.", node);
+						continue;
+					}
+
+					zone.create(node, zoneConfig);
+					zones.put(node, zone);
+					zonesOrdered.add(zone);
 				}
-
-				clazz = zoneTypes.get(type);
-				if (clazz == null) {
-					MagicSpells.error("Invalid no-magic zone type '" + type + "' on zone '" + node + "'");
-					continue;
-				}
-
-				DependsOn dependsOn = clazz.getAnnotation(DependsOn.class);
-				if (dependsOn != null && !Util.checkPluginsEnabled(dependsOn.value())) {
-					MagicSpells.error("Could not load no magic zone type '" + type + "'.");
-					continue;
-				}
-
-				// Create zone
-				try {
-					zone = clazz.getDeclaredConstructor().newInstance();
-				} catch (Exception e) {
-					MagicSpells.error("Failed to create no-magic zone '" + node + "'");
-					e.printStackTrace();
-					continue;
-				}
-				zone.create(node, zoneConfig);
-				zones.put(node, zone);
-				zonesOrdered.add(zone);
-				MagicSpells.debug(3, "Loaded no-magic zone: " + node);
 			}
 		}
 
-		MagicSpells.debug(1, "No-magic zones loaded: " + zones.size());
+		MagicDebug.info(DebugCategory.NO_MAGIC_ZONE, "Loaded %d no-magic zones", zones.size());
 	}
 
 	public boolean willFizzle(LivingEntity livingEntity, Spell spell) {

@@ -11,8 +11,9 @@ import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 
 import com.nisovin.magicspells.util.Name;
-import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.util.DependsOn;
+import com.nisovin.magicspells.debug.DebugCategory;
+import com.nisovin.magicspells.debug.MagicDebug;
 
 @Name("worldguard")
 @DependsOn("WorldGuard")
@@ -30,12 +31,12 @@ public class NoMagicZoneWorldGuard extends NoMagicZone {
 	@Override
 	public boolean inZone(Location location) {
 		if (regionName == null) {
-			MagicSpells.error("Failed to access WorldGuard region - no region specified.");
+			MagicDebug.warn(DebugCategory.NO_MAGIC_ZONE, "Failed to access WorldGuard region - no region specified.");
 			return false;
 		}
 
 		if (worldName == null) {
-			MagicSpells.error("Failed to access WorldGuard region '" + regionName + "' - no world specified.");
+			MagicDebug.warn(DebugCategory.NO_MAGIC_ZONE, "Failed to access WorldGuard region '%s' - no world specified.", regionName);
 			return false;
 		}
 
@@ -49,7 +50,7 @@ public class NoMagicZoneWorldGuard extends NoMagicZone {
 
 		ProtectedRegion region = regionManager == null ? null : regionManager.getRegion(regionName);
 		if (region == null) {
-			MagicSpells.error("Failed to access WorldGuard region '" + regionName + "' - no such region exists.");
+			MagicDebug.warn(DebugCategory.NO_MAGIC_ZONE, "Failed to access WorldGuard region %s' - no such region exists.", regionName);
 			return false;
 		}
 

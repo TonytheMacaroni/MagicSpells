@@ -77,7 +77,7 @@ public class DrainlifeSpell extends TargetedSpell implements TargetedEntitySpell
 		drainDamageType = getConfigDataRegistryEntry("drain-damage-type", RegistryKey.DAMAGE_TYPE, null)
 			.orDefault(data -> data.caster() instanceof Player ? DamageType.PLAYER_ATTACK : DamageType.MOB_ATTACK);
 
-		MagicSpells.getDeprecationManager().addDeprecation(this, HEALTH_DEPRECATION_NOTICE,
+		MagicSpells.getDeprecationManager().addDeprecation(HEALTH_DEPRECATION_NOTICE,
 			takeType.isConstant() && takeType.get() == DrainType.HEALTH ||
 				giveType.isConstant() && giveType.get() == DrainType.HEALTH
 		);

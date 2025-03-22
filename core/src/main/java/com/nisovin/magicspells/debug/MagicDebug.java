@@ -4,11 +4,13 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.intellij.lang.annotations.PrintFormat;
 
+import java.util.Collection;
 import java.util.Iterator;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayDeque;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.logging.Logger;
 import java.util.function.Consumer;
@@ -31,7 +33,7 @@ import com.nisovin.magicspells.util.config.ConfigData;
 
 public class MagicDebug {
 
-	private static Section section = new Section(null, null, DebugCategory.DEFAULT, new ArrayDeque<>(), 0, false, false, false);
+	private static Section section = new Section(null, null, DebugCategory.DEFAULT, DebugLevel.INFO, new ArrayDeque<>(), 0, false, false, false);
 
 	@NotNull
 	public static Section.Builder section() {
@@ -183,6 +185,10 @@ public class MagicDebug {
 		return !section.all && config.suppressDebug(section.category, level);
 	}
 
+	public static boolean suppressLog(@NotNull Section section) {
+		return suppressLog(section.config(), section.category, section.level);
+	}
+
 	public static boolean suppressLog(@NotNull DebugCategory category, DebugLevel level) {
 		return suppressLog(section.config(), category, level);
 	}
@@ -193,12 +199,12 @@ public class MagicDebug {
 	}
 
 	public static boolean isEnabled(@NotNull Section section) {
-		return section.all || section.config().isEnabled(section.category);
+		return section.all || section.config().isEnabled(section.category, section.level);
 	}
 
-	public static boolean isEnabled(@Nullable DebugConfig config, @NotNull DebugCategory category) {
+	public static boolean isEnabled(@Nullable DebugConfig config, @NotNull DebugCategory category, @NotNull DebugLevel level) {
 		if (config == null) config = MagicSpells.getDebugConfig();
-		return config.isEnabled(category);
+		return config.isEnabled(category, level);
 	}
 
 	public static boolean isEnhanced(@Nullable DebugConfig config, @NotNull DebugCategory category) {
@@ -409,28 +415,33 @@ public class MagicDebug {
 	}
 
 	private static Object[] replaceArguments(Object[] args) {
-		for (int i = 0; i < args.length; i++) {
-			Object arg = args[i];
-			if (arg instanceof ConfigData<?> data && data.isConstant()) {
-				args[i] = data.get();
-				i--;
-			} else if (arg instanceof Supplier<?> supp) {
-				args[i] = supp.get();
-				i--;
-			} else if (arg instanceof Component comp) args[i] = ANSIComponentSerializer.ansi().serialize(comp);
-			else if (arg instanceof Keyed keyed) args[i] = keyed.getKey().asMinimalString();
-			else if (arg instanceof Player player) args[i] = player.getName();
-			else if (arg instanceof Entity entity) args[i] = entity.getUniqueId();
-			else if (arg instanceof CommandSender sender) args[i] = sender.getName();
-			else if (arg instanceof Spell spell) args[i] = spell.getInternalName();
-		}
+		for (int i = 0; i < args.length; i++)
+			args[i] = replaceArgument(args[i]);
 
 		return args;
 	}
 
+	private static Object replaceArgument(Object object) {
+		return switch (object) {
+			case ConfigData<?> data when data.isConstant() -> replaceArgument(data.get());
+			case Supplier<?> supp -> replaceArgument(supp.get());
+			case Component comp -> ANSIComponentSerializer.ansi().serialize(comp);
+			case Keyed keyed -> keyed.getKey().asMinimalString();
+			case Player player -> player.getName();
+			case Entity entity -> entity.getUniqueId();
+			case CommandSender sender -> sender.getName();
+			case Spell spell -> spell.getInternalName();
+			case Collection<?> collection -> collection.stream()
+				.map(MagicDebug::replaceArgument)
+				.map(Object::toString)
+				.collect(Collectors.joining(", ", "[", "]"));
+			case null, default -> object;
+		};
+	}
+
 	public record Section(
-		@Nullable Section previous, @Nullable DebugConfig config, @NotNull DebugCategory category, @NotNull ArrayDeque<DebugPath> paths,
-		int depth, boolean all, boolean downgradeWarnings, boolean logged
+		@Nullable Section previous, @Nullable DebugConfig config, @NotNull DebugCategory category, @NotNull DebugLevel level,
+		@NotNull ArrayDeque<DebugPath> paths, int depth, boolean all, boolean downgradeWarnings, boolean logged
 	) implements AutoCloseable {
 
 		public DebugConfig config() {
@@ -484,6 +495,7 @@ public class MagicDebug {
 			private boolean downgradeWarnings;
 			private DebugCategory category;
 			private DebugConfig config;
+			private DebugLevel level;
 
 			private String message;
 			private Object[] args;
@@ -492,6 +504,7 @@ public class MagicDebug {
 				downgradeWarnings = section.downgradeWarnings;
 				category = section.category;
 				config = section.config;
+				level = section.level;
 				paths = new ArrayDeque<>(section.paths);
 			}
 
@@ -503,6 +516,12 @@ public class MagicDebug {
 
 			public Builder config(@Nullable DebugConfig config) {
 				this.config = config;
+				return this;
+			}
+
+			public Builder level(DebugLevel debugLevel) {
+				Preconditions.checkNotNull(debugLevel);
+				this.level = debugLevel;
 				return this;
 			}
 
@@ -554,9 +573,11 @@ public class MagicDebug {
 				boolean logged = section.logged;
 				int depth = section.depth;
 
-				if (message == null) return section = new Section(section, config, category, paths, depth, all, downgradeWarnings, logged);
+				if (downgradeWarnings) level = DebugLevel.INFO;
 
-				boolean enabled = all || isEnabled(config, category);
+				if (message == null) return section = new Section(section, config, category, level, paths, depth, all, downgradeWarnings, logged);
+
+				boolean enabled = all || isEnabled(config, category, level);
 				if (enabled) {
 					if (logged && !isEnabled(section))
 						depth++;
@@ -564,7 +585,7 @@ public class MagicDebug {
 					depth++;
 				}
 
-				if (enabled || !suppressLog(DebugLevel.INFO)) {
+				if (enabled || !suppressLog(level)) {
 					logged = true;
 
 					DebugConfig debugConfig = config;
@@ -577,10 +598,10 @@ public class MagicDebug {
 					} else indentation = "";
 
 					Logger logger = MagicSpells.getInstance().getLogger();
-					logger.info(indentation + message.formatted(replaceArguments(args)));
+					logger.log(level.getLogLevel(), indentation + message.formatted(replaceArguments(args)));
 				}
 
-				return section = new Section(section, config, category, paths, depth, all, downgradeWarnings, logged);
+				return section = new Section(section, config, category, level, paths, depth, all, downgradeWarnings, logged);
 			}
 
 		}

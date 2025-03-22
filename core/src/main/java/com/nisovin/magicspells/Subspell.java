@@ -23,7 +23,6 @@ import com.nisovin.magicspells.Spell.SpellCastState;
 import com.nisovin.magicspells.Spell.PostCastAction;
 import com.nisovin.magicspells.Spell.SpellCastResult;
 import com.nisovin.magicspells.events.SpellCastEvent;
-import com.nisovin.magicspells.handlers.DebugHandler;
 import com.nisovin.magicspells.util.config.ConfigData;
 import com.nisovin.magicspells.events.SpellCastedEvent;
 import com.nisovin.magicspells.events.SpellTargetEvent;
@@ -298,7 +297,7 @@ public class Subspell {
 	public SpellCastResult subcast(@NotNull SpellData data, boolean passTargeting, boolean useTargetForLocation, @NotNull CastTargeting @NotNull [] ordering) {
 		try (var ignored = MagicDebug.section(builder -> builder
 			.message("Casting subspell '%s'.", text)
-			.category(DebugCategory.SPELLS)
+			.category(DebugCategory.CAST)
 			.configure(spell)
 		)) {
 			MagicDebug.info("Original spell data: %s", data);
@@ -395,7 +394,7 @@ public class Subspell {
 	public PostCastAction cast(LivingEntity caster, float power) {
 		try (var ignored = MagicDebug.section(builder -> builder
 			.message("Legacy casting subspell '%s' (mode: %s, targeting: NONE).", text, mode)
-			.category(DebugCategory.SPELLS)
+			.category(DebugCategory.CAST)
 			.configure(spell)
 		)) {
 			SpellCastResult result = cast(new SpellData(caster, power, null));
@@ -427,7 +426,7 @@ public class Subspell {
 
 		SpellData finalData = data.noTargeting();
 		MagicSpells.scheduleDelayedTask(() -> {
-			try (var ignored = MagicDebug.section("Casting delayed subspell '%s' (mode: %s, targeting: NONE).", text, mode)) {
+			try (var ignored = MagicDebug.section(DebugCategory.CAST, "Casting delayed subspell '%s' (mode: %s, targeting: NONE).", text, mode)) {
 				castReal(finalData);
 			}
 		}, delay);
@@ -458,7 +457,7 @@ public class Subspell {
 	public boolean castAtEntity(LivingEntity caster, LivingEntity target, float power) {
 		try (var ignored = MagicDebug.section(builder -> builder
 			.message("Legacy casting subspell '%s' (mode: %s, targeting: ENTITY).", text, mode)
-			.category(DebugCategory.SPELLS)
+			.category(DebugCategory.CAST)
 			.configure(spell)
 		)) {
 			return castAtEntity(new SpellData(caster, target, power, null), false).success();
@@ -469,7 +468,7 @@ public class Subspell {
 	public boolean castAtEntity(LivingEntity caster, LivingEntity target, float power, boolean passTargeting) {
 		try (var ignored = MagicDebug.section(builder -> builder
 			.message("Legacy casting subspell '%s' (mode: %s, targeting: ENTITY).", text, mode)
-			.category(DebugCategory.SPELLS)
+			.category(DebugCategory.CAST)
 			.configure(spell)
 		)) {
 			return castAtEntity(new SpellData(caster, target, power, null), passTargeting).success();
@@ -514,7 +513,7 @@ public class Subspell {
 
 		SpellData finalData = data.noLocation();
 		MagicSpells.scheduleDelayedTask(() -> {
-			try (var ignored = MagicDebug.section("Casting delayed subspell '%s' (mode: %s, targeting: ENTITY).", text, mode)) {
+			try (var ignored = MagicDebug.section(DebugCategory.CAST, "Casting delayed subspell '%s' (mode: %s, targeting: ENTITY).", text, mode)) {
 				castAtEntityReal(finalData);
 			}
 		}, delay);
@@ -585,7 +584,7 @@ public class Subspell {
 	public boolean castAtLocation(LivingEntity caster, Location target, float power) {
 		try (var ignored = MagicDebug.section(builder -> builder
 			.message("Legacy casting subspell '%s' (mode: %s, targeting: LOCATION).", text, mode)
-			.category(DebugCategory.SPELLS)
+			.category(DebugCategory.CAST)
 			.configure(spell)
 		)) {
 			return castAtLocation(new SpellData(caster, target, power, null)).success();
@@ -618,7 +617,7 @@ public class Subspell {
 
 		SpellData finalData = data.noTarget();
 		MagicSpells.scheduleDelayedTask(() -> {
-			try (var ignored = MagicDebug.section("Casting delayed subspell '%s' (mode: %s, targeting: LOCATION).", text, mode)) {
+			try (var ignored = MagicDebug.section(DebugCategory.CAST, "Casting delayed subspell '%s' (mode: %s, targeting: LOCATION).", text, mode)) {
 				castAtLocationReal(finalData);
 			}
 		}, delay);
@@ -691,7 +690,7 @@ public class Subspell {
 	public boolean castAtEntityFromLocation(LivingEntity caster, Location from, LivingEntity target, float power) {
 		try (var ignored = MagicDebug.section(builder -> builder
 			.message("Legacy casting subspell '%s' (mode: %s, targeting: ENTITY_FROM_LOCATION).", text, mode)
-			.category(DebugCategory.SPELLS)
+			.category(DebugCategory.CAST)
 			.configure(spell)
 		)) {
 			return castAtEntityFromLocation(new SpellData(caster, target, from, power, null), false).success();
@@ -702,7 +701,7 @@ public class Subspell {
 	public boolean castAtEntityFromLocation(LivingEntity caster, Location from, LivingEntity target, float power, boolean passTargeting) {
 		try (var ignored = MagicDebug.section(builder -> builder
 			.message("Legacy casting subspell '%s' (mode: %s, targeting: ENTITY_FROM_LOCATION).", text, mode)
-			.category(DebugCategory.SPELLS)
+			.category(DebugCategory.CAST)
 			.configure(spell)
 		)) {
 			return castAtEntityFromLocation(new SpellData(caster, target, from, power, null), passTargeting).success();
@@ -744,7 +743,7 @@ public class Subspell {
 
 		SpellData finalData = data;
 		MagicSpells.scheduleDelayedTask(() -> {
-			try (var ignored = MagicDebug.section("Casting delayed subspell '%s' (mode: %s, targeting: ENTITY).", text, mode)) {
+			try (var ignored = MagicDebug.section(DebugCategory.CAST, "Casting delayed subspell '%s' (mode: %s, targeting: ENTITY).", text, mode)) {
 				castAtEntityFromLocationReal(finalData);
 			}
 		}, delay);

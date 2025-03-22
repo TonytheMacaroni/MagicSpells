@@ -5,10 +5,14 @@ import java.util.Objects;
 import java.util.Collection;
 import java.util.stream.Collectors;
 
+import org.intellij.lang.annotations.Subst;
 import org.jetbrains.annotations.NotNull;
 
 import com.nisovin.magicspells.Spell;
 import com.nisovin.magicspells.MagicSpells;
+import com.nisovin.magicspells.debug.DebugCategory;
+import com.nisovin.magicspells.debug.DebugLevel;
+import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.util.DeprecationNotice;
 
 import com.google.common.collect.Multimap;
@@ -16,38 +20,41 @@ import com.google.common.collect.HashMultimap;
 
 public class DeprecationHandler {
 
-	private final Multimap<DeprecationNotice, Spell> deprecations = HashMultimap.create();
+	private final Multimap<DeprecationNotice, String> deprecations = HashMultimap.create();
 
 	public void addDeprecation(@NotNull DeprecationNotice deprecationNotice) {
-		deprecations.put(deprecationNotice, null);
+		deprecations.put(deprecationNotice, MagicDebug.resolveFullPath().get());
 	}
 
-	public void addDeprecation(@NotNull Spell spell, @NotNull DeprecationNotice deprecationNotice) {
-		deprecations.put(deprecationNotice, spell);
+	public <T extends Spell> void addDeprecation(@NotNull DeprecationNotice deprecationNotice, boolean check) {
+		if (check) addDeprecation(deprecationNotice);
 	}
 
-	public <T extends Spell> void addDeprecation(@NotNull T spell, @NotNull DeprecationNotice deprecationNotice, boolean check) {
-		if (check) addDeprecation(spell, deprecationNotice);
-	}
-
+	@SuppressWarnings("PatternValidation")
 	public void printDeprecationNotices() {
 		if (deprecations.isEmpty()) return;
 
-		MagicSpells.error("Usage of deprecated features found. All such usages should be examined and replaced with supported alternatives.");
+		try (var ignored = MagicDebug.section(builder -> builder
+			.message("Usage of deprecated features found. All such usages should be examined and replaced with supported alternatives.")
+			.category(DebugCategory.DEPRECATIONS)
+			.level(DebugLevel.WARNING)
+		)) {
+			for (Map.Entry<DeprecationNotice, Collection<String>> entry : deprecations.asMap().entrySet()) {
+				DeprecationNotice notice = entry.getKey();
 
-		for (Map.Entry<DeprecationNotice, Collection<Spell>> entry : deprecations.asMap().entrySet()) {
-			DeprecationNotice notice = entry.getKey();
-			Collection<Spell> spells = entry.getValue();
+				try (var ignored1 = MagicDebug.section(notice.reason())) {
+					MagicDebug.warn("Steps to take: " + notice.replacement());
+					MagicDebug.warn("Context: " + notice.context());
 
-			MagicSpells.error("    " + notice.reason());
-			String relevantSpells = spells.stream()
-				.filter(Objects::nonNull)
-				.map(Spell::getInternalName)
-				.sorted()
-				.collect(Collectors.joining(", "));
-			if (!relevantSpells.isEmpty()) MagicSpells.error("        Relevant spells: [" + relevantSpells + "]");
-			MagicSpells.error("        Steps to take: " + notice.replacement());
-			if (notice.context() != null) MagicSpells.error("        Context: " + notice.context());
+					try (var ignored2 = MagicDebug.section("Usages:")) {
+						MagicDebug.warn(
+							entry.getValue().stream()
+								.sorted()
+								.collect(Collectors.joining("\n- ", "- ", ""))
+						);
+					}
+				}
+			}
 		}
 	}
 

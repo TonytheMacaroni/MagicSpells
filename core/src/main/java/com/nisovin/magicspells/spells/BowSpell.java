@@ -29,6 +29,7 @@ import com.nisovin.magicspells.Subspell;
 import com.nisovin.magicspells.Spellbook;
 import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.events.SpellCastEvent;
+import com.nisovin.magicspells.util.conversion.Converters;
 import com.nisovin.magicspells.util.config.ConfigData;
 import com.nisovin.magicspells.events.SpellTargetEvent;
 import com.nisovin.magicspells.util.magicitems.MagicItems;
@@ -95,10 +96,10 @@ public class BowSpell extends Spell {
 			triggerList = new ValidTargetList(this, targets);
 		} else triggerList = new ValidTargetList(this, getConfigString("can-trigger", "players"));
 
-		bowItems = getFilter("bow-items");
-		ammoItems = getFilter("ammo-items");
-		disallowedBowItems = getFilter("disallowed-bow-items");
-		disallowedAmmoItems = getFilter("disallowed-ammo-items");
+		bowItems = getConfigCollection("bow-items", ArrayList::new, Converters.MAGIC_ITEM_DATA);
+		ammoItems = getConfigCollection("ammo-items", ArrayList::new, Converters.MAGIC_ITEM_DATA);
+		disallowedBowItems = getConfigCollection("disallowed-bow-items", ArrayList::new, Converters.MAGIC_ITEM_DATA);
+		disallowedAmmoItems = getConfigCollection("disallowed-ammo-items", ArrayList::new, Converters.MAGIC_ITEM_DATA);
 
 		bindable = getConfigBoolean("bindable", false);
 		requireBind = getConfigBoolean("require-bind", false);
@@ -110,24 +111,6 @@ public class BowSpell extends Spell {
 
 		minimumForce = getConfigDataFloat("minimum-force", 0F);
 		maximumForce = getConfigDataFloat("maximum-force", 1F);
-	}
-
-	private List<MagicItemData> getFilter(String key) {
-		List<String> itemStrings = getConfigStringList(key, null);
-		if (itemStrings == null || itemStrings.isEmpty()) return null;
-
-		List<MagicItemData> itemData = new ArrayList<>();
-		for (String itemString : itemStrings) {
-			MagicItemData data = MagicItems.getMagicItemDataFromString(itemString);
-			if (data == null) {
-				MagicSpells.error("BowSpell '" + internalName + "' has an magic item '" + itemString + "' defined!");
-				continue;
-			}
-
-			itemData.add(data);
-		}
-
-		return itemData.isEmpty() ? null : itemData;
 	}
 
 	@Override

@@ -20,6 +20,7 @@ import com.nisovin.magicspells.util.Name;
 import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.util.SpellData;
 import com.nisovin.magicspells.util.SpellAnimation;
+import com.nisovin.magicspells.util.conversion.*;
 import com.nisovin.magicspells.util.config.ConfigData;
 import com.nisovin.magicspells.spelleffects.SpellEffect;
 import com.nisovin.magicspells.util.config.ConfigDataUtil;
@@ -44,26 +45,8 @@ public class NovaEffect extends SpellEffect {
 
 	@Override
 	public void loadFromConfig(ConfigurationSection config) {
-		List<String> materialList = config.getStringList("types");
-		if (!materialList.isEmpty()) {
-			blockDataList = new ArrayList<>();
-			for (String str : materialList) {
-				BlockData data;
-				try {
-					data = Bukkit.createBlockData(str.toLowerCase());
-				} catch (IllegalArgumentException e) {
-					MagicSpells.error("Wrong nova type defined: '" + str + "'");
-					continue;
-				}
-
-				if (!data.getMaterial().isBlock()) {
-					MagicSpells.error("Wrong nova type defined: '" + str + "'");
-					continue;
-				}
-
-				blockDataList.add(data);
-			}
-		}
+		blockDataList = CollectionUtil.getCollection(config, "types", ArrayList::new, Converters.BLOCK_DATA);
+//		blockDataList = ConversionUtil.convert(ConversionSource.listFromConfig(config, "types"), ConversionTarget.list(), Converters.BLOCK_DATA);
 
 		blockData = ConfigDataUtil.getBlockData(config, "type", Bukkit.createBlockData(Material.FIRE));
 
@@ -90,15 +73,11 @@ public class NovaEffect extends SpellEffect {
 
 		// Start animation
 		if (circleShape.get(data)) {
-			if (blockDataList != null && !blockDataList.isEmpty())
-				new NovaAnimationCircle(nearbyPlayers, location.getBlock(), blockDataList, data);
-			else
-				new NovaAnimationCircle(nearbyPlayers, location.getBlock(), blockData, data);
+			if (blockDataList != null) new NovaAnimationCircle(nearbyPlayers, location.getBlock(), blockDataList, data);
+			else new NovaAnimationCircle(nearbyPlayers, location.getBlock(), blockData, data);
 		} else {
-			if (blockDataList != null && !blockDataList.isEmpty())
-				new NovaAnimationSquare(nearbyPlayers, location.getBlock(), blockDataList, data);
-			else
-				new NovaAnimationSquare(nearbyPlayers, location.getBlock(), blockData, data);
+			if (blockDataList != null) new NovaAnimationSquare(nearbyPlayers, location.getBlock(), blockDataList, data);
+			else new NovaAnimationSquare(nearbyPlayers, location.getBlock(), blockData, data);
 		}
 		return null;
 	}

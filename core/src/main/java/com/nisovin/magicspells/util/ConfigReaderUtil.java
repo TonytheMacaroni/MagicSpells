@@ -2,12 +2,18 @@ package com.nisovin.magicspells.util;
 
 import java.util.Map;
 
+import org.bukkit.Bukkit;
 import org.bukkit.conversations.Prompt;
 import org.bukkit.conversations.ConversationFactory;
 import org.bukkit.configuration.MemoryConfiguration;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.inventory.ItemStack;
 
 import com.nisovin.magicspells.MagicSpells;
+import com.nisovin.magicspells.debug.DebugPath;
+import com.nisovin.magicspells.debug.MagicDebug;
+import com.nisovin.magicspells.util.magicitems.MagicItem;
+import com.nisovin.magicspells.util.magicitems.MagicItems;
 import com.nisovin.magicspells.util.prompt.PromptType;
 
 public class ConfigReaderUtil {
@@ -64,6 +70,36 @@ public class ConfigReaderUtil {
 			else section.set(key, entry.getValue());
 		}
 		return section;
+	}
+
+	public static ItemStack getConfigItemStack(ConfigurationSection config, String key, ItemStack def) {
+		try (var ignored = MagicDebug.section("Resolving item stack '%s'.", key)
+			.pushPaths(key, DebugPath.Type.SCALAR)
+		) {
+			String string = config.getString(key, null);
+			if (string == null) {
+				MagicDebug.info("No value found - using default.");
+				return def;
+			}
+
+			MagicDebug.info("Resolving from string '%s'.", string);
+
+			try {
+				ItemStack item = Bukkit.getItemFactory().createItemStack(key);
+				MagicDebug.info("Resolved vanilla item.");
+				return item;
+			} catch (IllegalArgumentException ignored1) {
+			}
+
+			MagicItem magicItem = MagicItems.getMagicItemFromString(key);
+			if (magicItem == null) {
+				MagicDebug.warn("Invalid item '%s' %s.", string, MagicDebug.resolveFullPath());
+				return def;
+			}
+
+			MagicDebug.info("Resolved magic item.");
+			return magicItem.getItemStack();
+		}
 	}
 
 }

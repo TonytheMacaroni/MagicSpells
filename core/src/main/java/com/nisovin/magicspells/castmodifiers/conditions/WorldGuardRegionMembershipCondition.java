@@ -6,8 +6,8 @@ import com.sk89q.worldguard.LocalPlayer;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 
 import com.nisovin.magicspells.util.Name;
-import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.util.DependsOn;
+import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.castmodifiers.conditions.util.AbstractWorldGuardCondition;
 
 @DependsOn("WorldGuard")
@@ -22,7 +22,8 @@ public class WorldGuardRegionMembershipCondition extends AbstractWorldGuardCondi
 		try {
 			type = Type.valueOf(var.toUpperCase());
 		} catch (IllegalArgumentException ignored) {
-			MagicSpells.error("Invalid type defined on 'worldguardmembership': " + var);
+			MagicDebug.warn("Invalid type '%s' %s.", var, MagicDebug.resolveFullPath());
+//			MagicSpells.error("Invalid type defined on 'worldguardmembership': " + var);
 			return false;
 		}
 		return true;

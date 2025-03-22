@@ -29,7 +29,7 @@ public class FatalDamageListener extends PassiveListener {
 
 	@Override
 	public void initialize(@NotNull String var) {
-		MagicSpells.getDeprecationManager().addDeprecation(passiveSpell, DEPRECATION_NOTICE);
+		MagicSpells.getDeprecationManager().addDeprecation(DEPRECATION_NOTICE);
 		if (var.isEmpty()) return;
 
 		for (String causeName : var.split("\\|")) {

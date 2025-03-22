@@ -11,6 +11,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.inventory.PrepareAnvilEvent;
 
+import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.util.Name;
 import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.util.OverridePriority;
@@ -38,10 +39,7 @@ public class AnvilListener extends PassiveListener {
 
 				for (String item : items) {
 					MagicItemData itemData = MagicItems.getMagicItemDataFromString(item);
-					if (itemData == null) {
-						MagicSpells.error("Invalid magic item '" + item + "' in anvil trigger on passive spell '" + passiveSpell.getInternalName() + "'.");
-						continue;
-					}
+					if (itemData == null) continue;
 
 					firstItem.add(itemData);
 				}
@@ -55,10 +53,7 @@ public class AnvilListener extends PassiveListener {
 
 				for (String item : items) {
 					MagicItemData itemData = MagicItems.getMagicItemDataFromString(item);
-					if (itemData == null) {
-						MagicSpells.error("Invalid magic item '" + item + "' in anvil trigger on passive spell '" + passiveSpell.getInternalName() + "'.");
-						continue;
-					}
+					if (itemData == null) continue;
 
 					secondItem.add(itemData);
 				}
@@ -72,10 +67,7 @@ public class AnvilListener extends PassiveListener {
 
 				for (String item : items) {
 					MagicItemData itemData = MagicItems.getMagicItemDataFromString(item);
-					if (itemData == null) {
-						MagicSpells.error("Invalid magic item '" + item + "' in anvil trigger on passive spell '" + passiveSpell.getInternalName() + "'.");
-						continue;
-					}
+					if (itemData == null) continue;
 
 					resultItem.add(itemData);
 				}

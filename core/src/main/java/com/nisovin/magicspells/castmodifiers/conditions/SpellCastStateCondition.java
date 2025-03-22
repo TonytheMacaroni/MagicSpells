@@ -6,8 +6,8 @@ import org.bukkit.entity.LivingEntity;
 import org.jetbrains.annotations.NotNull;
 
 import com.nisovin.magicspells.util.Name;
-import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.util.SpellData;
+import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.util.ModifierResult;
 import com.nisovin.magicspells.Spell.SpellCastState;
 import com.nisovin.magicspells.events.SpellCastEvent;
@@ -32,8 +32,8 @@ public class SpellCastStateCondition extends Condition implements IModifier {
 		try {
 			state = SpellCastState.valueOf(var.trim().toUpperCase());
 			return true;
-		} catch (IllegalArgumentException badValueString) {
-			MagicSpells.error("Invalid SpellCastState of \"" + var.trim() + "\" on this modifier var");
+		} catch (IllegalArgumentException e) {
+			MagicDebug.warn("Invalid spell cast state '%s' %s.", var, MagicDebug.resolveFullPath());
 			return false;
 		}
 	}

@@ -16,7 +16,7 @@ import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.EquipmentSlotGroup;
 
 import com.nisovin.magicspells.util.Name;
-import com.nisovin.magicspells.MagicSpells;
+import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.castmodifiers.Condition;
 import com.nisovin.magicspells.util.magicitems.MagicItems;
 import com.nisovin.magicspells.util.magicitems.MagicItemData;
@@ -56,7 +56,7 @@ public class WearingInSlotCondition extends Condition {
 			};
 
 			if (group == null) {
-				MagicSpells.error("Invalid equipment slot group '" + groupString + "'.");
+				MagicDebug.warn("Invalid equipment slot group '%s' %s.", MagicDebug.resolveFullPath());
 				return false;
 			}
 
@@ -86,10 +86,7 @@ public class WearingInSlotCondition extends Condition {
 			}
 
 			MagicItemData itemData = MagicItems.getMagicItemDataFromString(magicItemString);
-			if (itemData == null) {
-				MagicSpells.error("Invalid magic item '" + magicItemString + "'.");
-				return false;
-			}
+			if (itemData == null) return false;
 
 			items.add(itemData);
 		}

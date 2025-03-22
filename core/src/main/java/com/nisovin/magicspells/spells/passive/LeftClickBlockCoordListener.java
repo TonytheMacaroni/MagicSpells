@@ -14,7 +14,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.player.PlayerInteractEvent;
 
 import com.nisovin.magicspells.util.Name;
-import com.nisovin.magicspells.MagicSpells;
+import com.nisovin.magicspells.util.conversion.*;
 import com.nisovin.magicspells.util.LocationUtil;
 import com.nisovin.magicspells.util.OverridePriority;
 import com.nisovin.magicspells.spells.passive.util.PassiveListener;
@@ -31,14 +31,12 @@ public class LeftClickBlockCoordListener extends PassiveListener {
 	@Override
 	public void initialize(@NotNull String var) {
 		if (var.isEmpty()) return;
-		for (String string : var.split(";")) {
-			Location location = LocationUtil.fromString(string);
-			if (location == null) {
-				MagicSpells.error("Invalid coords on leftclickblockcoord trigger for spell '" + passiveSpell.getInternalName() + "': " + string);
-				continue;
-			}
-			locations.add(location);
-		}
+
+		ConversionUtil.convert(
+			ConversionSource.split(var, ";"),
+			ConversionTarget.consumer(locations::add),
+			Converters.stringFunction(LocationUtil::fromString, false)
+		);
 	}
 
 	@OverridePriority

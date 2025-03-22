@@ -3,7 +3,6 @@ package com.nisovin.magicspells.spells.passive;
 import java.util.List;
 import java.util.ArrayList;
 
-import org.bukkit.Bukkit;
 import org.bukkit.block.Block;
 import org.bukkit.event.EventHandler;
 import org.bukkit.entity.LivingEntity;
@@ -14,7 +13,8 @@ import org.jetbrains.annotations.NotNull;
 import io.papermc.paper.event.entity.EntityInsideBlockEvent;
 
 import com.nisovin.magicspells.util.Name;
-import com.nisovin.magicspells.MagicSpells;
+import com.nisovin.magicspells.util.RegexUtil;
+import com.nisovin.magicspells.util.conversion.*;
 import com.nisovin.magicspells.util.OverridePriority;
 import com.nisovin.magicspells.spells.passive.util.PassiveListener;
 
@@ -27,15 +27,11 @@ public class InsideBlockListener extends PassiveListener {
 	public void initialize(@NotNull String var) {
 		if (var.isEmpty()) return;
 
-		blockData = new ArrayList<>();
-
-		for (String data : var.split(",(?![^\\[]*])")) {
-			try {
-				blockData.add(Bukkit.createBlockData(data.trim().toLowerCase()));
-			} catch (IllegalArgumentException e) {
-				MagicSpells.error("Invalid block data '" + data + "' in insideblock trigger on passive spell '" + passiveSpell.getInternalName() + "'");
-			}
-		}
+		blockData = ConversionUtil.convert(
+			ConversionSource.split(var, RegexUtil.BLOCK_DATA_SPLIT_PATTERN),
+			ConversionTarget.list(),
+			Converters.BLOCK_DATA
+		);
 	}
 
 	@OverridePriority

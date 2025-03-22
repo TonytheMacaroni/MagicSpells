@@ -1047,8 +1047,11 @@ public class MagicSpells extends JavaPlugin {
 			Bukkit.getPluginManager().callEvent(new PassiveListenersLoadingEvent(plugin, passiveManager));
 
 			for (Spell spell : spells.values()) {
-				if (!(spell instanceof PassiveSpell)) continue;
-				((PassiveSpell) spell).initializeListeners();
+				if (!(spell instanceof PassiveSpell passiveSpell)) continue;
+
+				try (var ignored = MagicDebug.section(spell, "Initializing passive triggers for spell '%s'.", spell)) {
+					passiveSpell.initializeListeners();
+				}
 			}
 		}
 
@@ -2173,30 +2176,25 @@ public class MagicSpells extends JavaPlugin {
 	}
 
 	public static void profilingReport() {
-		if (plugin.profilingTotalTime == null) return;
-		if (plugin.profilingRuns == null) return;
+		if (plugin.profilingTotalTime == null || plugin.profilingRuns == null) return;
 
-		PrintWriter writer = null;
-		try {
-			writer = new PrintWriter(new File(plugin.getDataFolder(), "profiling_report_" + System.currentTimeMillis() + ".txt"));
+		try (PrintWriter writer = new PrintWriter(new File(plugin.getDataFolder(), "profiling_report_" + System.currentTimeMillis() + ".txt"))) {
 			long totalTime = 0;
+
 			writer.println("Key\tRuns\tAvg\tTotal");
+
 			for (String key : plugin.profilingTotalTime.keySet()) {
 				long time = plugin.profilingTotalTime.get(key);
 				int runs = plugin.profilingRuns.get(key);
 				totalTime += time;
 				writer.println(key + '\t' + runs + '\t' + (time / runs / 1000000F) + "ms\t" + (time / 1000000F) + "ms");
 			}
+
 			writer.println();
 			writer.println("TOTAL TIME: " + (totalTime / 1000000F) + "ms");
-		} catch (Exception ex) {
-			error("Failed to save profiling report");
-			handleException(ex);
-		} finally {
-			if (writer != null) writer.close();
+		} catch (Exception e) {
+			MagicDebug.error(e, "Failed to save profiling report.");
 		}
-		plugin.profilingTotalTime.clear();
-		plugin.profilingRuns.clear();
 	}
 
 	/**

@@ -131,8 +131,8 @@ public class DebugConfig {
 		return overrides.getOrDefault(category, defaultLevel).ordinal() < level.ordinal();
 	}
 
-	public boolean isEnabled(DebugCategory category) {
-		return overrides.getOrDefault(category, defaultLevel).ordinal() >= DebugLevel.INFO.ordinal();
+	public boolean isEnabled(DebugCategory category, DebugLevel level) {
+		return overrides.getOrDefault(category, defaultLevel).ordinal() >= level.ordinal();
 	}
 
 	public boolean isEnhanced(DebugCategory category) {

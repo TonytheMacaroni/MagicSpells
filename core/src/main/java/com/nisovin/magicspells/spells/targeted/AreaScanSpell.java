@@ -1,10 +1,8 @@
 package com.nisovin.magicspells.spells.targeted;
 
 import java.util.Set;
-import java.util.List;
 import java.util.HashSet;
 
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.util.Vector;
 import org.bukkit.entity.Player;
@@ -18,6 +16,7 @@ import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.spells.TargetedSpell;
 import com.nisovin.magicspells.util.config.ConfigData;
 import com.nisovin.magicspells.castmodifiers.ModifierSet;
+import com.nisovin.magicspells.util.conversion.Converters;
 import com.nisovin.magicspells.spelleffects.EffectPosition;
 import com.nisovin.magicspells.spells.TargetedLocationSpell;
 import com.nisovin.magicspells.util.managers.VariableManager;
@@ -25,8 +24,8 @@ import com.nisovin.magicspells.events.SpellTargetLocationEvent;
 
 public class AreaScanSpell extends TargetedSpell implements TargetedLocationSpell {
 
-	private Set<BlockData> blocks;
-	private Set<BlockData> deniedBlocks;
+	private final Set<BlockData> blocks;
+	private final Set<BlockData> deniedBlocks;
 
 	private final ConfigData<Integer> xRadius;
 	private final ConfigData<Integer> yRadius;
@@ -91,36 +90,8 @@ public class AreaScanSpell extends TargetedSpell implements TargetedLocationSpel
 		powerAffectsRadius = getConfigDataBoolean("power-affects-radius", true);
 		powerAffectsMaxBlocks = getConfigDataBoolean("power-affects-max-blocks", true);
 
-		List<String> blockStrings = getConfigStringList("blocks", null);
-		if (blockStrings != null && !blockStrings.isEmpty()) {
-			blocks = new HashSet<>();
-
-			for (String blockDataString : blockStrings) {
-				try {
-					blocks.add(Bukkit.createBlockData(blockDataString));
-				} catch (IllegalArgumentException e) {
-					MagicSpells.error("Invalid block '" + blockDataString + "' in AreaScanSpell '" + internalName + "'.");
-				}
-			}
-
-			if (blocks.isEmpty()) blocks = null;
-		}
-
-		List<String> deniedBlockStrings = getConfigStringList("denied-blocks", null);
-		if (deniedBlockStrings != null && !deniedBlockStrings.isEmpty()) {
-			deniedBlocks = new HashSet<>();
-
-			for (String blockDataString : deniedBlockStrings) {
-				try {
-					deniedBlocks.add(Bukkit.createBlockData(blockDataString));
-				} catch (IllegalArgumentException e) {
-					MagicSpells.error("Invalid denied block '" + blockDataString + "' in AreaScanSpell '" + internalName + "'.");
-				}
-
-			}
-
-			if (deniedBlocks.isEmpty()) deniedBlocks = null;
-		}
+		blocks = getConfigCollection("blocks", HashSet::new, Converters.BLOCK_DATA);
+		deniedBlocks = getConfigCollection("denied-blocks", HashSet::new, Converters.BLOCK_DATA);
 	}
 
 	@Override

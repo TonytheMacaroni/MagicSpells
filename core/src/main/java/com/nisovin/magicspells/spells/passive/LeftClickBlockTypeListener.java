@@ -1,5 +1,6 @@
 package com.nisovin.magicspells.spells.passive;
 
+import java.util.Set;
 import java.util.EnumSet;
 
 import org.jetbrains.annotations.NotNull;
@@ -13,8 +14,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.player.PlayerInteractEvent;
 
 import com.nisovin.magicspells.util.Name;
-import com.nisovin.magicspells.util.Util;
-import com.nisovin.magicspells.MagicSpells;
+import com.nisovin.magicspells.util.conversion.*;
 import com.nisovin.magicspells.util.OverridePriority;
 import com.nisovin.magicspells.spells.passive.util.PassiveListener;
 
@@ -22,21 +22,17 @@ import com.nisovin.magicspells.spells.passive.util.PassiveListener;
 @Name("leftclickblocktype")
 public class LeftClickBlockTypeListener extends PassiveListener {
 
-	private final EnumSet<Material> materials = EnumSet.noneOf(Material.class);
+	private final Set<Material> materials = EnumSet.noneOf(Material.class);
 
 	@Override
 	public void initialize(@NotNull String var) {
 		if (var.isEmpty()) return;
-		for (String s : var.split(",")) {
-			s = s.trim();
-			Material m = Util.getMaterial(s);
-			if (m == null) {
-				MagicSpells.error("Invalid block type on leftclickblocktype trigger '" + s + "' on passive spell '" + passiveSpell.getInternalName() + "'");
-				continue;
-			}
 
-			materials.add(m);
-		}
+		ConversionUtil.convert(
+			ConversionSource.split(var, ","),
+			ConversionTarget.consumer(materials::add),
+			Converters.MATERIAL_BLOCK
+		);
 	}
 
 	@OverridePriority
