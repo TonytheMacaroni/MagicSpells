@@ -192,8 +192,9 @@ public class ParticleCloudSpell extends TargetedSpell implements TargetedLocatio
 
 			for (PotionEffect eff : potionEffects) cloud.addCustomEffect(eff, true);
 
+			Component customName = this.customName.get(finalData);
 			if (customName != null) {
-				cloud.customName(customName.get(finalData));
+				cloud.customName(customName);
 				cloud.setCustomNameVisible(true);
 			}
 		});
