@@ -61,6 +61,10 @@ public class EffectTracker implements Runnable {
 		return data;
 	}
 
+	public DelayableEntity<Entity> getEffectEntity() {
+		return effectEntity;
+	}
+
 	public void setBuffSpell(BuffSpell spell) {
 		buffSpell = spell;
 	}
