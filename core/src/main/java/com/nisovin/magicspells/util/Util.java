@@ -145,7 +145,13 @@ public class Util {
 		return c;
 	}
 
-	public static List<ConfigData<PotionEffect>> getPotionEffects(@Nullable List<?> potionEffectData, @NotNull String internalName, boolean spellPowerAffectsDuration, boolean spellPowerAffectsStrength) {
+	@Nullable
+	public static List<ConfigData<PotionEffect>> getPotionEffects(@Nullable List<?> potionEffectData, @Nullable String internalName) {
+		return getPotionEffects(potionEffectData, internalName, false, false);
+	}
+
+	@Nullable
+	public static List<ConfigData<PotionEffect>> getPotionEffects(@Nullable List<?> potionEffectData, @Nullable String internalName, boolean spellPowerAffectsDuration, boolean spellPowerAffectsStrength) {
 		if (potionEffectData == null || potionEffectData.isEmpty()) return null;
 
 		List<ConfigData<PotionEffect>> potionEffects = new ArrayList<>();
@@ -156,7 +162,7 @@ public class Util {
 
 				PotionEffectType type = PotionEffectHandler.getPotionEffectType(data[0]);
 				if (type == null) {
-					MagicSpells.error("Invalid potion effect string '" + potionEffectString + "' in spell '" + internalName + "'.");
+					MagicSpells.error("Invalid potion effect string '" + potionEffectString + "'" + (internalName == null ? "" : " in spell '" + internalName + "'."));
 					continue;
 				}
 
@@ -165,7 +171,7 @@ public class Util {
 					try {
 						duration = Integer.parseInt(data[1]);
 					} catch (NumberFormatException e) {
-						MagicSpells.error("Invalid duration '" + duration + "' in potion effect string '" + potionEffectString + "' in spell '" + internalName + "'.");
+						MagicSpells.error("Invalid duration '" + duration + "' in potion effect string '" + potionEffectString + "'" + (internalName == null ? "" : " in spell '" + internalName + "'."));
 						continue;
 					}
 				}
@@ -175,7 +181,7 @@ public class Util {
 					try {
 						strength = Integer.parseInt(data[2]);
 					} catch (NumberFormatException e) {
-						MagicSpells.error("Invalid strength '" + strength + "' in potion effect string '" + potionEffectString + "' in spell '" + internalName + "'.");
+						MagicSpells.error("Invalid strength '" + strength + "' in potion effect string '" + potionEffectString + "'" + (internalName == null ? "" : " in spell '" + internalName + "'."));
 						continue;
 					}
 				}
@@ -185,7 +191,7 @@ public class Util {
 				boolean icon = data.length < 6 || Boolean.parseBoolean(data[5]);
 
 				if (data.length > 6)
-					MagicSpells.error("Trailing data found in potion effect string '" + potionEffectString + "' in spell '" + internalName + "'.");
+					MagicSpells.error("Trailing data found in potion effect string '" + potionEffectString + "'" + (internalName == null ? "" : " in spell '" + internalName + "'."));
 
 				if (spellPowerAffectsDuration || spellPowerAffectsStrength) {
 					int finalDuration = duration;
