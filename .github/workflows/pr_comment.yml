@@ -44,7 +44,10 @@ jobs:
             // Create or update comment, linking the artifact.
             const artifact_url = `https://nightly.link/${owner}/${repo}/actions/artifacts/${artifact.id}.zip`;
             const marker = `<!-- bot: ${label} -->`;
-            const body = `${marker}\nBuilt artifact: [\`${artifact.name}\`](${artifact_url})`;
+            
+            let body = `${marker}\nBuilt artifact: [\`${artifact.name}\`](${artifact_url})`;
+            const {behind_by} = await github.rest.repos.compareCommitsWithBasehead({owner: pr_owner, repo, basehead: `${pr_branch}...${owner}:main`});
+            if (behind_by > 0) body += `\n\n[(Behind by \`${behind_by}\` commits)](https://github.com/${pr_owner}/${repo}/compare/${pr_branch}...${owner}:main)`;
 
             const issue_number = pull_request.number;
             const {data: comments} = await github.rest.issues.listComments({owner, repo, issue_number});
