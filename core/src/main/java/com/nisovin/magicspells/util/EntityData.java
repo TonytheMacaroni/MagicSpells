@@ -386,7 +386,7 @@ public class EntityData {
 		ConfigData<Vector3f> translation = getVector(config, "transformation.translation");
 		ConfigData<Vector3f> scale = getVector(config, "transformation.scale");
 		ConfigData<Transformation> transformation = data -> null;
-		if (checkNull(leftRotation) && checkNull(rightRotation) && checkNull(translation) && checkNull(scale)) {
+		if (!leftRotation.isNull() && !rightRotation.isNull() && !translation.isNull() && !scale.isNull()) {
 			if (leftRotation.isConstant() && rightRotation.isConstant() && translation.isConstant() && scale.isConstant()) {
 				Quaternionf lr = leftRotation.get();
 				Quaternionf rr = rightRotation.get();
@@ -429,7 +429,7 @@ public class EntityData {
 		ConfigData<Integer> blockLight = ConfigDataUtil.getInteger(config, "brightness.block");
 		ConfigData<Integer> skyLight = ConfigDataUtil.getInteger(config, "brightness.sky");
 		ConfigData<Display.Brightness> brightness = data -> null;
-		if (checkNull(blockLight) && checkNull(skyLight)) {
+		if (!blockLight.isNull() && !skyLight.isNull()) {
 			if (blockLight.isConstant() && skyLight.isConstant()) {
 				int bl = blockLight.get();
 				int sl = skyLight.get();
@@ -756,7 +756,7 @@ public class EntityData {
 	private <T> ConfigData<T> fallback(Function<String, ConfigData<T>> function, String... keys) {
 		for (String key : keys) {
 			ConfigData<T> data = function.apply(key);
-			if (checkNull(data)) return data;
+			if (!data.isNull()) return data;
 		}
 
 		return data -> null;
@@ -823,7 +823,7 @@ public class EntityData {
 			return data -> null;
 		}
 
-		if (!checkNull(x) || !checkNull(y) || !checkNull(z)) return data -> null;
+		if (x.isNull() || y.isNull() || z.isNull()) return data -> null;
 
 		if (x.isConstant() && y.isConstant() && z.isConstant()) {
 			Vector3f vector = new Vector3f(x.get(), y.get(), z.get());
@@ -873,7 +873,7 @@ public class EntityData {
 
 		ConfigData<Float> angle = ConfigDataUtil.getFloat(config, path + ".angle");
 		ConfigData<Vector3f> axis = getVector(config, path + ".axis");
-		if (checkNull(angle) && checkNull(axis)) {
+		if (!angle.isNull() && !axis.isNull()) {
 			if (angle.isConstant() && axis.isConstant()) {
 				Vector3f ax = axis.get();
 				float ang = angle.get();
@@ -960,7 +960,7 @@ public class EntityData {
 			return data -> null;
 		}
 
-		if (!checkNull(x) || !checkNull(y) || !checkNull(z) || !checkNull(w)) return data -> null;
+		if (x.isNull() || y.isNull() || z.isNull() || w.isNull()) return data -> null;
 
 		if (x.isConstant() && y.isConstant() && z.isConstant() && w.isConstant()) {
 			Quaternionf rot = new Quaternionf(x.get(), y.get(), z.get(), w.get());
@@ -993,10 +993,6 @@ public class EntityData {
 
 		};
 
-	}
-
-	private boolean checkNull(ConfigData<?> data) {
-		return !data.isConstant() || data.get() != null;
 	}
 
 	public ConfigData<EntityType> getEntityType() {

@@ -606,7 +606,7 @@ public class ConfigDataUtil {
 		if (value == null) return data -> def;
 
 		Particle val = ParticleUtil.getParticle(value);
-		if (val != null) return ata -> val;
+		if (val != null) return data -> val;
 
 		ConfigData<String> supplier = getString(value);
 		if (supplier.isConstant()) return data -> def;
