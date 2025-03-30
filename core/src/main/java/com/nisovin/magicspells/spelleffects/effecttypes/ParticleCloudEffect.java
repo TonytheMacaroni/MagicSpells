@@ -16,6 +16,7 @@ import com.nisovin.magicspells.util.config.ConfigDataUtil;
 public class ParticleCloudEffect extends ParticlesEffect {
 
 	private ConfigData<Integer> duration;
+	private ConfigData<Integer> waitTime;
 
 	private ConfigData<Float> radius;
 	private ConfigData<Float> yOffset;
@@ -28,6 +29,7 @@ public class ParticleCloudEffect extends ParticlesEffect {
 		ConfigData<Integer> color = ConfigDataUtil.getInteger(config, "color", 0xFF0000);
 		argbColor = argbColor.orDefault(data -> Color.fromRGB(color.get(data)));
 
+		waitTime = ConfigDataUtil.getInteger(config, "wait-time", 0);
 		duration = ConfigDataUtil.getInteger(config, "duration", 60);
 
 		radius = ConfigDataUtil.getFloat(config, "radius", 5);
@@ -46,6 +48,7 @@ public class ParticleCloudEffect extends ParticlesEffect {
 		if (particle == null) return null;
 
 		location.getWorld().spawn(location.clone().add(0, yOffset.get(data), 0), AreaEffectCloud.class, cloud -> {
+			cloud.setWaitTime(waitTime.get(data));
 			cloud.setRadius(radius.get(data));
 			cloud.setDuration(duration.get(data));
 			cloud.setRadiusPerTick(radiusPerTick.get(data));
