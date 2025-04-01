@@ -24,8 +24,8 @@ jobs:
             const pr_sha = "${{github.event.workflow_run.head_sha}}";
 
             // Find PR matching workflow run.
-            const {data} = await github.rest.pulls.list({owner, repo, head: `${pr_owner}:${pr_branch}`, state: "open"});
-            const pulls = data.filter(pr => pr.head.sha === pr_sha);
+            const {data: allPulls} = await github.rest.pulls.list({owner, repo, head: `${pr_owner}:${pr_branch}`, state: "open"});
+            const pulls = allPulls.filter(pr => pr.head.sha === pr_sha);
             
             if (!pulls.length) return core.error("No PR found");
             if (pulls.length > 1) return core.error("Found multiple matching PRs");
@@ -46,8 +46,8 @@ jobs:
             const marker = `<!-- bot: ${label} -->`;
             
             let body = `${marker}\nBuilt artifact: [\`${artifact.name}\`](${artifact_url})`;
-            const {behind_by} = await github.rest.repos.compareCommitsWithBasehead({owner: pr_owner, repo, basehead: `${pr_branch}...${owner}:main`});
-            if (behind_by > 0) body += `\n\n[(Behind by \`${behind_by}\` commits)](https://github.com/${pr_owner}/${repo}/compare/${pr_branch}...${owner}:main)`;
+            const {data: {ahead_by: behind, html_url: behind_url}} = await github.rest.repos.compareCommitsWithBasehead({owner: pr_owner, repo, basehead: `${pr_branch}...${owner}:main`});
+            if (behind > 0) body += `\n\n[(Behind by \`${behind}\` commits)](${behind_url})`;
 
             const issue_number = pull_request.number;
             const {data: comments} = await github.rest.issues.listComments({owner, repo, issue_number});
