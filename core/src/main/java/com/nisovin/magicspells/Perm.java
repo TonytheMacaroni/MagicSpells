@@ -71,6 +71,11 @@ public enum Perm {
 		return node;
 	}
 
+	@Override
+	public String toString() {
+		return node;
+	}
+
 	public String getNode(Spell spell) {
 		return node + spell.getPermissionName();
 	}
