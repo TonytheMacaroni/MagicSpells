@@ -847,15 +847,13 @@ public class MagicSpells extends JavaPlugin {
 
 		PermissionDefault defaultValue = defaultAllPermsFalse ? PermissionDefault.FALSE : PermissionDefault.TRUE;
 
-		record SpellPermission(String name, boolean alwaysGranted) {}
-
 		// Spell permissions
 		spellsOrdered.stream()
 			.filter(Predicate.not(Spell::isHelperSpell))
-			.map(spell -> new SpellPermission(spell.getPermissionName(), spell.isAlwaysGranted()))
-			.filter(permission -> !permission.name.equals("*"))
-			.collect(Collectors.toMap(SpellPermission::name, SpellPermission::alwaysGranted, Boolean::logicalOr))
+			.collect(Collectors.toMap(s -> s.getPermissionName().toLowerCase(), Spell::isAlwaysGranted, Boolean::logicalOr))
 			.forEach((permissionName, alwaysGranted) -> {
+				if (permissionName.equals("*")) return;
+
 				if (!alwaysGranted) {
 					String grant = Perm.GRANT + permissionName;
 
