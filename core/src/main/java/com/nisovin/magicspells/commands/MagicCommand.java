@@ -741,21 +741,22 @@ public class MagicCommand extends BaseCommand {
 				return;
 			}
 			// Player
-			if (sender instanceof Player) {
-				Player player = ((Player) sender).getPlayer();
-				if (player == null) return;
-				if (!spell.canCastByCommand()) {
-					MagicSpells.sendMessage(MagicSpells.getTextColor() + "You cannot cast this spell by commands.", player, null);
-					return;
-				}
+			if (sender instanceof Player player) {
 				if (spell.isHelperSpell() && !Perm.COMMAND_CAST_SELF_HELPER.has(player) || !MagicSpells.getSpellbook(player).hasSpell(spell)) {
 					MagicSpells.sendMessage(MagicSpells.getTextColor() + MagicSpells.getUnknownSpellMessage(), player, null);
 					return;
 				}
+
+				if (!spell.canCastByCommand()) {
+					MagicSpells.sendMessage(MagicSpells.getTextColor() + spell.getStrCantCastByCommand(), player, null);
+					return;
+				}
+
 				if (!spell.isValidItemForCastCommand(player.getInventory().getItemInMainHand())) {
 					MagicSpells.sendMessage(spell.getStrWrongCastItem(), player, null);
 					return;
 				}
+
 				spell.hardCast(new SpellData(player, power, spellArgs));
 				return;
 			}

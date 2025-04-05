@@ -165,6 +165,7 @@ public abstract class Spell implements Comparable<Spell>, Listener {
 	protected String strWrongCastItem;
 	protected String strModifierFailed;
 	protected String strMissingReagents;
+	protected String strCantCastByCommand;
 
 	protected ModifierSet modifiers;
 	protected ModifierSet targetModifiers;
@@ -436,6 +437,7 @@ public abstract class Spell implements Comparable<Spell>, Listener {
 		strWrongCastItem = config.getString(internalKey + "str-wrong-cast-item", strCantCast);
 		strModifierFailed = config.getString(internalKey + "str-modifier-failed", null);
 		strMissingReagents = config.getString(internalKey + "str-missing-reagents", MagicSpells.getMissingReagentsMessage());
+		strCantCastByCommand = config.getString(internalKey + "str-cant-cast-by-command", "You cannot cast this spell by commands.");
 		if (strXpAutoLearned != null) strXpAutoLearned = strXpAutoLearned.replace("%s", name);
 
 		tags = new HashSet<>(config.getStringList(internalKey + "tags", new ArrayList<>()));
@@ -2490,6 +2492,10 @@ public abstract class Spell implements Comparable<Spell>, Listener {
 
 	public String getStrWrongCastItem() {
 		return strWrongCastItem;
+	}
+
+	public String getStrCantCastByCommand() {
+		return strCantCastByCommand;
 	}
 
 	public List<String> getPrecludes() {
