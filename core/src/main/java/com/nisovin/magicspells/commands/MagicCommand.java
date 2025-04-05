@@ -748,7 +748,7 @@ public class MagicCommand extends BaseCommand {
 				}
 
 				if (!spell.canCastByCommand()) {
-					MagicSpells.sendMessage(MagicSpells.getTextColor() + "You cannot cast this spell by commands.", player, null);
+					MagicSpells.sendMessage(MagicSpells.getTextColor() + spell.getStrCantCastByCommand(), player, null);
 					return;
 				}
 
