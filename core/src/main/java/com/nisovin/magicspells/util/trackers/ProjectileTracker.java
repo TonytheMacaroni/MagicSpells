@@ -143,7 +143,6 @@ public class ProjectileTracker implements Runnable, Tracker {
 		});
 
 		if (spell != null) {
-			spell.playEffects(EffectPosition.CASTER, startLocation, data);
 			effectSet = spell.playEffectsProjectile(EffectPosition.PROJECTILE, currentLocation, data);
 			entityMap = spell.playEntityEffectsProjectile(EffectPosition.PROJECTILE, currentLocation, data);
 			armorStandSet = spell.playArmorStandEffectsProjectile(EffectPosition.PROJECTILE, currentLocation, data);
