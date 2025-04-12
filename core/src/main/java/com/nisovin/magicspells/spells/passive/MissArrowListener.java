@@ -1,18 +1,21 @@
 package com.nisovin.magicspells.spells.passive;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.Set;
 import java.util.UUID;
 import java.util.HashSet;
 
-import org.jetbrains.annotations.NotNull;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.HashMultimap;
 
 import org.bukkit.entity.Arrow;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.Projectile;
+import org.bukkit.event.Listener;
 import org.bukkit.event.EventHandler;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.event.EventPriority;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.metadata.FixedMetadataValue;
+import org.bukkit.event.entity.EntityRemoveEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.entity.ProjectileLaunchEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
@@ -28,11 +31,19 @@ import com.nisovin.magicspells.util.magicitems.MagicItemDataParser;
 @Name("missarrow")
 public class MissArrowListener extends PassiveListener {
 
+	private static ArrowTracker tracker;
+
 	private final Set<MagicItemData> items = new HashSet<>();
-	
+
 	@Override
 	public void initialize(@NotNull String var) {
+		if (tracker == null) {
+			tracker = new ArrowTracker();
+			MagicSpells.registerEvents(tracker);
+		}
+
 		if (var.isEmpty()) return;
+
 		for (String s : var.split(MagicItemDataParser.DATA_REGEX)) {
 			s = s.trim();
 
@@ -45,99 +56,74 @@ public class MissArrowListener extends PassiveListener {
 			items.add(itemData);
 		}
 	}
-	
-	@OverridePriority
-	@EventHandler
-	public void onHitEntity(EntityDamageByEntityEvent event) {
-		LivingEntity attacker = getAttacker(event);
-		if (attacker == null) return;
-		String name = attacker.getName();
-		UUID id = attacker.getUniqueId();
-		if (event.getDamager() instanceof Arrow && event.getDamager().hasMetadata("mal-" + id + '-' + name)
-				&& !event.getEntity().getMetadata("mal-" + id + '-' + name).isEmpty()) {
-			((ArrowParticle) event.getDamager().getMetadata("mal-" + id + '-' + name).get(0).value()).setHitEntity(true);
-		}
+
+	@Override
+	public void turnOff() {
+		tracker = null;
 	}
-	
+
 	@OverridePriority
 	@EventHandler
-	public void onDamage(ProjectileHitEvent event) {
-		if (!(event.getEntity() instanceof Arrow arrow)) return;
+	public void onHit(ProjectileHitEvent event) {
+		if (event.getHitBlock() == null) return;
+		if (!(event.getEntity() instanceof Arrow arrow) || !tracker.isTracking(arrow, this)) return;
+		if (!(arrow.getShooter() instanceof LivingEntity caster) || !canTrigger(caster)) return;
 
-		LivingEntity caster = getAttacker(event);
-		if (caster == null || !canTrigger(caster)) return;
-
-		String name = caster.getName();
-		UUID id = caster.getUniqueId();
-		
-		if (!event.getEntity().hasMetadata("mal-" + id + '-' + name)) return;
-		if (event.getEntity().getMetadata("mal-" + id + '-' + name).isEmpty()) return;
-		
-		ArrowParticle arrowParticle = (ArrowParticle) event.getEntity().getMetadata("mal-" + id + '-' + name).get(0).value();
-		if (arrowParticle.isHitEntity()) return;
+		tracker.removeTracking(arrow, this);
 
 		if (!items.isEmpty()) {
-			ItemStack item = arrow.getWeapon();
-			if (item == null) return;
+			ItemStack weapon = arrow.getWeapon();
+			if (weapon == null) return;
 
-			MagicItemData itemData = MagicItems.getMagicItemDataFromItemStack(item);
-			if (!contains(itemData)) return;
+			MagicItemData itemData = MagicItems.getMagicItemDataFromItemStack(weapon);
+			if (itemData == null || !contains(itemData)) return;
 		}
 
-		passiveSpell.activate(caster, event.getEntity().getLocation());
+		passiveSpell.activate(caster, arrow.getLocation());
 	}
 
 	private boolean contains(MagicItemData itemData) {
-		for (MagicItemData data : items) {
-			if (data.matches(itemData)) return true;
-		}
+		for (MagicItemData data : items)
+			if (data.matches(itemData))
+				return true;
+
 		return false;
 	}
-	
-	private LivingEntity getAttacker(ProjectileHitEvent event) {
-		Projectile e = event.getEntity();
-		if (!(e instanceof Arrow)) return null;
-		if (e.getShooter() != null && e.getShooter() instanceof LivingEntity) {
-			return (LivingEntity) e.getShooter();
-		}
-		return null;
-	}
 
-	private LivingEntity getAttacker(EntityDamageByEntityEvent event) {
-		Entity e = event.getDamager();
-		if (!(e instanceof Arrow)) return null;
-		if (((Arrow) e).getShooter() != null && ((Arrow) e).getShooter() instanceof LivingEntity) {
-			return (LivingEntity) ((Arrow) e).getShooter();
-		}
-		return null;
-	}
-	
-	@EventHandler
-	public void shoot(ProjectileLaunchEvent event) {
-		if (event.getEntity().getShooter() == null || !(event.getEntity().getShooter() instanceof LivingEntity p) || !(event.getEntity() instanceof Arrow)) return;
-		ArrowParticle arrowParticle = new ArrowParticle(p);
-		event.getEntity().setMetadata("mal-" + p.getUniqueId() + '-' + p.getName(), new FixedMetadataValue(MagicSpells.getInstance(), arrowParticle));
-	}
-	
-	private static class ArrowParticle {
+	private static class ArrowTracker implements Listener {
 
-		private LivingEntity origCaster;
-		private boolean hitEntity;
-		
-		private ArrowParticle(LivingEntity origCaster) {
-			this.origCaster = origCaster;
+		private final Multimap<UUID, MissArrowListener> untracked = HashMultimap.create();
+		private final Set<UUID> tracking = new HashSet<>();
+
+		@EventHandler
+		public void onShoot(ProjectileLaunchEvent event) {
+			if (!(event.getEntity() instanceof Arrow arrow)) return;
+			if (!(arrow.getShooter() instanceof LivingEntity)) return;
+
+			tracking.add(arrow.getUniqueId());
 		}
-		
-		public LivingEntity getOrigCaster() {
-			return origCaster;
+
+		@EventHandler
+		public void onRemove(EntityRemoveEvent event) {
+			UUID uuid = event.getEntity().getUniqueId();
+			tracking.remove(uuid);
+			untracked.removeAll(uuid);
 		}
-		
-		public boolean isHitEntity() {
-			return hitEntity;
+
+		@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+		public void onDamage(EntityDamageByEntityEvent event) {
+			UUID uuid = event.getEntity().getUniqueId();
+			tracking.remove(uuid);
+			untracked.removeAll(uuid);
 		}
-		
-		public void setHitEntity(boolean hitEntity) {
-			this.hitEntity = hitEntity;
+
+		public boolean isTracking(Arrow arrow, MissArrowListener instance) {
+			UUID uuid = arrow.getUniqueId();
+			return tracking.contains(uuid) && !untracked.containsEntry(uuid, instance);
+		}
+
+		public void removeTracking(Arrow arrow, MissArrowListener instance) {
+			untracked.put(arrow.getUniqueId(), instance);
 		}
 
 	}
