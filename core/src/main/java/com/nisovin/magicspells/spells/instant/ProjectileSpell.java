@@ -173,13 +173,7 @@ public class ProjectileSpell extends InstantSpell implements TargetedLocationSpe
 
 	@Override
 	public CastResult cast(SpellData data) {
-		data = data.location(data.caster().getLocation());
-
-		ProjectileTracker tracker = new ProjectileTracker(data);
-		setupTracker(tracker, data);
-		tracker.start();
-
-		return new CastResult(PostCastAction.HANDLE_NORMALLY, data);
+		return castAtLocation(data.location(data.caster().getLocation()));
 	}
 
 	@Override
@@ -190,6 +184,7 @@ public class ProjectileSpell extends InstantSpell implements TargetedLocationSpe
 		setupTracker(tracker, data);
 		tracker.start();
 
+		playSpellEffects(data);
 		return new CastResult(PostCastAction.HANDLE_NORMALLY, data);
 	}
 
