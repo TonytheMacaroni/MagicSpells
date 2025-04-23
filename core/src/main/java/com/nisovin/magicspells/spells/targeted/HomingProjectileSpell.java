@@ -291,7 +291,7 @@ public class HomingProjectileSpell extends TargetedSpell implements TargetedEnti
 			airSpellInterval = HomingProjectileSpell.this.airSpellInterval.get(data);
 			specialEffectInterval = HomingProjectileSpell.this.specialEffectInterval.get(data);
 
-			intermediateSpecialEffects = Math.min(HomingProjectileSpell.this.intermediateSpecialEffects.get(data), 0);
+			intermediateSpecialEffects = Math.max(HomingProjectileSpell.this.intermediateSpecialEffects.get(data), 0);
 
 			float velocity = HomingProjectileSpell.this.velocity.get(data);
 			if (powerAffectsVelocity.get(data)) velocity *= data.power();
