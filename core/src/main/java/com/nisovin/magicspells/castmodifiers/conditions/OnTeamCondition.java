@@ -37,7 +37,7 @@ public class OnTeamCondition extends Condition {
 	}
 
 	private boolean onTeam(LivingEntity target) {
-		Team team = Bukkit.getScoreboardManager().getMainScoreboard().getEntryTeam(target.getName());
+		Team team = Bukkit.getScoreboardManager().getMainScoreboard().getEntityTeam(target);
 		return team != null && team.getName().equals(teamName);
 	}
 
