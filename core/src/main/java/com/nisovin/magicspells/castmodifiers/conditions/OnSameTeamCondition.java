@@ -36,8 +36,8 @@ public class OnSameTeamCondition extends Condition {
 
 	private boolean checkTeam(LivingEntity caster, LivingEntity target) {
 		Scoreboard scoreboard = Bukkit.getScoreboardManager().getMainScoreboard();
-		Team team1 = scoreboard.getEntryTeam(caster.getName());
-		Team team2 = scoreboard.getEntryTeam(target.getName());
+		Team team1 = scoreboard.getEntityTeam(caster);
+		Team team2 = scoreboard.getEntityTeam(target);
 		return (team1 != null && team2 != null) && team1.equals(team2);
 	}
 	
