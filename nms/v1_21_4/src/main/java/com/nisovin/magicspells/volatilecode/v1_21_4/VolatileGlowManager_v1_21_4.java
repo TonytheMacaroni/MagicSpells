@@ -1,4 +1,4 @@
-package com.nisovin.magicspells.volatilecode.latest;
+package com.nisovin.magicspells.volatilecode.v1_21_4;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -6,7 +6,6 @@ import java.util.*;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
-import java.util.function.Function;
 
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.ChannelPipeline;
@@ -17,7 +16,6 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.world.scores.PlayerTeam;
 import net.minecraft.world.scores.Scoreboard;
-import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.scores.Team.Visibility;
 import net.minecraft.world.scores.Team.CollisionRule;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -43,7 +41,7 @@ import com.nisovin.magicspells.util.glow.LibsDisguiseHelper;
 import com.nisovin.magicspells.volatilecode.VolatileCodeHelper;
 import com.nisovin.magicspells.util.glow.PacketBasedGlowManager;
 
-public class VolatileGlowManagerLatest extends PacketBasedGlowManager<Packet<?>, ClientboundSetEntityDataPacket, ClientboundSetPlayerTeamPacket> {
+public class VolatileGlowManager_v1_21_4 extends PacketBasedGlowManager<Packet<?>, ClientboundSetEntityDataPacket, ClientboundSetPlayerTeamPacket> {
 
 	private static final EntityDataAccessor<Byte> DATA_SHARED_FLAGS_ID = new EntityDataAccessor<>(0, EntityDataSerializers.BYTE);
 
@@ -51,7 +49,7 @@ public class VolatileGlowManagerLatest extends PacketBasedGlowManager<Packet<?>,
 	private final MethodHandle teamPacketHandle;
 	private final VolatileCodeHelper helper;
 
-	public VolatileGlowManagerLatest(VolatileCodeHelper helper) {
+	public VolatileGlowManager_v1_21_4(VolatileCodeHelper helper) {
 		this.helper = helper;
 
 		try {
@@ -89,8 +87,8 @@ public class VolatileGlowManagerLatest extends PacketBasedGlowManager<Packet<?>,
 
 		ConfigurationSection config = helper.getMainConfig();
 		boolean seeFriendlyInvisibles = config.getBoolean("general.glow-spell-scoreboard-teams.see-friendly-invisibles", false);
-		CollisionRule collision = getStringOption("collision-rule", CollisionRule.ALWAYS, StringRepresentable.createNameLookup(CollisionRule.values(), Function.identity()), config, helper::error);
-		Visibility visibility = getStringOption("name-tag-visibility", Visibility.ALWAYS, StringRepresentable.createNameLookup(Visibility.values(), Function.identity()), config, helper::error);
+		CollisionRule collision = getStringOption("collision-rule", CollisionRule.ALWAYS, CollisionRule::byName, config, helper::error);
+		Visibility visibility = getStringOption("name-tag-visibility", Visibility.ALWAYS, Visibility::byName, config, helper::error);
 
 		Scoreboard scoreboard = new Scoreboard();
 		for (ChatFormatting formatting : ChatFormatting.values()) {
@@ -250,7 +248,7 @@ public class VolatileGlowManagerLatest extends PacketBasedGlowManager<Packet<?>,
 				return;
 			}
 
-			synchronized (VolatileGlowManagerLatest.this) {
+			synchronized (VolatileGlowManager_v1_21_4.this) {
 				if (glows.isEmpty() && perPlayerGlows.isEmpty()) {
 					super.write(ctx, msg, promise);
 					return;
