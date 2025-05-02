@@ -5,7 +5,7 @@ plugins {
 
 dependencies {
     shadow(group: "org.apache.commons", name: "commons-math4-core", version: "4.0-beta1")
-    shadow(group: "com.github.Chronoken", name: "EffectLib", version: "e809407")
+    shadow(group: "com.github.Chronoken", name: "EffectLib", version: "753da6c")
     shadow(group: "co.aikar", name: "acf-paper", version: "0.5.1-SNAPSHOT")
     shadow(group: "org.bstats", name: "bstats-bukkit", version: "3.0.2")
 
