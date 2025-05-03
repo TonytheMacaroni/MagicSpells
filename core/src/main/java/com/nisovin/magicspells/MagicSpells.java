@@ -1024,7 +1024,7 @@ public class MagicSpells extends JavaPlugin {
 	}
 
 	public static boolean isLoaded() {
-		return plugin.loaded;
+		return plugin != null && plugin.loaded;
 	}
 
 	/**
