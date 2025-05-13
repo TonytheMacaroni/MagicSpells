@@ -67,13 +67,16 @@ public class SpellEffectManager {
 	}
 
 	private void initialize() {
-		addSpellEffect(ArmorStandEffect.class);
 		addSpellEffect(ActionBarTextEffect.class);
-		addSpellEffect(BossBarEffect.class);
+		addSpellEffect(ArmorStandEffect.class);
 		addSpellEffect(BlockBreakEffect.class);
+		addSpellEffect(BossBarEffect.class);
 		addSpellEffect(BroadcastEffect.class);
 		addSpellEffect(CloudEffect.class);
 		addSpellEffect(DragonDeathEffect.class);
+		addSpellEffect(EffectLibEffect.class);
+		addSpellEffect(EffectLibEntityEffect.class);
+		addSpellEffect(EffectLibLineEffect.class);
 		addSpellEffect(EnderSignalEffect.class);
 		addSpellEffect(EntityEffect.class);
 		addSpellEffect(ExplosionEffect.class);
@@ -83,22 +86,20 @@ public class SpellEffectManager {
 		addSpellEffect(ItemCooldownEffect.class);
 		addSpellEffect(ItemSprayEffect.class);
 		addSpellEffect(LightningEffect.class);
+		addSpellEffect(MobSpawnerEffect.class);
 		addSpellEffect(NovaEffect.class);
+		addSpellEffect(ParticleCloudEffect.class);
 		addSpellEffect(ParticlesEffect.class);
 		addSpellEffect(ParticlesPersonalEffect.class);
-		addSpellEffect(ParticleCloudEffect.class);
 		addSpellEffect(PotionEffect.class);
 		addSpellEffect(SmokeSwirlEffect.class);
 		addSpellEffect(SmokeTrailEffect.class);
 		addSpellEffect(SoundEffect.class);
 		addSpellEffect(SoundPersonalEffect.class);
-		addSpellEffect(MobSpawnerEffect.class);
 		addSpellEffect(SplashPotionEffect.class);
+		addSpellEffect(SwingHandEffect.class);
 		addSpellEffect(TitleEffect.class);
 		addSpellEffect(ToastEffect.class);
-		addSpellEffect(EffectLibEffect.class);
-		addSpellEffect(EffectLibLineEffect.class);
-		addSpellEffect(EffectLibEntityEffect.class);
 	}
 
 }
