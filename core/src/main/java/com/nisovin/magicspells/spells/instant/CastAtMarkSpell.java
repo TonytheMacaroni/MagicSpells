@@ -51,8 +51,6 @@ public class CastAtMarkSpell extends InstantSpell {
 
 	@Override
 	public void turnOff() {
-		super.turnOff();
-
 		markSpell = null;
 		spellToCast = null;
 		initialized = false;

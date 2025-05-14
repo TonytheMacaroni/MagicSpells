@@ -62,7 +62,6 @@ import com.nisovin.magicspells.listeners.*;
 import com.nisovin.magicspells.util.managers.*;
 import com.nisovin.magicspells.mana.ManaSystem;
 import com.nisovin.magicspells.mana.ManaHandler;
-import com.nisovin.magicspells.spells.BuffSpell;
 import com.nisovin.magicspells.variables.Variable;
 import com.nisovin.magicspells.spells.PassiveSpell;
 import com.nisovin.magicspells.commands.MagicCommand;
@@ -2169,7 +2168,6 @@ public class MagicSpells extends JavaPlugin {
 					}
 				}
 			}
-			if (spell instanceof BuffSpell buffSpell) buffSpell.stopAllEffects();
 
 			spell.turnOff();
 		}

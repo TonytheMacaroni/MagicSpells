@@ -1,8 +1,8 @@
 package com.nisovin.magicspells.spells.buff;
 
-import java.util.Set;
-import java.util.UUID;
-import java.util.HashSet;
+import java.util.*;
+
+import org.jetbrains.annotations.NotNull;
 
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -70,10 +70,10 @@ public class ImpactRecordSpell extends BuffSpell {
 	}
 
 	@Override
-	protected void turnOff() {
-		entities.clear();
+	protected @NotNull Collection<UUID> getActiveEntities() {
+		return entities;
 	}
-	
+
 	@EventHandler(priority = EventPriority.MONITOR)
 	public void onSpellTarget(SpellTargetEvent event) {
 		if (event.isCancelled() && !recordCancelled) return;

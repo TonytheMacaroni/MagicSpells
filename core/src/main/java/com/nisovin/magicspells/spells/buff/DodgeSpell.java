@@ -1,8 +1,8 @@
 package com.nisovin.magicspells.spells.buff;
 
-import java.util.Map;
-import java.util.UUID;
-import java.util.HashMap;
+import java.util.*;
+
+import org.jetbrains.annotations.NotNull;
 
 import org.bukkit.Location;
 import org.bukkit.util.Vector;
@@ -90,11 +90,8 @@ public class DodgeSpell extends BuffSpell {
 	}
 
 	@Override
-	protected void turnOff() {
-		for (EffectPosition pos: EffectPosition.values()) {
-			cancelEffectForAllPlayers(pos);
-		}
-		entities.clear();
+	protected @NotNull Collection<UUID> getActiveEntities() {
+		return entities.keySet();
 	}
 
 	@EventHandler

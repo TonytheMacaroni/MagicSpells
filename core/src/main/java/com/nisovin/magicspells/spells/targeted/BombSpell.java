@@ -52,8 +52,6 @@ public class BombSpell extends TargetedSpell implements TargetedLocationSpell {
 
 	@Override
 	public void turnOff() {
-		super.turnOff();
-
 		for (Block b : blocks) {
 			b.setType(Material.AIR);
 		}

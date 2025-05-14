@@ -1,11 +1,8 @@
 package com.nisovin.magicspells.spells.buff;
 
-import java.util.Map;
-import java.util.Set;
-import java.util.List;
-import java.util.UUID;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.*;
+
+import org.jetbrains.annotations.NotNull;
 
 import org.bukkit.Effect;
 import org.bukkit.GameMode;
@@ -93,8 +90,8 @@ public class ReachSpell extends BuffSpell {
 	}
 
 	@Override
-	protected void turnOff() {
-		players.clear();
+	protected @NotNull Collection<UUID> getActiveEntities() {
+		return players.keySet();
 	}
 
 	@EventHandler(priority = EventPriority.HIGHEST)

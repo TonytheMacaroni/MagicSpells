@@ -1,9 +1,9 @@
 package com.nisovin.magicspells.spells.buff;
 
-import java.util.Map;
-import java.util.UUID;
-import java.util.HashMap;
+import java.util.*;
 import java.util.function.Supplier;
+
+import org.jetbrains.annotations.NotNull;
 
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -85,8 +85,8 @@ public class EmpowerSpell extends BuffSpell {
 	}
 
 	@Override
-	protected void turnOff() {
-		entities.clear();
+	protected @NotNull Collection<UUID> getActiveEntities() {
+		return entities.keySet();
 	}
 
 	@EventHandler(priority = EventPriority.HIGHEST)

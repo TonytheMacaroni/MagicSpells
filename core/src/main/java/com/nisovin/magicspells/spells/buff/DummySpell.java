@@ -1,15 +1,14 @@
 package com.nisovin.magicspells.spells.buff;
 
-import java.util.Set;
-import java.util.UUID;
-import java.util.HashSet;
+import java.util.*;
+
+import org.jetbrains.annotations.NotNull;
 
 import org.bukkit.entity.LivingEntity;
 
 import com.nisovin.magicspells.util.SpellData;
 import com.nisovin.magicspells.util.MagicConfig;
 import com.nisovin.magicspells.spells.BuffSpell;
-import com.nisovin.magicspells.spelleffects.EffectPosition;
 
 public class DummySpell extends BuffSpell {
 
@@ -38,11 +37,8 @@ public class DummySpell extends BuffSpell {
 	}
 
 	@Override
-	protected void turnOff() {
-		for (EffectPosition pos: EffectPosition.values()) {
-			cancelEffectForAllPlayers(pos);
-		}
-		entities.clear();
+	protected @NotNull Collection<UUID> getActiveEntities() {
+		return entities;
 	}
 
 	public Set<UUID> getEntities() {

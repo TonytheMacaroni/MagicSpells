@@ -20,7 +20,6 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.configuration.ConfigurationSection;
 
 import com.nisovin.magicspells.util.*;
-import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.handlers.PotionEffectHandler;
 
 public class ConfigDataUtil {

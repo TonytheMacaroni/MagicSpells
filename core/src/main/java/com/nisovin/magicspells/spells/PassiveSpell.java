@@ -88,8 +88,6 @@ public class PassiveSpell extends Spell {
 
 	@Override
 	public void turnOff() {
-		super.turnOff();
-
 		for (PassiveListener listener : passiveListeners) {
 			listener.turnOff();
 			HandlerList.unregisterAll(listener);

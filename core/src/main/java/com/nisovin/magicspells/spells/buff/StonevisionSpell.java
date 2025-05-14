@@ -1,12 +1,8 @@
 package com.nisovin.magicspells.spells.buff;
 
-import java.util.Map;
-import java.util.Set;
-import java.util.List;
-import java.util.UUID;
-import java.util.HashSet;
-import java.util.HashMap;
-import java.util.ArrayList;
+import java.util.*;
+
+import org.jetbrains.annotations.NotNull;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -84,17 +80,13 @@ public class StonevisionSpell extends BuffSpell {
 
 	@Override
 	public void turnOffBuff(LivingEntity entity) {
-		TransparentBlockSet t = players.remove(entity.getUniqueId());
-		if (t != null) t.removeTransparency();
+		TransparentBlockSet set = players.remove(entity.getUniqueId());
+		if (set != null) set.removeTransparency();
 	}
 
 	@Override
-	protected void turnOff() {
-		for (TransparentBlockSet tbs : players.values()) {
-			tbs.removeTransparency();
-		}
-
-		players.clear();
+	protected @NotNull Collection<UUID> getActiveEntities() {
+		return players.keySet();
 	}
 
 	@EventHandler(priority = EventPriority.MONITOR)

@@ -2,7 +2,8 @@ package com.nisovin.magicspells.spells.buff;
 
 import java.util.*;
 
-import org.bukkit.Bukkit;
+import org.jetbrains.annotations.NotNull;
+
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -87,16 +88,8 @@ public class LightwalkSpell extends BuffSpell {
 	}
 
 	@Override
-	protected void turnOff() {
-		for (UUID id : players.keySet()) {
-			Player player = Bukkit.getPlayer(id);
-			if (player == null) continue;
-
-			LightWalkData data = players.get(id);
-			if (data.current != null) player.sendBlockChange(data.current.getLocation(), data.current.getBlockData());
-		}
-
-		players.clear();
+	protected @NotNull Collection<UUID> getActiveEntities() {
+		return players.keySet();
 	}
 
 	@EventHandler(priority = EventPriority.MONITOR)

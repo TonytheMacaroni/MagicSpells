@@ -1,10 +1,8 @@
 package com.nisovin.magicspells.spells.buff;
 
-import java.util.Set;
-import java.util.Map;
-import java.util.UUID;
-import java.util.HashSet;
-import java.util.HashMap;
+import java.util.*;
+
+import org.jetbrains.annotations.NotNull;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -76,17 +74,13 @@ public class CarpetSpell extends BuffSpell {
 
 	@Override
 	public void turnOffBuff(LivingEntity entity) {
-		BlockPlatform platform = entities.get(entity.getUniqueId());
-		if (platform == null) return;
-
-		platform.destroyPlatform();
-		entities.remove(entity.getUniqueId());
+		BlockPlatform platform = entities.remove(entity.getUniqueId());
+		if (platform != null) platform.destroyPlatform();
 	}
 
 	@Override
-	protected void turnOff() {
-		entities.values().forEach(BlockPlatform::destroyPlatform);
-		entities.clear();
+	protected @NotNull Collection<UUID> getActiveEntities() {
+		return entities.keySet();
 	}
 
 	private void handleMove(LivingEntity entity, Location to) {

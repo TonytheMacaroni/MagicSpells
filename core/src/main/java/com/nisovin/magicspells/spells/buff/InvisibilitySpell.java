@@ -2,6 +2,8 @@ package com.nisovin.magicspells.spells.buff;
 
 import java.util.*;
 
+import org.jetbrains.annotations.NotNull;
+
 import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
 import it.unimi.dsi.fastutil.objects.Object2BooleanArrayMap;
 
@@ -64,10 +66,16 @@ public class InvisibilitySpell extends BuffSpell {
 
 	@Override
 	protected void turnOff() {
-		if (manager != null) {
-			manager.stop();
-			manager = null;
-		}
+		super.turnOff();
+
+		if (manager == null) return;
+		manager.stop();
+		manager = null;
+	}
+
+	@Override
+	protected @NotNull Collection<UUID> getActiveEntities() {
+		return manager.entities.keySet();
 	}
 
 	private static class InvisibilityManager implements Listener {

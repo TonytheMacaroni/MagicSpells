@@ -1,10 +1,10 @@
 package com.nisovin.magicspells.spells;
 
-import java.util.Map;
-import java.util.UUID;
-import java.util.HashMap;
-import java.util.Iterator;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.MustBeInvokedByOverriders;
 
 import it.unimi.dsi.fastutil.objects.Object2LongMap;
 import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
@@ -384,7 +384,7 @@ public abstract class BuffSpell extends TargetedSpell implements TargetedEntityS
 		}
 	}
 
-	public void stopAllEffects() {
+	private void stopAllEffects() {
 		Iterator<EffectTracker> trackerIterator = getEffectTrackers().iterator();
 		EffectTracker effectTracker;
 		while (trackerIterator.hasNext()) {
@@ -404,8 +404,26 @@ public abstract class BuffSpell extends TargetedSpell implements TargetedEntityS
 
 	protected abstract void turnOffBuff(LivingEntity entity);
 
+	/**
+	 * The {@link BuffSpell} implementation of this method handles running {@link BuffSpell#turnOff(LivingEntity)} for entities.
+	 */
 	@Override
-	protected abstract void turnOff();
+	@MustBeInvokedByOverriders
+	protected void turnOff() {
+		stopAllEffects();
+
+		Collection<UUID> uuids = getActiveEntities();
+		if (!uuids.isEmpty()) {
+			for (UUID uuid : new ArrayList<>(uuids)) {
+				if (!(Bukkit.getEntity(uuid) instanceof LivingEntity entity)) continue;
+				if (!entity.isValid()) continue;
+				turnOff(entity);
+			}
+		}
+	}
+
+	@NotNull
+	protected abstract Collection<UUID> getActiveEntities();
 
 	public boolean isTargeted() {
 		return targeted;

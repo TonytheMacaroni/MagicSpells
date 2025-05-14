@@ -2,6 +2,8 @@ package com.nisovin.magicspells.spells.buff;
 
 import java.util.*;
 
+import org.jetbrains.annotations.NotNull;
+
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.LivingEntity;
@@ -81,12 +83,16 @@ public class SeeHealthSpell extends BuffSpell {
 
 	@Override
 	protected void turnOff() {
-		players.clear();
+		super.turnOff();
 
-		if (updater != null) {
-			updater.stop();
-			updater = null;
-		}
+		if (updater == null) return;
+		updater.stop();
+		updater = null;
+	}
+
+	@Override
+	protected @NotNull Collection<UUID> getActiveEntities() {
+		return players.keySet();
 	}
 
 	private void showHealthBar(Player player, SeeHealthData data) {

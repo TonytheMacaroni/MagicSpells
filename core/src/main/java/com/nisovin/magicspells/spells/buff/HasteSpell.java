@@ -1,10 +1,9 @@
 package com.nisovin.magicspells.spells.buff;
 
-import java.util.Map;
-import java.util.UUID;
-import java.util.HashMap;
+import java.util.*;
 
-import org.bukkit.Bukkit;
+import org.jetbrains.annotations.NotNull;
+
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.entity.LivingEntity;
@@ -84,16 +83,8 @@ public class HasteSpell extends BuffSpell {
 	}
 
 	@Override
-	protected void turnOff() {
-		for (UUID id : players.keySet()) {
-			Player player = Bukkit.getPlayer(id);
-			if (player == null) continue;
-			player.removePotionEffect(PotionEffectType.SPEED);
-			HasteData data = players.get(id);
-			if (data != null) MagicSpells.cancelTask(data.task);
-		}
-
-		players.clear();
+	protected @NotNull Collection<UUID> getActiveEntities() {
+		return players.keySet();
 	}
 
 	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)

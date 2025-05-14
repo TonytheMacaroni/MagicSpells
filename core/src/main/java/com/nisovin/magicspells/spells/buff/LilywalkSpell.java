@@ -1,12 +1,8 @@
 package com.nisovin.magicspells.spells.buff;
 
-import java.util.Set;
-import java.util.Map;
-import java.util.UUID;
-import java.util.Objects;
-import java.util.HashSet;
-import java.util.HashMap;
-import java.util.Iterator;
+import java.util.*;
+
+import org.jetbrains.annotations.NotNull;
 
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -51,14 +47,12 @@ public class LilywalkSpell extends BuffSpell {
 	@Override
 	public void turnOffBuff(LivingEntity entity) {
 		Lilies lilies = entities.remove(entity.getUniqueId());
-		if (lilies == null) return;
-		lilies.remove();
+		if (lilies != null) lilies.remove();
 	}
 
 	@Override
-	protected void turnOff() {
-		entities.values().forEach(Lilies::remove);
-		entities.clear();
+	protected @NotNull Collection<UUID> getActiveEntities() {
+		return entities.keySet();
 	}
 
 	private void handleMove(LivingEntity entity, Block block) {

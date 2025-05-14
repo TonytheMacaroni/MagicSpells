@@ -1,8 +1,8 @@
 package com.nisovin.magicspells.spells.buff;
 
-import java.util.Set;
-import java.util.UUID;
-import java.util.HashSet;
+import java.util.*;
+
+import org.jetbrains.annotations.NotNull;
 
 import org.bukkit.event.EventHandler;
 import org.bukkit.entity.LivingEntity;
@@ -39,8 +39,8 @@ public class StealthSpell extends BuffSpell {
 	}
 
 	@Override
-	protected void turnOff() {
-		entities.clear();
+	protected @NotNull Collection<UUID> getActiveEntities() {
+		return entities;
 	}
 
 	@EventHandler(ignoreCancelled = true)

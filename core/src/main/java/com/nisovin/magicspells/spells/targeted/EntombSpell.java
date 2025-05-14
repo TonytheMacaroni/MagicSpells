@@ -52,8 +52,6 @@ public class EntombSpell extends TargetedSpell implements TargetedEntitySpell {
 	
 	@Override
 	public void turnOff() {
-		super.turnOff();
-
 		for (Block block : blocks) {
 			block.setType(Material.AIR);
 			playSpellEffects(EffectPosition.BLOCK_DESTRUCTION, block.getLocation(), SpellData.NULL);
