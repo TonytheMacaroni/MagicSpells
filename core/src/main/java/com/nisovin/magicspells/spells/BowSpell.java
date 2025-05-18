@@ -173,8 +173,6 @@ public class BowSpell extends Spell {
 
 	@Override
 	public void turnOff() {
-		super.turnOff();
-
 		hitListener = null;
 	}
 

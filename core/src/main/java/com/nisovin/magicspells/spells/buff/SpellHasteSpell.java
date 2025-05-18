@@ -1,8 +1,8 @@
 package com.nisovin.magicspells.spells.buff;
 
-import java.util.Map;
-import java.util.UUID;
-import java.util.HashMap;
+import java.util.*;
+
+import org.jetbrains.annotations.NotNull;
 
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -89,8 +89,8 @@ public class SpellHasteSpell extends BuffSpell {
 	}
 
 	@Override
-	protected void turnOff() {
-		entities.clear();
+	protected @NotNull Collection<UUID> getActiveEntities() {
+		return entities.keySet();
 	}
 
 	@EventHandler(priority = EventPriority.MONITOR)

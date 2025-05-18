@@ -1,8 +1,8 @@
 package com.nisovin.magicspells.spells.buff;
 
-import java.util.Map;
-import java.util.UUID;
-import java.util.HashMap;
+import java.util.*;
+
+import org.jetbrains.annotations.NotNull;
 
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -62,8 +62,8 @@ public class ManaRegenSpell extends BuffSpell {
 	}
 
 	@Override
-	protected void turnOff() {
-		players.clear();
+	protected @NotNull Collection<UUID> getActiveEntities() {
+		return players.keySet();
 	}
 
 	@EventHandler(priority = EventPriority.MONITOR)

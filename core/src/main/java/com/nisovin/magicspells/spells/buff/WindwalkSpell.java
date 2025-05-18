@@ -1,8 +1,8 @@
 package com.nisovin.magicspells.spells.buff;
 
-import java.util.Map;
-import java.util.UUID;
-import java.util.HashMap;
+import java.util.*;
+
+import org.jetbrains.annotations.NotNull;
 
 import io.papermc.paper.entity.TeleportFlag;
 
@@ -147,26 +147,23 @@ public class WindwalkSpell extends BuffSpell {
 		pl.setFlySpeed(flyData.oldFlySpeed());
 		pl.setFallDistance(0);
 
-		if (heightMonitor != null && players.isEmpty()) {
-			heightMonitor.stop();
-			heightMonitor = null;
-		}
+		if (heightMonitor == null || !players.isEmpty()) return;
+		heightMonitor.stop();
+		heightMonitor = null;
 	}
 
 	@Override
 	protected void turnOff() {
-		for (UUID id : players.keySet()) {
-			Player player = Bukkit.getPlayer(id);
-			if (player == null || !player.isValid()) continue;
-
-			turnOffBuff(player);
-		}
-
-		players.clear();
+		super.turnOff();
 
 		if (heightMonitor == null) return;
 		heightMonitor.stop();
 		heightMonitor = null;
+	}
+
+	@Override
+	protected @NotNull Collection<UUID> getActiveEntities() {
+		return players.keySet();
 	}
 
 	public boolean shouldCancelOnLand() {

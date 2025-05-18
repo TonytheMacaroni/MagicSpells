@@ -1,8 +1,8 @@
 package com.nisovin.magicspells.spells.buff;
 
-import java.util.Map;
-import java.util.UUID;
-import java.util.HashMap;
+import java.util.*;
+
+import org.jetbrains.annotations.NotNull;
 
 import org.bukkit.Fluid;
 import org.bukkit.Bukkit;
@@ -69,17 +69,14 @@ public class WaterwalkSpell extends BuffSpell {
 
 	@Override
 	protected void turnOff() {
-		for (UUID id : entities.keySet()) {
-			Player pl = Bukkit.getPlayer(id);
-			if (pl == null) continue;
-			if (!pl.isValid()) continue;
+		super.turnOff();
 
-			pl.setFlying(false);
-			if (pl.getGameMode() != GameMode.CREATIVE) pl.setAllowFlight(false);
-		}
-
-		entities.clear();
 		stopTicker();
+	}
+
+	@Override
+	protected @NotNull Collection<UUID> getActiveEntities() {
+		return entities.keySet();
 	}
 
 	private void startTicker() {

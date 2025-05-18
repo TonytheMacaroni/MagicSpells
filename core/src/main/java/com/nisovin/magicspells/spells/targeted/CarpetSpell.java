@@ -68,8 +68,6 @@ public class CarpetSpell extends TargetedSpell implements TargetedLocationSpell 
 
 	@Override
 	public void turnOff() {
-		super.turnOff();
-
 		for (Entry<Block, CarpetData> entry : blocks.entrySet()) {
 			entry.getKey().setType(entry.getValue().air());
 		}

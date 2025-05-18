@@ -1,13 +1,10 @@
 package com.nisovin.magicspells.spells.buff;
 
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-import java.util.List;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.*;
 
 import net.kyori.adventure.key.Key;
+
+import org.jetbrains.annotations.NotNull;
 
 import org.bukkit.entity.Entity;
 import org.bukkit.event.EventHandler;
@@ -137,8 +134,8 @@ public class ResistSpell extends BuffSpell {
 	}
 
 	@Override
-	protected void turnOff() {
-		entities.clear();
+	protected @NotNull Collection<UUID> getActiveEntities() {
+		return entities.keySet();
 	}
 
 	@EventHandler

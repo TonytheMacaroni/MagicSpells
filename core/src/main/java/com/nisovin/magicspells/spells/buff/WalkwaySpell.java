@@ -2,6 +2,8 @@ package com.nisovin.magicspells.spells.buff;
 
 import java.util.*;
 
+import org.jetbrains.annotations.NotNull;
+
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -76,9 +78,14 @@ public class WalkwaySpell extends BuffSpell {
 
 	@Override
 	protected void turnOff() {
-		entities.values().forEach(Platform::remove);
-		entities.clear();
+		super.turnOff();
+
 		unregisterListener();
+	}
+
+	@Override
+	protected @NotNull Collection<UUID> getActiveEntities() {
+		return entities.keySet();
 	}
 
 	private void registerListener() {

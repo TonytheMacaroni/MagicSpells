@@ -1,11 +1,8 @@
 package com.nisovin.magicspells.spells.buff;
 
-import java.util.Set;
-import java.util.Map;
-import java.util.UUID;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.ArrayList;
+import java.util.*;
+
+import org.jetbrains.annotations.NotNull;
 
 import org.bukkit.event.EventHandler;
 import org.bukkit.entity.LivingEntity;
@@ -85,8 +82,8 @@ public class ReflectSpell extends BuffSpell {
 	}
 
 	@Override
-	protected void turnOff() {
-		reflectors.clear();
+	protected @NotNull Collection<UUID> getActiveEntities() {
+		return reflectors.keySet();
 	}
 
 	@EventHandler(ignoreCancelled = true)

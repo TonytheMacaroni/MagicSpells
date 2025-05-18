@@ -1,9 +1,8 @@
 package com.nisovin.magicspells.spells.buff;
 
-import java.util.Set;
-import java.util.List;
-import java.util.UUID;
-import java.util.HashSet;
+import java.util.*;
+
+import org.jetbrains.annotations.NotNull;
 
 import org.bukkit.Bukkit;
 import org.bukkit.event.Event;
@@ -137,16 +136,8 @@ public class ArmorSpell extends BuffSpell {
 	}
 
 	@Override
-	protected void turnOff() {
-		for (UUID id : entities) {
-			Entity entity = Bukkit.getEntity(id);
-			if (entity == null || !entity.isValid()) continue;
-
-			EntityEquipment eq = ((LivingEntity) entity).getEquipment();
-			if (eq != null) removeArmor(eq);
-		}
-
-		entities.clear();
+	protected @NotNull Collection<UUID> getActiveEntities() {
+		return entities;
 	}
 
 	private void setArmor(EntityEquipment eq) {

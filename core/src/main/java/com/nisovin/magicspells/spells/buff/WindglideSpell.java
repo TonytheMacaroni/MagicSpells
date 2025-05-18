@@ -1,8 +1,8 @@
 package com.nisovin.magicspells.spells.buff;
 
-import java.util.Map;
-import java.util.UUID;
-import java.util.HashMap;
+import java.util.*;
+
+import org.jetbrains.annotations.NotNull;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -120,21 +120,14 @@ public class WindglideSpell extends BuffSpell {
 
 	@Override
 	protected void turnOff() {
-		for (EffectPosition pos : EffectPosition.values()) {
-			cancelEffectForAllPlayers(pos);
-		}
+		super.turnOff();
 
-		for (UUID id : entities.keySet()) {
-			Entity entity = Bukkit.getEntity(id);
-			if (!(entity instanceof LivingEntity livingEntity)) continue;
-			if (!entity.isValid()) continue;
-
-			livingEntity.setGliding(false);
-			turnOff(livingEntity);
-		}
-
-		entities.clear();
 		monitor.stop();
+	}
+
+	@Override
+	protected @NotNull Collection<UUID> getActiveEntities() {
+		return entities.keySet();
 	}
 
 	@EventHandler

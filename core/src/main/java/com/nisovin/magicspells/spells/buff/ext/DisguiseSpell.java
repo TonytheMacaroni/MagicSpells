@@ -1,12 +1,10 @@
 package com.nisovin.magicspells.spells.buff.ext;
 
-import java.util.Set;
-import java.util.UUID;
-import java.util.HashSet;
+import java.util.*;
 
-import org.bukkit.Bukkit;
+import org.jetbrains.annotations.NotNull;
+
 import org.bukkit.DyeColor;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.Villager;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.ItemStack;
@@ -206,13 +204,8 @@ public class DisguiseSpell extends BuffSpell {
 	}
 
 	@Override
-	protected void turnOff() {
-		for (UUID id : entities) {
-			Entity entity = Bukkit.getEntity(id);
-			if (entity == null) continue;
-			DisguiseAPI.undisguiseToAll(entity);
-		}
-		entities.clear();
+	protected @NotNull Collection<UUID> getActiveEntities() {
+		return entities;
 	}
 
 	public Set<UUID> getEntities() {

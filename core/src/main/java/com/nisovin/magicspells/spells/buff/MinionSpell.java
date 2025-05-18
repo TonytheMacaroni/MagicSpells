@@ -3,6 +3,8 @@ package com.nisovin.magicspells.spells.buff;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.jetbrains.annotations.NotNull;
+
 import com.google.common.collect.Multimap;
 
 import org.bukkit.Bukkit;
@@ -341,12 +343,8 @@ public class MinionSpell extends BuffSpell {
 	}
 
 	@Override
-	protected void turnOff() {
-		minions.values().forEach(Entity::remove);
-		minions.clear();
-
-		players.clear();
-		targets.clear();
+	protected @NotNull Collection<UUID> getActiveEntities() {
+		return minions.keySet();
 	}
 
 	@EventHandler

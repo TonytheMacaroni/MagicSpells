@@ -1,11 +1,8 @@
 package com.nisovin.magicspells.spells.buff;
 
-import java.util.Set;
-import java.util.Map;
-import java.util.UUID;
-import java.util.List;
-import java.util.HashSet;
-import java.util.HashMap;
+import java.util.*;
+
+import org.jetbrains.annotations.NotNull;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -78,19 +75,24 @@ public class LifewalkSpell extends BuffSpell {
 	public void turnOffBuff(LivingEntity entity) {
 		entities.remove(entity.getUniqueId());
 		if (!entities.isEmpty()) return;
+
 		if (grower == null) return;
-		
 		grower.stop();
 		grower = null;
 	}
 	
 	@Override
 	protected void turnOff() {
-		entities.clear();
+		super.turnOff();
+
 		if (grower == null) return;
-		
 		grower.stop();
 		grower = null;
+	}
+
+	@Override
+	protected @NotNull Collection<UUID> getActiveEntities() {
+		return entities;
 	}
 
 	public Set<UUID> getEntities() {

@@ -1,8 +1,8 @@
 package com.nisovin.magicspells.spells.buff;
 
-import java.util.Map;
-import java.util.UUID;
-import java.util.HashMap;
+import java.util.*;
+
+import org.jetbrains.annotations.NotNull;
 
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
@@ -88,19 +88,24 @@ public class FlamewalkSpell extends BuffSpell {
 	public void turnOffBuff(LivingEntity entity) {
 		entities.remove(entity.getUniqueId());
 		if (!entities.isEmpty()) return;
-		if (burner == null) return;
 
+		if (burner == null) return;
 		burner.stop();
 		burner = null;
 	}
 
 	@Override
 	protected void turnOff() {
-		entities.clear();
-		if (burner == null) return;
+		super.turnOff();
 
+		if (burner == null) return;
 		burner.stop();
 		burner = null;
+	}
+
+	@Override
+	protected @NotNull Collection<UUID> getActiveEntities() {
+		return entities.keySet();
 	}
 
 	private record FlamewalkData(SpellData spellData, boolean checkPlugins, double radius, boolean constantRadius, int fireTicks, boolean constantFireTicks) {

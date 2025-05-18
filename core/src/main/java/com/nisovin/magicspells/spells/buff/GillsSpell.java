@@ -1,11 +1,9 @@
 package com.nisovin.magicspells.spells.buff;
 
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-import java.util.HashMap;
+import java.util.*;
 
-import org.bukkit.Bukkit;
+import org.jetbrains.annotations.NotNull;
+
 import org.bukkit.Material;
 import org.bukkit.event.Event;
 import org.bukkit.entity.Entity;
@@ -117,24 +115,16 @@ public class GillsSpell extends BuffSpell {
 	@Override
 	public void turnOffBuff(LivingEntity entity) {
 		GillData data = entities.remove(entity.getUniqueId());
-		if (data != null && data.headEffect) {
-			EntityEquipment eq = entity.getEquipment();
-			if (eq == null) return;
+		if (data == null || !data.headEffect) return;
 
-			eq.setHelmet(data.helmet);
-		}
+		EntityEquipment eq = entity.getEquipment();
+		if (eq != null) eq.setHelmet(data.helmet);
+
 	}
 
 	@Override
-	protected void turnOff() {
-		for (UUID uuid : entities.keySet()) {
-			Entity entity = Bukkit.getEntity(uuid);
-			if (!(entity instanceof LivingEntity livingEntity) || !livingEntity.isValid()) continue;
-
-			turnOffBuff(livingEntity);
-		}
-
-		entities.clear();
+	protected @NotNull Collection<UUID> getActiveEntities() {
+		return entities.keySet();
 	}
 
 	@EventHandler(ignoreCancelled = true)
