@@ -405,7 +405,7 @@ public abstract class BuffSpell extends TargetedSpell implements TargetedEntityS
 	protected abstract void turnOffBuff(LivingEntity entity);
 
 	/**
-	 * The {@link BuffSpell} implementation of this method handles running {@link BuffSpell#turnOff(LivingEntity)} for entities.
+	 * The {@link BuffSpell} implementation of this method handles running {@link BuffSpell#turnOff(LivingEntity)} for entities in {@link BuffSpell#getActiveEntities()}.
 	 */
 	@Override
 	@MustBeInvokedByOverriders
@@ -423,7 +423,9 @@ public abstract class BuffSpell extends TargetedSpell implements TargetedEntityS
 	}
 
 	@NotNull
-	protected abstract Collection<UUID> getActiveEntities();
+	protected Collection<UUID> getActiveEntities() {
+		return Collections.emptyList();
+	}
 
 	public boolean isTargeted() {
 		return targeted;
