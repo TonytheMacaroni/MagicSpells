@@ -340,7 +340,7 @@ public class MenuSpell extends TargetedSpell implements TargetedEntitySpell, Tar
 		PostClickState state = castSpells(menu, event.getCurrentItem(), event.getClick());
 
 		if (state == PostClickState.CLOSE) {
-			MagicSpells.scheduleDelayedTask(player::closeInventory, 0);
+			if (player.getOpenInventory() == view) player.closeInventory();
 			return;
 		}
 

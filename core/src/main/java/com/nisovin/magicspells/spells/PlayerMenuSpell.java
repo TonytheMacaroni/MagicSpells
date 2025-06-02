@@ -288,7 +288,7 @@ public class PlayerMenuSpell extends TargetedSpell implements TargetedEntitySpel
 
 			if (menu.stayOpen) item.setItemMeta(meta);
 			else {
-				opener.closeInventory();
+				if (opener.getOpenInventory() == view) opener.closeInventory();
 				playSpellEffects(EffectPosition.DISABLED, opener, menu.data);
 			}
 
@@ -309,7 +309,7 @@ public class PlayerMenuSpell extends TargetedSpell implements TargetedEntitySpel
 
 			if (menu.stayOpen) item.setItemMeta(meta);
 			else {
-				opener.closeInventory();
+				if (opener.getOpenInventory() == view) opener.closeInventory();
 				playSpellEffects(EffectPosition.DISABLED, opener, menu.data);
 			}
 
@@ -331,7 +331,7 @@ public class PlayerMenuSpell extends TargetedSpell implements TargetedEntitySpel
 
 		if (menu.stayOpen) open(opener, menu);
 		else {
-			opener.closeInventory();
+			if (opener.getOpenInventory() == view) opener.closeInventory();
 			playSpellEffects(EffectPosition.DISABLED, opener, menu.data);
 		}
 	}
