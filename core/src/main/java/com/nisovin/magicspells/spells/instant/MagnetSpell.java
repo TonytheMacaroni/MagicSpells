@@ -1,10 +1,14 @@
 package com.nisovin.magicspells.spells.instant;
 
+import java.util.UUID;
 import java.util.Collection;
 
 import org.bukkit.Location;
-import org.bukkit.util.Vector;
+import org.bukkit.entity.Mob;
 import org.bukkit.entity.Item;
+import org.bukkit.util.Vector;
+import org.bukkit.entity.Player;
+import org.bukkit.entity.LivingEntity;
 
 import com.nisovin.magicspells.util.*;
 import com.nisovin.magicspells.MagicSpells;
@@ -12,6 +16,7 @@ import com.nisovin.magicspells.spells.InstantSpell;
 import com.nisovin.magicspells.util.config.ConfigData;
 import com.nisovin.magicspells.spelleffects.EffectPosition;
 import com.nisovin.magicspells.spells.TargetedLocationSpell;
+import com.nisovin.magicspells.spelleffects.effecttypes.ItemSprayEffect;
 
 import net.kyori.adventure.util.TriState;
 
@@ -65,6 +70,16 @@ public class MagnetSpell extends InstantSpell implements TargetedLocationSpell {
 
 		Collection<Item> items = location.getNearbyEntitiesByType(Item.class, radius, item -> {
 			if (!item.isValid() || item.getItemStack().isEmpty()) return false;
+			if (item.getPersistentDataContainer().has(ItemSprayEffect.MS_ITEM_SPRAY)) return false;
+
+			if (data.hasCaster()) {
+				LivingEntity caster = data.caster();
+				if (caster instanceof Mob && !item.canMobPickup()) return false;
+				if (caster instanceof Player player && (!item.canPlayerPickup() || !player.canSee(item))) return false;
+
+				UUID owner = item.getOwner();
+				if (owner != null && !owner.equals(caster.getUniqueId())) return false;
+			}
 
 			if (forcePickup) {
 				item.setPickupDelay(0);
