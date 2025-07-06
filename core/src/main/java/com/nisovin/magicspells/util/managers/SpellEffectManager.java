@@ -73,6 +73,7 @@ public class SpellEffectManager {
 		addSpellEffect(BossBarEffect.class);
 		addSpellEffect(BroadcastEffect.class);
 		addSpellEffect(CloudEffect.class);
+		addSpellEffect(CompleteUsingItemEffect.class);
 		addSpellEffect(DragonDeathEffect.class);
 		addSpellEffect(EffectLibEffect.class);
 		addSpellEffect(EffectLibEntityEffect.class);
@@ -97,6 +98,8 @@ public class SpellEffectManager {
 		addSpellEffect(SoundEffect.class);
 		addSpellEffect(SoundPersonalEffect.class);
 		addSpellEffect(SplashPotionEffect.class);
+		addSpellEffect(StartUsingItemEffect.class);
+		addSpellEffect(StopUsingItemEffect.class);
 		addSpellEffect(SwingHandEffect.class);
 		addSpellEffect(TitleEffect.class);
 		addSpellEffect(ToastEffect.class);
