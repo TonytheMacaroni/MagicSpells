@@ -886,9 +886,9 @@ public class MagicSpells extends JavaPlugin {
 		permissions.add(new Permission(Perm.ADVANCED_SCROLL.getNode(), PermissionDefault.FALSE));
 		advancedChildren.put(Perm.ADVANCED_SCROLL.getNode(), true);
 
-		boolean opsIgnoreReagents = config.getBoolean("general.ops-ignore-reagents", true);
-		boolean opsIgnoreCooldowns = config.getBoolean("general.ops-ignore-cooldowns", true);
-		boolean opsIgnoreCastTimes = config.getBoolean("general.ops-ignore-cast-times", true);
+		boolean opsIgnoreReagents = config.getBoolean("general.ops-ignore-reagents", false);
+		boolean opsIgnoreCooldowns = config.getBoolean("general.ops-ignore-cooldowns", false);
+		boolean opsIgnoreCastTimes = config.getBoolean("general.ops-ignore-cast-times", false);
 
 		// Op permissions
 		permissions.add(new Permission(

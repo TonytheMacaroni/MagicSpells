@@ -121,9 +121,9 @@ str-console-name: Admin
 str-xp-auto-learned: You have learned the %s spell!
 allow-anticheat-integrations: false
 buff-check-interval: 1
-ops-ignore-reagents: true
-ops-ignore-cooldowns: true
-ops-ignore-cast-times: true
+ops-ignore-reagents: false
+ops-ignore-cooldowns: false
+ops-ignore-cast-times: false
 hide-magic-items-tooltips: false
 enable-magic-xp: false
 enable-dance-casting: true
