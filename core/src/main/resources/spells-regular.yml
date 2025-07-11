@@ -1149,7 +1149,7 @@ silence:
     prevent-chat: false
     prevent-commands: false
     duration: 200
-    allowed-spells:
+    spells:
         - list
         - help
     cost: [mana 15]
