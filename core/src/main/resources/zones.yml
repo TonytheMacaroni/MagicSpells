@@ -5,7 +5,7 @@ zone1:
     point1: -30,0,-30
     point2: 30,128,30
     message: An anti-magic aura makes your spell fizzle.
-    allowed-spells:
+    spells:
         - list
         - help
 zone2:
@@ -14,7 +14,7 @@ zone2:
     type: worldguard
     region: arena
     message: You cannot use that spell in the arena.
-    disallowed-spells:
+    denied-spells:
         - blink
         - gate
         - mark

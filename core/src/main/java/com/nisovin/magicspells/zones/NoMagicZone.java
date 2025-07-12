@@ -51,9 +51,7 @@ public abstract class NoMagicZone implements Comparable<NoMagicZone> {
 		if (!inZone(location)) return ZoneCheckResult.IGNORED;
 		if (disallowAll) return ZoneCheckResult.DENY;
 		if (allowAll) return ZoneCheckResult.ALLOW;
-		if (!spellFilter.check(spell)) return ZoneCheckResult.DENY;
-		if (spellFilter.check(spell)) return ZoneCheckResult.ALLOW;
-		return ZoneCheckResult.IGNORED;
+		return spellFilter.check(spell) ? ZoneCheckResult.ALLOW : ZoneCheckResult.DENY;
 	}
 	
 	public abstract boolean inZone(Location location);
