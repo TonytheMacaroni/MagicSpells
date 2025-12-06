@@ -1,7 +1,6 @@
 package com.nisovin.magicspells.spells.passive;
 
 import java.util.Set;
-import java.util.HashSet;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -13,10 +12,13 @@ import org.bukkit.inventory.SmithingInventory;
 import org.bukkit.event.inventory.PrepareSmithingEvent;
 
 import com.nisovin.magicspells.util.Name;
-import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.util.OverridePriority;
+import com.nisovin.magicspells.util.conversion.Conversion;
+import com.nisovin.magicspells.util.conversion.Converters;
 import com.nisovin.magicspells.util.magicitems.MagicItems;
 import com.nisovin.magicspells.util.magicitems.MagicItemData;
+import com.nisovin.magicspells.util.conversion.ConversionSource;
+import com.nisovin.magicspells.util.conversion.ConversionTarget;
 import com.nisovin.magicspells.spells.passive.util.PassiveListener;
 import com.nisovin.magicspells.util.magicitems.MagicItemDataParser;
 
@@ -34,58 +36,33 @@ public class SmithListener extends PassiveListener {
 
 		if (split.length > 0) {
 			if (!split[0].equals("any")) {
-				String[] items = split[0].split(MagicItemDataParser.DATA_REGEX);
-				firstItem = new HashSet<>();
-
-				for (String item : items) {
-					MagicItemData itemData = MagicItems.getMagicItemDataFromString(item);
-					if (itemData == null) {
-						MagicSpells.error("Invalid magic item '" + item + "' in smith trigger on passive spell '" + passiveSpell.getInternalName() + "'.");
-						continue;
-					}
-
-					firstItem.add(itemData);
-				}
+				firstItem = Conversion.convert(
+					ConversionSource.split(split[0], MagicItemDataParser.DATA_REGEX_PATTERN),
+					Converters.MAGIC_ITEM_DATA,
+					ConversionTarget.set(true)
+				);
 			}
 		}
 
 		if (split.length > 1) {
 			if (!split[1].equals("any")) {
-				String[] items = split[1].split(MagicItemDataParser.DATA_REGEX);
-				secondItem = new HashSet<>();
-
-				for (String item : items) {
-					MagicItemData itemData = MagicItems.getMagicItemDataFromString(item);
-					if (itemData == null) {
-						MagicSpells.error("Invalid magic item '" + item + "' in smith trigger on passive spell '" + passiveSpell.getInternalName() + "'.");
-						continue;
-					}
-
-					secondItem.add(itemData);
-				}
+				secondItem = Conversion.convert(
+					ConversionSource.split(split[1], MagicItemDataParser.DATA_REGEX_PATTERN),
+					Converters.MAGIC_ITEM_DATA,
+					ConversionTarget.set(true)
+				);
 			}
 		}
 
 		if (split.length > 2) {
 			if (!split[2].equals("any")) {
-				String[] items = split[2].split(MagicItemDataParser.DATA_REGEX);
-				resultItem = new HashSet<>();
-
-				for (String item : items) {
-					MagicItemData itemData = MagicItems.getMagicItemDataFromString(item);
-					if (itemData == null) {
-						MagicSpells.error("Invalid magic item '" + item + "' in smith trigger on passive spell '" + passiveSpell.getInternalName() + "'.");
-						continue;
-					}
-
-					resultItem.add(itemData);
-				}
+				resultItem = Conversion.convert(
+					ConversionSource.split(split[2], MagicItemDataParser.DATA_REGEX_PATTERN),
+					Converters.MAGIC_ITEM_DATA,
+					ConversionTarget.set(true)
+				);
 			}
 		}
-
-		if (firstItem != null && firstItem.isEmpty()) firstItem = null;
-		if (secondItem != null && secondItem.isEmpty()) secondItem = null;
-		if (resultItem != null && resultItem.isEmpty()) resultItem = null;
 	}
 
 	@OverridePriority

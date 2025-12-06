@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.function.Predicate;
 
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.util.Vector;
 import org.bukkit.entity.Entity;
 import org.bukkit.NamespacedKey;
@@ -21,6 +22,7 @@ import org.bukkit.persistence.PersistentDataType;
 import com.nisovin.magicspells.util.*;
 import com.nisovin.magicspells.Subspell;
 import com.nisovin.magicspells.MagicSpells;
+import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.spells.InstantSpell;
 import com.nisovin.magicspells.util.config.ConfigData;
 import com.nisovin.magicspells.events.SpellTargetEvent;
@@ -73,10 +75,6 @@ public class BlockBeamSpell extends InstantSpell implements TargetedLocationSpel
 	private Subspell endSpell;
 	private Subspell groundSpell;
 
-	private final String hitSpellName;
-	private final String endSpellName;
-	private final String groundSpellName;
-
 	private NoMagicZoneManager zoneManager;
 
 	public BlockBeamSpell(MagicConfig config, String spellName) {
@@ -84,10 +82,7 @@ public class BlockBeamSpell extends InstantSpell implements TargetedLocationSpel
 
 		entities = new HashSet<>();
 
-		String item = getConfigString("block-type", "stone");
-		MagicItem magicItem = MagicItems.getMagicItemFromString(item);
-		if (magicItem != null && magicItem.getItemStack() != null) headItem = magicItem.getItemStack();
-		else MagicSpells.error("BlockBeamSpell '" + internalName + "' has an invalid 'block-type' defined!");
+		headItem = getConfigItemStack("block-type", new ItemStack(Material.STONE));
 
 		relativeOffset = getConfigDataVector("relative-offset", new Vector(0, 0.5, 0));
 		targetRelativeOffset = getConfigDataVector("target-relative-offset", new Vector(0, 0.5, 0));
@@ -118,27 +113,16 @@ public class BlockBeamSpell extends InstantSpell implements TargetedLocationSpel
 		changePitch = getConfigDataBoolean("change-pitch", true);
 		stopOnHitEntity = getConfigDataBoolean("stop-on-hit-entity", false);
 		stopOnHitGround = getConfigDataBoolean("stop-on-hit-ground", false);
-
-		hitSpellName = getConfigString("spell", "");
-		endSpellName = getConfigString("spell-on-end", "");
-		groundSpellName = getConfigString("spell-on-hit-ground", "");
 	}
 
 	@Override
 	public void initialize() {
 		super.initialize();
 
-		String error = "BlockBeamSpell '" + internalName + "' has an invalid '%s' defined!";
-		hitSpell = initSubspell(hitSpellName,
-				error.formatted("spell"),
-				true);
-		endSpell = initSubspell(endSpellName,
-				error.formatted("spell-on-end"),
-				true);
-		groundSpell = initSubspell(groundSpellName,
-				error.formatted("spell-on-hit-ground"),
-				true);
-		
+		hitSpell = initSubspell("spell", "", true);
+		endSpell = initSubspell("spell-on-end", "", true);
+		groundSpell = initSubspell("spell-on-hit-ground", "", true);
+
 		zoneManager = MagicSpells.getNoMagicZoneManager();
 	}
 

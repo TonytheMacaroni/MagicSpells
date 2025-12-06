@@ -28,10 +28,10 @@ public class AlternativeReaderManager {
 	
 	public static ItemStack deserialize(ConfigurationSection configurationSection) {
 		if (configurationSection == null) return null;
-		
+
 		ItemConfigTransformer transformer = getReader(configurationSection.getString(KEY_PROCESSOR));
 		if (transformer == null) return null;
-		
+
 		return transformer.deserialize(configurationSection);
 	}
 	
@@ -40,10 +40,10 @@ public class AlternativeReaderManager {
 	public static ConfigurationSection serialize(String processor, ItemStack itemStack) {
 		ItemConfigTransformer serializer = getReader(processor);
 		if (serializer == null) return null;
-		
+
 		ConfigurationSection ret = serializer.serialize(itemStack);
 		if (ret == null) return null;
-		
+
 		// Apply the processor key to the section here to reduce code in the processors
 		ret.set(KEY_PROCESSOR, serializer.getReaderKey());
 		return ret;

@@ -46,20 +46,12 @@ public class NovaSpell extends TargetedSpell implements TargetedLocationSpell, T
 	private Subspell locationSpell;
 	private Subspell spellOnWaveRemove;
 
-	private final String spellOnEndName;
-	private final String locationSpellName;
-	private final String spellOnWaveRemoveName;
-
 	public NovaSpell(MagicConfig config, String spellName) {
 		super(config, spellName);
 
 		blockData = getConfigDataBlockData("type", Bukkit.createBlockData(Material.WATER));
 
 		relativeOffset = getConfigDataVector("relative-offset", new Vector());
-
-		locationSpellName = getConfigString("spell", "");
-		spellOnEndName = getConfigString("spell-on-end", "");
-		spellOnWaveRemoveName = getConfigString("spell-on-wave-remove", "");
 
 		radius = getConfigDataInt("radius", 3);
 		startRadius = getConfigDataInt("start-radius", 0);
@@ -73,23 +65,15 @@ public class NovaSpell extends TargetedSpell implements TargetedLocationSpell, T
 		pointBlank = getConfigDataBoolean("point-blank", true);
 		circleShape = getConfigDataBoolean("circle-shape", false);
 		removePreviousBlocks = getConfigDataBoolean("remove-previous-blocks", true);
-
 	}
 
 	@Override
 	public void initialize() {
 		super.initialize();
 
-		String error = "NovaSpell " + internalName + " has an invalid '%s' defined!";
-		locationSpell = initSubspell(locationSpellName,
-				error.formatted("spell"),
-				true);
-		spellOnWaveRemove = initSubspell(spellOnWaveRemoveName,
-				error.formatted("spell-on-wave-remove"),
-				true);
-		spellOnEnd = initSubspell(spellOnEndName,
-				error.formatted("spell-on-end"),
-				true);
+		locationSpell = initSubspell("spell", "", true);
+		spellOnWaveRemove = initSubspell("spell-on-wave-remove", "", true);
+		spellOnEnd = initSubspell("spell-on-end", "", true);
 	}
 
 	@Override

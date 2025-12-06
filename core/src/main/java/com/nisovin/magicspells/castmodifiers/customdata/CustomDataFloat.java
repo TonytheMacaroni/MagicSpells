@@ -25,7 +25,7 @@ public class CustomDataFloat extends CustomData {
 			float value = Float.parseFloat(data);
 			customData = spellData -> value;
 		} catch (NumberFormatException e) {
-			customData = FunctionData.build(data, Double::floatValue, 0f);
+			customData = FunctionData.build(data, Double::floatValue, 0f, true);
 			if (customData == null) {
 				invalidText = "Number or function is invalid.";
 				return;

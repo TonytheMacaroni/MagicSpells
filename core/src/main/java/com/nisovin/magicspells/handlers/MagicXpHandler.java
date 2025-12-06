@@ -25,6 +25,7 @@ import com.nisovin.magicspells.util.Util;
 import com.nisovin.magicspells.util.IntMap;
 import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.util.TimeUtil;
+import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.util.MagicConfig;
 import com.nisovin.magicspells.Spell.PostCastAction;
 import com.nisovin.magicspells.Spell.SpellCastState;
@@ -202,8 +203,7 @@ public class MagicXpHandler implements Listener {
 			}
 			xp.put(player.getName(), playerXp);
 		} catch (Exception e) {
-			MagicSpells.error("Error while loading player XP for player " + player.getName());
-			MagicSpells.handleException(e);
+			MagicDebug.warn(e, "Error while loading player XP for player '%s'.", player);
 		}
 	}
 	
@@ -238,8 +238,7 @@ public class MagicXpHandler implements Listener {
 		try {
 			conf.save(file);
 		} catch (Exception e) {
-			MagicSpells.error("Error while saving player XP for player " + player);
-			MagicSpells.handleException(e);
+			MagicDebug.warn("Error while saving player XP for player '%s'.", player);
 		}
 	}
 	

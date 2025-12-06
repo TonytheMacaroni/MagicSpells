@@ -1,7 +1,6 @@
 package com.nisovin.magicspells.spells.passive;
 
 import java.util.Set;
-import java.util.HashSet;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -12,7 +11,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.event.enchantment.EnchantItemEvent;
 
 import com.nisovin.magicspells.util.Name;
-import com.nisovin.magicspells.MagicSpells;
+import com.nisovin.magicspells.util.conversion.*;
 import com.nisovin.magicspells.util.OverridePriority;
 import com.nisovin.magicspells.util.magicitems.MagicItems;
 import com.nisovin.magicspells.util.magicitems.MagicItemData;
@@ -28,16 +27,11 @@ public class EnchantListener extends PassiveListener {
 	public void initialize(@NotNull String var) {
 		if (var.isEmpty()) return;
 
-		items = new HashSet<>();
-		for (String item : var.split(MagicItemDataParser.DATA_REGEX)) {
-			MagicItemData itemData = MagicItems.getMagicItemDataFromString(item);
-			if (itemData == null) {
-				MagicSpells.error("Invalid magic item '" + item + "' in enchant trigger on passive spell '" + passiveSpell.getInternalName() + "'.");
-				continue;
-			}
-			items.add(itemData);
-		}
-		if (items.isEmpty()) items = null;
+		items = Conversion.convert(
+			ConversionSource.split(var, MagicItemDataParser.DATA_REGEX_PATTERN),
+			Converters.MAGIC_ITEM_DATA,
+			ConversionTarget.set(true)
+		);
 	}
 
 	@OverridePriority

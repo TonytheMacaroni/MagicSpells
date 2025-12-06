@@ -12,6 +12,7 @@ import org.bukkit.entity.LivingEntity;
 import com.nisovin.magicspells.Spell;
 import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.util.SpellData;
+import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.spells.BuffSpell;
 import com.nisovin.magicspells.util.MagicConfig;
 import com.nisovin.magicspells.util.SpellFilter;
@@ -48,7 +49,7 @@ public class ImpactRecordSpell extends BuffSpell {
 		super.initializeVariables();
 		
 		if (variableName == null || MagicSpells.getVariableManager().getVariable(variableName) == null) {
-			MagicSpells.error("ImpactRecordSpell '" + internalName + "' has an invalid variable-name defined!");
+			MagicDebug.warn("Invalid 'variable-name' value '%s' specified %s.", variableName, MagicDebug.resolveFullPath());
 			variableName = null;
 		}
 	}

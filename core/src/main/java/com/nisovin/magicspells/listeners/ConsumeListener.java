@@ -10,6 +10,7 @@ import org.bukkit.event.player.PlayerItemConsumeEvent;
 
 import com.nisovin.magicspells.Spell;
 import com.nisovin.magicspells.MagicSpells;
+import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.util.CastItem;
 import com.nisovin.magicspells.util.SpellData;
 import com.nisovin.magicspells.Spell.SpellCastState;
@@ -25,7 +26,8 @@ public class ConsumeListener implements Listener {
 			for (CastItem item : spell.getConsumeCastItems()) {
 				Spell old = consumeCastItems.put(item, spell);
 				if (old == null) continue;
-				MagicSpells.error("The spell '" + spell.getInternalName() + "' has same consume-cast-item as '" + old.getInternalName() + "'!");
+
+				MagicDebug.warn("The spell '%s' %s has the same 'consume-cast-item' as '%s'.", spell.getInternalName(), MagicDebug.resolveFullPath(), old.getInternalName());
 			}
 		}
 	}

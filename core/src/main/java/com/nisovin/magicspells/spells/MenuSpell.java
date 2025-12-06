@@ -22,11 +22,11 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 
 import net.kyori.adventure.text.Component;
 
-import co.aikar.commands.ACFUtil;
-
 import com.nisovin.magicspells.util.*;
 import com.nisovin.magicspells.Subspell;
 import com.nisovin.magicspells.MagicSpells;
+import com.nisovin.magicspells.debug.DebugPath;
+import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.variables.Variable;
 import com.nisovin.magicspells.util.config.ConfigData;
 import com.nisovin.magicspells.castmodifiers.ModifierSet;
@@ -126,12 +126,6 @@ public class MenuSpell extends TargetedSpell implements TargetedEntitySpell, Tar
 			option.item = item;
 			option.items = items;
 			option.quantity = getConfigString(path + "quantity", "");
-			option.spellName = getConfigString(path + "spell", "");
-			option.spellRightName = getConfigString(path + "spell-right", "");
-			option.spellSneakLeftName = getConfigString(path + "spell-sneak-left", "");
-			option.spellSneakRightName = getConfigString(path + "spell-sneak-right", "");
-			option.spellDropName = getConfigString(path + "spell-drop", "");
-			option.spellSwapName = getConfigString(path + "spell-swap", "");
 			option.power = getConfigFloat(path + "power", 1);
 			option.modifierList = getConfigStringList(path + "modifiers", null);
 			option.stayOpen = getConfigBoolean(path + "stay-open", false);
@@ -142,38 +136,42 @@ public class MenuSpell extends TargetedSpell implements TargetedEntitySpell, Tar
 	}
 
 	@Override
-	public void initializeModifiers() {
-		super.initializeModifiers();
+	public void initialize() {
+		super.initialize();
 
-		for (MenuOption option : options.values()) {
-			if (option.modifierList != null) option.menuOptionModifiers = new ModifierSet(option.modifierList, this);
+		try (var _ = MagicDebug.section("Initializing 'options'.")
+			.pushPath("options", DebugPath.Type.SECTION)
+		) {
+			for (MenuOption option : options.values()) {
+			    try (var _ = MagicDebug.section("Initializing subspells for option '%s'.", option.menuOptionName)
+					.pushPath(option.menuOptionName, DebugPath.Type.SECTION)
+				) {
+					String path = "options." + option.menuOptionName + ".";
+					option.spell = initSubspell(path + "spell", "", true);
+					option.spellRight = initSubspell(path + "spell-right", "", true);
+					option.spellSneakLeft = initSubspell(path + "spell-sneak-left", "", true);
+					option.spellSneakRight = initSubspell(path + "spell-sneak-right", "", true);
+					option.spellDrop = initSubspell(path + "spell-drop", "", true);
+					option.spellSwap = initSubspell(path + "spell-swap", "", true);
+				}
+			}
 		}
 	}
 
 	@Override
-	public void initialize() {
-		super.initialize();
+	public void initializeModifiers() {
+		super.initializeModifiers();
 
-		for (MenuOption option : options.values()) {
-			String error = "MenuSpell '" + internalName + "' has an invalid '%s' defined for: " + option.menuOptionName;
-			option.spell = initSubspell(option.spellName,
-					error.formatted("spell"),
-					true);
-			option.spellRight = initSubspell(option.spellRightName,
-					error.formatted("spell-right"),
-					true);
-			option.spellSneakLeft = initSubspell(option.spellSneakLeftName,
-					error.formatted("spell-sneak-left"),
-					true);
-			option.spellSneakRight = initSubspell(option.spellSneakRightName,
-					error.formatted("spell-sneak-right"),
-					true);
-			option.spellDrop = initSubspell(option.spellDropName,
-					error.formatted("spell-drop"),
-					true);
-			option.spellSwap = initSubspell(option.spellSwapName,
-					error.formatted("spell-swap"),
-					true);
+		try (var _ = MagicDebug.section("Initializing option modifiers.")
+			.pushPath("options", DebugPath.Type.SECTION)
+		) {
+			for (MenuOption option : options.values()) {
+				try (var _ = MagicDebug.section("Initializing 'modifiers' for option '%s'.", option.menuOptionName)
+					.pushPath(option.menuOptionName, DebugPath.Type.SECTION)
+				) {
+					option.menuOptionModifiers = initModifierSet("options." + option.menuOptionName + ".modifiers");
+				}
+			}
 		}
 	}
 
@@ -286,8 +284,13 @@ public class MenuSpell extends TargetedSpell implements TargetedEntitySpell, Tar
 
 			int quantity;
 			Variable variable = MagicSpells.getVariableManager().getVariable(option.quantity);
-			if (variable == null) quantity = ACFUtil.parseInt(option.quantity, 1);
-			else quantity = (int) Math.round(variable.getValue(opener));
+			if (variable == null) {
+				try {
+					quantity = Integer.parseInt(option.quantity);
+				} catch (NumberFormatException e) {
+					quantity = 1;
+				}
+			} else quantity = (int) Math.round(variable.getValue(opener));
 			item.setAmount(quantity);
 
 			// Set item for all defined slots.
@@ -438,12 +441,6 @@ public class MenuSpell extends TargetedSpell implements TargetedEntitySpell, Tar
 		private ItemStack item;
 		private List<ItemStack> items;
 		private String quantity;
-		private String spellName;
-		private String spellRightName;
-		private String spellSneakLeftName;
-		private String spellSneakRightName;
-		private String spellDropName;
-		private String spellSwapName;
 		private Subspell spell;
 		private Subspell spellRight;
 		private Subspell spellSneakLeft;

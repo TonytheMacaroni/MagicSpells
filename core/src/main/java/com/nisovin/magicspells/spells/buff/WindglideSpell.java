@@ -28,9 +28,6 @@ public class WindglideSpell extends BuffSpell {
 	private Subspell glideSpell;
 	private Subspell collisionSpell;
 
-	private final String glideSpellName;
-	private final String collisionSpellName;
-
 	private final ConfigData<Boolean> constantHeight;
 	private final ConfigData<Boolean> constantVelocity;
 	private final ConfigData<Boolean> cancelOnCollision;
@@ -45,9 +42,6 @@ public class WindglideSpell extends BuffSpell {
 
 	public WindglideSpell(MagicConfig config, String spellName) {
 		super(config, spellName);
-
-		glideSpellName = getConfigString("spell", "");
-		collisionSpellName = getConfigString("collision-spell", "");
 
 		constantHeight = getConfigDataBoolean("constant-height", true);
 		constantVelocity = getConfigDataBoolean("constant-velocity", true);
@@ -69,13 +63,8 @@ public class WindglideSpell extends BuffSpell {
 	public void initialize() {
 		super.initialize();
 
-		String error = "WindglideSpell " + internalName + " has an invalid '%s' defined!";
-		glideSpell = initSubspell(glideSpellName,
-				error.formatted("spell"),
-				true);
-		collisionSpell = initSubspell(collisionSpellName,
-				error.formatted("collision-spell"),
-				true);
+		glideSpell = initSubspell("spell", "", true);
+		collisionSpell = initSubspell("collision-spell", "", true);
 	}
 
 	@Override

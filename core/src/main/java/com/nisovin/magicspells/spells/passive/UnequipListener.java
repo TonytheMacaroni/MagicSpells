@@ -32,15 +32,8 @@ public class UnequipListener extends PassiveListener {
 		if (var.isEmpty()) return;
 
 		for (String s : var.split(MagicItemDataParser.DATA_REGEX)) {
-			s = s.trim();
-
-			MagicItemData itemData = MagicItems.getMagicItemDataFromString(s);
-			if (itemData == null) {
-				MagicSpells.error("Invalid magic item '" + s + "' in unequip trigger on passive spell '" + passiveSpell.getInternalName() + "'");
-				continue;
-			}
-
-			items.add(itemData);
+			MagicItemData itemData = MagicItems.getMagicItemDataFromString(s.trim());
+			if (itemData != null) items.add(itemData);
 		}
 	}
 

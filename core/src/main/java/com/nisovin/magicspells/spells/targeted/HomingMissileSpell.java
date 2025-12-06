@@ -36,7 +36,6 @@ public class HomingMissileSpell extends TargetedSpell implements TargetedEntityS
 	private NoMagicZoneManager zoneManager;
 
 	private ModifierSet homingModifiers;
-	private List<String> homingModifiersStrings;
 
 	private final ConfigData<Vector> effectOffset;
 	private final ConfigData<Vector> relativeOffset;
@@ -48,13 +47,6 @@ public class HomingMissileSpell extends TargetedSpell implements TargetedEntityS
 	private final ConfigData<Boolean> stopOnHitGround;
 	private final ConfigData<Boolean> stopOnModifierFail;
 	private final ConfigData<Boolean> hitAirAfterDuration;
-
-	private final String hitSpellName;
-	private final String airSpellName;
-	private final String groundSpellName;
-	private final String modifierSpellName;
-	private final String durationSpellName;
-	private final String entityLocationSpellName;
 
 	private Subspell hitSpell;
 	private Subspell airSpell;
@@ -85,8 +77,6 @@ public class HomingMissileSpell extends TargetedSpell implements TargetedEntityS
 	public HomingMissileSpell(MagicConfig config, String spellName) {
 		super(config, spellName);
 
-		homingModifiersStrings = getConfigStringList("homing-modifiers", null);
-
 		effectOffset = getConfigDataVector("effect-offset", new Vector(0, 0, 0));
 		relativeOffset = getConfigDataVector("relative-offset", new Vector(0, 0.6, 0));
 		targetRelativeOffset = getConfigDataVector("target-relative-offset", new Vector(0, 0.6, 0));
@@ -97,13 +87,6 @@ public class HomingMissileSpell extends TargetedSpell implements TargetedEntityS
 		stopOnHitGround = getConfigDataBoolean("stop-on-hit-ground", false);
 		stopOnModifierFail = getConfigDataBoolean("stop-on-modifier-fail", true);
 		hitAirAfterDuration = getConfigDataBoolean("hit-air-after-duration", false);
-
-		hitSpellName = getConfigString("spell", "");
-		airSpellName = getConfigString("spell-on-hit-air", "");
-		groundSpellName = getConfigString("spell-on-hit-ground", "");
-		modifierSpellName = getConfigString("spell-on-modifier-fail", "");
-		durationSpellName = getConfigString("spell-after-duration", "");
-		entityLocationSpellName = getConfigString("spell-on-entity-location", "");
 
 		yOffset = getConfigDataDouble("y-offset", 0.6D);
 		maxDuration = getConfigDataDouble("max-duration", 20);
@@ -129,35 +112,19 @@ public class HomingMissileSpell extends TargetedSpell implements TargetedEntityS
 	public void initializeModifiers() {
 		super.initializeModifiers();
 
-		if (homingModifiersStrings != null && !homingModifiersStrings.isEmpty()) {
-			homingModifiers = new ModifierSet(homingModifiersStrings, this);
-			homingModifiersStrings = null;
-		}
+		homingModifiers = initModifierSet("homing-modifiers");
 	}
 
 	@Override
 	public void initialize() {
 		super.initialize();
 
-		String error = "HomingMissileSpell '" + internalName + "' has an invalid '%s' defined!";
-		hitSpell = initSubspell(hitSpellName,
-				error.formatted("spell"),
-				true);
-		groundSpell = initSubspell(groundSpellName,
-				error.formatted("spell-on-hit-ground"),
-				true);
-		airSpell = initSubspell(airSpellName,
-				error.formatted("spell-on-hit-air"),
-				true);
-		durationSpell = initSubspell(durationSpellName,
-				error.formatted("spell-after-duration"),
-				true);
-		modifierSpell = initSubspell(modifierSpellName,
-				error.formatted("spell-on-modifier-fail"),
-				true);
-		entityLocationSpell = initSubspell(entityLocationSpellName,
-				error.formatted("spell-on-entity-location"),
-				true);
+		hitSpell = initSubspell("spell", "", true);
+		groundSpell = initSubspell("spell-on-hit-ground", "", true);
+		airSpell = initSubspell("spell-on-hit-air", "", true);
+		durationSpell = initSubspell("spell-after-duration", "", true);
+		modifierSpell = initSubspell("spell-on-modifier-fail", "", true);
+		entityLocationSpell = initSubspell("spell-on-entity-location", "", true);
 
 		zoneManager = MagicSpells.getNoMagicZoneManager();
 	}

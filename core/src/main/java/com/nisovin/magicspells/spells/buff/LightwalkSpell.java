@@ -13,6 +13,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.event.player.PlayerMoveEvent;
 
+import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.util.Util;
 import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.util.SpellData;
@@ -44,9 +45,12 @@ public class LightwalkSpell extends BuffSpell {
 		if (blockList == null) return;
 		for (String str : blockList) {
 			Material material = Util.getMaterial(str);
-			if (material == null)
-				MagicSpells.error("LightwalkSpell " + internalName + " has an invalid block defined: " + str);
-			else allowedTypes.add(material);
+			if (material != null && material.isBlock()) {
+				allowedTypes.add(material);
+				continue;
+			}
+
+			MagicDebug.warn("Invalid block type '%s' defined %s.", str, MagicDebug.resolveFullPath());
 		}
 	}
 

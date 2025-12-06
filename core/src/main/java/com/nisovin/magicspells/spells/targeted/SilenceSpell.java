@@ -38,10 +38,6 @@ public class SilenceSpell extends TargetedSpell implements TargetedEntitySpell {
 	private final boolean notifyPassiveSpells;
 	private final ConfigData<Boolean> powerAffectsDuration;
 
-	private final String preventCastSpellName;
-	private final String preventChatSpellName;
-	private final String preventCommandSpellName;
-
 	private SpellFilter filter;
 
 	private Subspell preventCastSpell;
@@ -62,10 +58,6 @@ public class SilenceSpell extends TargetedSpell implements TargetedEntitySpell {
 		notifyPassiveSpells = getConfigBoolean("notify-passive-spells", true);
 		powerAffectsDuration = getConfigDataBoolean("power-affects-duration", true);
 
-		preventCastSpellName = getConfigString("spell-on-denied-cast", "");
-		preventChatSpellName = getConfigString("spell-on-denied-chat", "");
-		preventCommandSpellName = getConfigString("spell-on-denied-command", "");
-
 		if (preventChat) silenced = new ConcurrentHashMap<>();
 		else silenced = new HashMap<>();
 	}
@@ -74,23 +66,18 @@ public class SilenceSpell extends TargetedSpell implements TargetedEntitySpell {
 	public void initialize() {
 		super.initialize();
 
-		String error = "SilenceSpell '" + internalName + "' has an invalid '%s' defined!";
 		if (preventCast) {
-			preventCastSpell = initSubspell(preventCastSpellName,
-					error.formatted("spell-on-denied-cast"),
-					true);
+			preventCastSpell = initSubspell("spell-on-denied-cast", "", true);
 			registerEvents(new CastListener());
 		}
+
 		if (preventChat) {
-			preventChatSpell = initSubspell(preventChatSpellName,
-					error.formatted("spell-on-denied-chat"),
-					true);
+			preventChatSpell = initSubspell("spell-on-denied-chat", "", true);
 			registerEvents(new ChatListener());
 		}
+
 		if (preventCommands) {
-			preventCommandSpell = initSubspell(preventCommandSpellName,
-					error.formatted("spell-on-denied-command"),
-					true);
+			preventCommandSpell = initSubspell("spell-on-denied-command", "", true);
 			registerEvents(new CommandListener());
 		}
 

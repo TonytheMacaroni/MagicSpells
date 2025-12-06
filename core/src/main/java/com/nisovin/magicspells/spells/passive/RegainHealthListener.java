@@ -11,8 +11,11 @@ import org.bukkit.event.entity.EntityRegainHealthEvent;
 import org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason;
 
 import com.nisovin.magicspells.util.Name;
-import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.util.OverridePriority;
+import com.nisovin.magicspells.util.conversion.Conversion;
+import com.nisovin.magicspells.util.conversion.Converters;
+import com.nisovin.magicspells.util.conversion.ConversionSource;
+import com.nisovin.magicspells.util.conversion.ConversionTarget;
 import com.nisovin.magicspells.spells.passive.util.PassiveListener;
 
 @Name("regainhealth")
@@ -23,13 +26,12 @@ public class RegainHealthListener extends PassiveListener {
 	@Override
 	public void initialize(@NotNull String var) {
 		if (var.isEmpty()) return;
-		for (String datum : var.split(",")) {
-			try {
-				reasons.add(RegainReason.valueOf(datum.toUpperCase()));
-			} catch (IllegalArgumentException e) {
-				MagicSpells.error("Invalid health regain reason '" + datum + "' in regainhealth trigger on passive spell '" + passiveSpell.getName() + "'");
-			}
-		}
+
+		Conversion.convert(
+			ConversionSource.split(var, ","),
+			Converters.enumConverter(RegainReason.class),
+			ConversionTarget.addTo(reasons)
+		);
 	}
 
 	@OverridePriority

@@ -11,7 +11,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.event.entity.FoodLevelChangeEvent;
 
 import com.nisovin.magicspells.util.Name;
-import com.nisovin.magicspells.MagicSpells;
+import com.nisovin.magicspells.util.conversion.*;
 import com.nisovin.magicspells.util.OverridePriority;
 import com.nisovin.magicspells.util.magicitems.MagicItems;
 import com.nisovin.magicspells.util.magicitems.MagicItemData;
@@ -26,17 +26,12 @@ public class FoodLevelChangeListener extends PassiveListener {
 	@Override
 	public void initialize(@NotNull String var) {
 		if (var.isEmpty()) return;
-		for (String s : var.split(MagicItemDataParser.DATA_REGEX)) {
-			s = s.trim();
 
-			MagicItemData itemData = MagicItems.getMagicItemDataFromString(s);
-			if (itemData == null) {
-				MagicSpells.error("Invalid magic item '" + s + "' in foodlevelchange trigger on passive spell '" + passiveSpell.getInternalName() + "'");
-				continue;
-			}
-
-			items.add(itemData);
-		}
+		Conversion.convert(
+			ConversionSource.split(var, MagicItemDataParser.DATA_REGEX_PATTERN),
+			Converters.MAGIC_ITEM_DATA,
+			ConversionTarget.addTo(items)
+		);
 	}
 
 	@OverridePriority

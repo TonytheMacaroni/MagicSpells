@@ -68,10 +68,6 @@ public class MinionSpell extends BuffSpell {
 
 	private String minionName;
 
-	private final String spawnSpellName;
-	private final String deathSpellName;
-	private final String attackSpellName;
-
 	private Subspell spawnSpell;
 	private Subspell deathSpell;
 	private Subspell attackSpell;
@@ -143,7 +139,7 @@ public class MinionSpell extends BuffSpell {
 
 		List<?> attributeList = getConfigList("attributes", null);
 		if (attributeList != null && !attributeList.isEmpty())
-			attributes = AttributeHandler.getAttributeModifiers(attributeList, internalName);
+			attributes = AttributeHandler.getAttributeModifiers(attributeList, "attributes", internalName);
 
 		// Equipment
 		MagicItem magicMainHandItem = MagicItems.getMagicItemFromString(getConfigString("main-hand", ""));
@@ -200,9 +196,6 @@ public class MinionSpell extends BuffSpell {
 		bootsDropChance = getConfigFloat("boots-drop-chance", 0) / 100F;
 
 		minionName = getConfigString("minion-name", "");
-		spawnSpellName = getConfigString("spell-on-spawn", "");
-		deathSpellName = getConfigString("spell-on-death", "");
-		attackSpellName = getConfigString("spell-on-attack", "");
 
 		spawnOffset = getConfigDataVector("spawn-offset", new Vector(1, 0, 0));
 
@@ -218,7 +211,7 @@ public class MinionSpell extends BuffSpell {
 		preventCombust = getConfigBoolean("prevent-sun-burn", true);
 		powerAffectsHealth = getConfigDataBoolean("power-affects-health", false);
 
-		MagicSpells.getDeprecationManager().addDeprecation(this, BABY_DEPRECATION_NOTICE,
+		MagicSpells.getDeprecationManager().addDeprecation(BABY_DEPRECATION_NOTICE,
 			entityData != null && (!baby.isConstant() || baby.get())
 		);
 	}
@@ -227,16 +220,9 @@ public class MinionSpell extends BuffSpell {
 	public void initialize() {
 		super.initialize();
 
-		String error = "MinionSpell '" + internalName + "' has an invalid '%s' defined!";
-		spawnSpell = initSubspell(spawnSpellName,
-				error.formatted("spell-on-spawn"),
-				true);
-		attackSpell = initSubspell(attackSpellName,
-				error.formatted("spell-on-attack"),
-				true);
-		deathSpell = initSubspell(deathSpellName,
-				error.formatted("spell-on-death"),
-				true);
+		spawnSpell = initSubspell("spell-on-spawn", "", true);
+		attackSpell = initSubspell("spell-on-attack", "", true);
+		deathSpell = initSubspell("spell-on-death", "", true);
 	}
 
 	@Override

@@ -23,8 +23,12 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import com.nisovin.magicspells.util.Name;
 import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.util.OverridePriority;
+import com.nisovin.magicspells.util.conversion.Conversion;
+import com.nisovin.magicspells.util.conversion.Converters;
 import com.nisovin.magicspells.util.magicitems.MagicItems;
 import com.nisovin.magicspells.util.magicitems.MagicItemData;
+import com.nisovin.magicspells.util.conversion.ConversionSource;
+import com.nisovin.magicspells.util.conversion.ConversionTarget;
 import com.nisovin.magicspells.spells.passive.util.PassiveListener;
 import com.nisovin.magicspells.util.magicitems.MagicItemDataParser;
 
@@ -44,17 +48,11 @@ public class MissArrowListener extends PassiveListener {
 
 		if (var.isEmpty()) return;
 
-		for (String s : var.split(MagicItemDataParser.DATA_REGEX)) {
-			s = s.trim();
-
-			MagicItemData itemData = MagicItems.getMagicItemDataFromString(s);
-			if (itemData == null) {
-				MagicSpells.error("Invalid magic item '" + s + "' in missarrow trigger on passive spell '" + passiveSpell.getInternalName() + "'");
-				continue;
-			}
-
-			items.add(itemData);
-		}
+		Conversion.convert(
+			ConversionSource.split(var, MagicItemDataParser.DATA_REGEX_PATTERN),
+			Converters.MAGIC_ITEM_DATA,
+			ConversionTarget.addTo(items)
+		);
 	}
 
 	@Override

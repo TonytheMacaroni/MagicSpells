@@ -3,7 +3,6 @@ package com.nisovin.magicspells.spells.passive;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Set;
-import java.util.List;
 import java.util.EnumSet;
 import java.util.function.Predicate;
 
@@ -14,12 +13,12 @@ import org.bukkit.event.player.PlayerInputEvent;
 import org.bukkit.configuration.ConfigurationSection;
 
 import com.nisovin.magicspells.util.Name;
-import com.nisovin.magicspells.MagicSpells;
+import com.nisovin.magicspells.debug.MagicDebug;
+import com.nisovin.magicspells.util.conversion.*;
 import com.nisovin.magicspells.util.InputPredicate;
 import com.nisovin.magicspells.util.OverridePriority;
 import com.nisovin.magicspells.spells.passive.util.PassiveListener;
 
-@SuppressWarnings("UnstableApiUsage")
 @Name("input")
 public class InputListener extends PassiveListener {
 
@@ -31,58 +30,32 @@ public class InputListener extends PassiveListener {
 
 	@Override
 	public void initialize(@NotNull String var) {
-		MagicSpells.error("PassiveSpell '" + passiveSpell.getInternalName() + "' attempted to create a 'input' trigger using the string format, which it does not support.");
+		MagicDebug.warn("The 'damage' trigger does not have a string format: %s", MagicDebug.resolveFullPath());
 	}
 
 	@Override
 	public boolean initialize(@NotNull ConfigurationSection config) {
-		List<String> onPressStrings = config.getStringList("on-press");
-		for (String typeString : onPressStrings) {
-			InputType type;
-			try {
-				type = InputType.valueOf(typeString.toUpperCase());
-			} catch (IllegalArgumentException e) {
-				MagicSpells.error("Invalid input type '" + typeString + "' specified in 'on-press' in 'input' trigger on passive spell '" + passiveSpell.getInternalName() + "'.");
-				return false;
-			}
+		if (initInputTypes(config, "on-press", onPress)) return false;
+		if (initInputTypes(config, "on-release", onRelease)) return false;
 
-			onPress.add(type);
-		}
+		oldInputPredicate = InputPredicate.fromConfig(config, "old-input");
+		if (oldInputPredicate == null && config.isSet("old-input")) return false;
 
-		List<String> onReleaseStrings = config.getStringList("on-release");
-		for (String typeString : onReleaseStrings) {
-			InputType type;
-			try {
-				type = InputType.valueOf(typeString.toUpperCase());
-			} catch (IllegalArgumentException e) {
-				MagicSpells.error("Invalid input type '" + typeString + "' specified in 'on-release' in 'input' trigger on passive spell '" + passiveSpell.getInternalName() + "'.");
-				return false;
-			}
-
-			onRelease.add(type);
-		}
-
-		String oldInputString = config.getString("old-input");
-		if (oldInputString != null) {
-			oldInputPredicate = InputPredicate.fromString(oldInputString);
-
-			if (oldInputPredicate == null) {
-				MagicSpells.error("Invalid value '" + oldInputString + "' specified for 'old-input' in 'input' trigger on passive spell '" + passiveSpell.getInternalName() + "'.");
-				return false;
-			}
-		}
-
-		String newInputString = config.getString("new-input");
-		if (newInputString != null) {
-			newInputPredicate = InputPredicate.fromString(newInputString);
-
-			if (newInputPredicate == null) {
-				MagicSpells.error("Invalid value '" + newInputString + "' specified for 'new-input' in 'input' trigger on passive spell '" + passiveSpell.getInternalName() + "'.");
-				return false;
-			}
-		}
+		newInputPredicate = InputPredicate.fromConfig(config, "new-input");
+		if (newInputPredicate == null && config.isSet("new-input")) return false;
 
 		return true;
+	}
+
+	private static boolean initInputTypes(ConfigurationSection config, String path, Set<InputType> inputTypes) {
+		ConversionResult<Void> result = Conversion.<Object, InputType, Void>single()
+			.source(ConversionSource.listFromConfig(config, path))
+			.converter(Converters.enumConverter(InputType.class))
+			.target(ConversionTarget.addTo(inputTypes))
+			.invalidateOnError()
+			.convert();
+
+		return result.isInvalid();
 	}
 
 	@OverridePriority

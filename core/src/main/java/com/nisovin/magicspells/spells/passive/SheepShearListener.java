@@ -12,8 +12,11 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.player.PlayerShearEntityEvent;
 
 import com.nisovin.magicspells.util.Name;
-import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.util.OverridePriority;
+import com.nisovin.magicspells.util.conversion.Conversion;
+import com.nisovin.magicspells.util.conversion.Converters;
+import com.nisovin.magicspells.util.conversion.ConversionSource;
+import com.nisovin.magicspells.util.conversion.ConversionTarget;
 import com.nisovin.magicspells.spells.passive.util.PassiveListener;
 
 // Optional trigger variable that can either be set to a dye color to accept or "all"
@@ -25,14 +28,12 @@ public class SheepShearListener extends PassiveListener {
 	@Override
 	public void initialize(@NotNull String var) {
 		if (var.isEmpty()) return;
-		for (String s : var.split(",")) {
-			try {
-				DyeColor color = DyeColor.valueOf(s.trim().toUpperCase());
-				dyeColors.add(color);
-			} catch (IllegalArgumentException e) {
-				MagicSpells.error("Invalid dye color '" + s + "' in sheepshear trigger on passive spell '" + passiveSpell.getInternalName() + "'");
-			}
-		}
+
+		Conversion.convert(
+			ConversionSource.split(var, ","),
+			Converters.enumConverter(DyeColor.class),
+			ConversionTarget.addTo(dyeColors)
+		);
 	}
 
 	@OverridePriority

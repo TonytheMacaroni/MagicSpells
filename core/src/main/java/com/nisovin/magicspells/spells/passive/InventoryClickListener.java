@@ -14,6 +14,7 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import com.nisovin.magicspells.util.Name;
 import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.util.SpellData;
+import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.util.OverridePriority;
 import com.nisovin.magicspells.util.config.ConfigData;
 import com.nisovin.magicspells.util.config.ConfigDataUtil;
@@ -42,25 +43,18 @@ public class InventoryClickListener extends PassiveListener {
 				InventoryAction invAction = InventoryAction.valueOf(splits[0].toUpperCase());
 				action = data -> invAction;
 			} catch (IllegalArgumentException e) {
-				MagicSpells.error("Invalid inventory action '" + splits[0] + "' in 'inventoryclick' trigger on PassiveSpell '" + passiveSpell.getInternalName() + "'");
+				MagicDebug.warn("Invalid inventory action '%s' %s.", splits[0], MagicDebug.resolveFullPath());
 			}
 		}
 
-		if (splits.length > 1 && !splits[1].isEmpty() && !splits[1].equals("null")) {
+		if (splits.length > 1 && !splits[1].isEmpty() && !splits[1].equals("null"))
 			itemCurrent = MagicItems.getMagicItemDataFromString(splits[1]);
 
-			if (itemCurrent == null) {
-				MagicSpells.error("Invalid magic item '" + splits[1] + "' in 'inventoryclick' trigger on PassiveSpell '" + passiveSpell.getInternalName() + "'");
-			}
-		}
-
-		if (splits.length > 2 && !splits[2].isEmpty() && !splits[2].equals("null")) {
+		if (splits.length > 2 && !splits[2].isEmpty() && !splits[2].equals("null"))
 			itemCursor = MagicItems.getMagicItemDataFromString(splits[2]);
 
-			if (itemCursor == null) {
-				MagicSpells.error("Invalid magic item '" + splits[2] + "' in 'inventoryclick' trigger on PassiveSpell '" + passiveSpell.getInternalName() + "'");
-			}
-		}
+		if (splits.length > 3)
+			MagicDebug.warn("Trailing data '%s' found at %s.", String.join(" ", splits), MagicDebug.resolveFullPath());
 	}
 
 	@Override

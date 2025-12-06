@@ -16,6 +16,9 @@ import java.util.function.Supplier;
 import java.util.function.Predicate;
 import java.util.concurrent.CompletableFuture;
 
+import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.format.NamedTextColor;
+
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.inventory.*;
@@ -43,7 +46,9 @@ import io.papermc.paper.entity.TeleportFlag;
 import io.papermc.paper.block.fluid.FluidData;
 
 import com.nisovin.magicspells.MagicSpells;
-import com.nisovin.magicspells.handlers.DebugHandler;
+import com.nisovin.magicspells.debug.DebugPath;
+import com.nisovin.magicspells.debug.MagicDebug;
+import com.nisovin.magicspells.debug.DebugCategory;
 import com.nisovin.magicspells.util.config.ConfigData;
 import com.nisovin.magicspells.util.config.ConfigDataUtil;
 import com.nisovin.magicspells.util.magicitems.MagicItems;
@@ -59,9 +64,10 @@ import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 
 public class Util {
 
+	private static final Pattern COLOR_AND_DECORATION_PATTERN = Pattern.compile("[&§]([0-9a-fk-or])", Pattern.CASE_INSENSITIVE);
 	private static final Pattern WEIRD_HEX_PATTERN = Pattern.compile("[&§]x(([&§][0-9a-f]){6})", Pattern.CASE_INSENSITIVE);
-	private static final Pattern COLOR_PATTERN = Pattern.compile("[&§]([0-9a-fk-or])", Pattern.CASE_INSENSITIVE);
-	private static final Pattern HEX_PATTERN = Pattern.compile("[&§](#[0-9a-f]{6})", Pattern.CASE_INSENSITIVE);
+	private static final Pattern COLOR_PATTERN = Pattern.compile("[&§]([0-9a-f])", Pattern.CASE_INSENSITIVE);
+	private static final Pattern HEX_PATTERN = Pattern.compile("[&§]#([0-9a-f]{6})", Pattern.CASE_INSENSITIVE);
 
 	private static final MiniMessage STRICT_SERIALIZER = MiniMessage.builder().strict(true).build();
 
@@ -69,178 +75,114 @@ public class Util {
 		return Material.matchMaterial(name);
 	}
 
-	// - <potionEffectType> (amplifier) (duration) (ambient) (particles) (icon)
-	public static PotionEffect buildPotionEffect(String effectString) {
-		String[] data = effectString.split(" ");
-		PotionEffectType type = PotionEffectHandler.getPotionEffectType(data[0]);
-
-		if (type == null) {
-			MagicSpells.error('\'' + data[0] + "' could not be connected to a potion effect type");
-			return null;
-		}
-
-		int amplifier = 0;
-		if (data.length > 1) {
-			try {
-				amplifier = Integer.parseInt(data[1]);
-			} catch (NumberFormatException ex) {
-				DebugHandler.debugNumberFormat(ex);
-			}
-		}
-
-		int duration = 600;
-		if (data.length > 2) {
-			try {
-				duration = Integer.parseInt(data[2]);
-			} catch (NumberFormatException ex) {
-				DebugHandler.debugNumberFormat(ex);
-			}
-		}
-
-		boolean ambient = data.length > 3 && (BooleanUtils.isYes(data[3]) || data[3].equalsIgnoreCase("ambient"));
-
-		boolean particles = data.length > 4 && (BooleanUtils.isYes(data[4]) || data[4].equalsIgnoreCase("particles"));
-
-		boolean icon = data.length > 5 && (BooleanUtils.isYes(data[5]) || data[5].equalsIgnoreCase("icon"));
-
-		return new PotionEffect(type, duration, amplifier, ambient, particles, icon);
+	public static List<ConfigData<PotionEffect>> getPotionEffects(@Nullable List<?> potionEffectData) {
+		return getPotionEffects(potionEffectData, false, false);
 	}
 
-	// - <potionEffectType> (duration)
-	public static PotionEffect buildSuspiciousStewPotionEffect(String effectString) {
-		String[] data = effectString.split(" ");
-		PotionEffectType t = PotionEffectHandler.getPotionEffectType(data[0]);
-
-		if (t == null) {
-			MagicSpells.error('\'' + data[0] + "' could not be connected to a potion effect type");
-			return null;
-		}
-
-		int duration = 600;
-		if (data.length > 1) {
-			try {
-				duration = Integer.parseInt(data[1]);
-			} catch (NumberFormatException ex) {
-				DebugHandler.debugNumberFormat(ex);
-			}
-		}
-		return new PotionEffect(t, duration, 0, true);
-	}
-
-	public static Color[] getColorsFromString(String str) {
-		int[] colors = new int[] { 0xFF0000 };
-		String[] args = str.replace(" ", "").split(",");
-		if (args.length > 0) {
-			colors = new int[args.length];
-			for (int i = 0; i < colors.length; i++) {
-				try {
-					colors[i] = Integer.parseInt(args[i], 16);
-				} catch (NumberFormatException e) {
-					colors[i] = 0;
-				}
-			}
-		}
-
-		Color[] c = new Color[colors.length];
-		for (int i = 0; i < colors.length; i++) {
-			c[i] = Color.fromRGB(colors[i]);
-		}
-		return c;
-	}
-
-	@Nullable
-	public static List<ConfigData<PotionEffect>> getPotionEffects(@Nullable List<?> potionEffectData, @Nullable String internalName) {
-		return getPotionEffects(potionEffectData, internalName, false, false);
-	}
-
-	@Nullable
-	public static List<ConfigData<PotionEffect>> getPotionEffects(@Nullable List<?> potionEffectData, @Nullable String internalName, boolean spellPowerAffectsDuration, boolean spellPowerAffectsStrength) {
+	public static List<ConfigData<PotionEffect>> getPotionEffects(@Nullable List<?> potionEffectData, boolean spellPowerAffectsDuration, boolean spellPowerAffectsStrength) {
 		if (potionEffectData == null || potionEffectData.isEmpty()) return null;
 
 		List<ConfigData<PotionEffect>> potionEffects = new ArrayList<>();
 
-		for (Object potionEffectObj : potionEffectData) {
-			if (potionEffectObj instanceof String potionEffectString) {
-				String[] data = potionEffectString.split(" ");
+		try (var _ = MagicDebug.section(builder -> builder
+			.category(DebugCategory.OPTIONS)
+			.message("Initializing 'potion-effects'.")
+			.path("potion-effects", DebugPath.Type.LIST)
+		)) {
+			for (int i = 0; i < potionEffectData.size(); i++) {
+				try (var _ = MagicDebug.section("Initializing entry at index #%d.", i).pushListEntry(i)) {
+					Object potionEffectObj = potionEffectData.get(i);
 
-				PotionEffectType type = PotionEffectHandler.getPotionEffectType(data[0]);
-				if (type == null) {
-					MagicSpells.error("Invalid potion effect string '" + potionEffectString + "'" + (internalName == null ? "" : " in spell '" + internalName + "'."));
-					continue;
-				}
+					if (potionEffectObj instanceof Map<?, ?> potionEffectMap) {
+						ConfigurationSection section = ConfigReaderUtil.mapToSection(potionEffectMap);
 
-				int duration = 0;
-				if (data.length >= 2) {
-					try {
-						duration = Integer.parseInt(data[1]);
-					} catch (NumberFormatException e) {
-						MagicSpells.error("Invalid duration '" + duration + "' in potion effect string '" + potionEffectString + "'" + (internalName == null ? "" : " in spell '" + internalName + "'."));
+						ConfigData<PotionEffectType> type = ConfigDataUtil.getPotionEffectType(section, "type", PotionEffectType.SPEED);
+						ConfigData<Integer> duration = ConfigDataUtil.getInteger(section, "duration", 0);
+						ConfigData<Integer> strength = ConfigDataUtil.getInteger(section, "strength", 0);
+						ConfigData<Boolean> ambient = ConfigDataUtil.getBoolean(section, "ambient", false);
+						ConfigData<Boolean> hidden = ConfigDataUtil.getBoolean(section, "hidden", false);
+						ConfigData<Boolean> icon = ConfigDataUtil.getBoolean(section, "icon", true);
+
+						ConfigData<PotionEffect> effect = spellData -> {
+							int d = duration.get(spellData);
+							if (spellPowerAffectsDuration) d = Math.round(d * spellData.power());
+
+							int s = strength.get(spellData);
+							if (spellPowerAffectsStrength) s = Math.round(s * spellData.power());
+
+							return new PotionEffect(
+								type.get(spellData),
+								d,
+								s,
+								ambient.get(spellData),
+								!hidden.get(spellData),
+								icon.get(spellData)
+							);
+						};
+
+						potionEffects.add(effect);
 						continue;
 					}
-				}
 
-				int strength = 0;
-				if (data.length >= 3) {
-					try {
-						strength = Integer.parseInt(data[2]);
-					} catch (NumberFormatException e) {
-						MagicSpells.error("Invalid strength '" + strength + "' in potion effect string '" + potionEffectString + "'" + (internalName == null ? "" : " in spell '" + internalName + "'."));
+					if (!(potionEffectObj instanceof String potionEffectString)) {
+						MagicDebug.warn("Invalid value '%s' %s.", potionEffectObj, MagicDebug.resolveFullPath());
 						continue;
 					}
+
+					String[] data = potionEffectString.split(" ");
+					if (data.length > 6) {
+						MagicDebug.warn("Invalid potion effect string '%s' %s - too many arguments.", potionEffectString, MagicDebug.resolveFullPath());
+						continue;
+					}
+
+					PotionEffectType type = PotionEffectHandler.getPotionEffectType(data[0]);
+					if (type == null) {
+						MagicDebug.warn("Invalid potion type '%s' %s.", data[0], MagicDebug.resolveFullPath());
+						continue;
+					}
+
+					int duration = 0;
+					if (data.length >= 2) {
+						try {
+							duration = Integer.parseInt(data[1]);
+						} catch (NumberFormatException e) {
+							MagicDebug.warn("Invalid duration '%s' %s.", data[1], MagicDebug.resolveFullPath());
+							continue;
+						}
+					}
+
+					int strength = 0;
+					if (data.length >= 3) {
+						try {
+							strength = Integer.parseInt(data[2]);
+						} catch (NumberFormatException e) {
+							MagicDebug.warn("Invalid strength '%s' %s.", data[2], MagicDebug.resolveFullPath());
+							continue;
+						}
+					}
+
+					boolean particles = data.length < 4 || !Boolean.parseBoolean(data[3]);
+					boolean ambient = data.length >= 5 && Boolean.parseBoolean(data[4]);
+					boolean icon = data.length < 6 || Boolean.parseBoolean(data[5]);
+
+					if (spellPowerAffectsDuration || spellPowerAffectsStrength) {
+						int finalDuration = duration;
+						int finalStrength = strength;
+
+						ConfigData<PotionEffect> effect;
+						if (!spellPowerAffectsStrength)
+							effect = spellData -> new PotionEffect(type, Math.round(finalDuration * spellData.power()), finalStrength, ambient, particles, icon);
+						else if (!spellPowerAffectsDuration)
+							effect = spellData -> new PotionEffect(type, finalDuration, Math.round(finalStrength * spellData.power()), ambient, particles, icon);
+						else
+							effect = spellData -> new PotionEffect(type, Math.round(finalDuration * spellData.power()), Math.round(finalStrength * spellData.power()), ambient, particles, icon);
+
+						potionEffects.add(effect);
+					} else {
+						PotionEffect effect = new PotionEffect(type, duration, strength, ambient, particles, icon);
+						potionEffects.add(spellData -> effect);
+					}
 				}
-
-				boolean particles = data.length < 4 || !Boolean.parseBoolean(data[3]);
-				boolean ambient = data.length >= 5 && Boolean.parseBoolean(data[4]);
-				boolean icon = data.length < 6 || Boolean.parseBoolean(data[5]);
-
-				if (data.length > 6)
-					MagicSpells.error("Trailing data found in potion effect string '" + potionEffectString + "'" + (internalName == null ? "" : " in spell '" + internalName + "'."));
-
-				if (spellPowerAffectsDuration || spellPowerAffectsStrength) {
-					int finalDuration = duration;
-					int finalStrength = strength;
-
-					ConfigData<PotionEffect> effect;
-					if (!spellPowerAffectsStrength)
-						effect = spellData -> new PotionEffect(type, Math.round(finalDuration * spellData.power()), finalStrength, ambient, particles, icon);
-					else if (!spellPowerAffectsDuration)
-						effect = spellData -> new PotionEffect(type, finalDuration, Math.round(finalStrength * spellData.power()), ambient, particles, icon);
-					else
-						effect = spellData -> new PotionEffect(type, Math.round(finalDuration * spellData.power()), Math.round(finalStrength * spellData.power()), ambient, particles, icon);
-
-					potionEffects.add(effect);
-				} else {
-					PotionEffect effect = new PotionEffect(type, duration, strength, ambient, particles, icon);
-					potionEffects.add(spellData -> effect);
-				}
-			} else if (potionEffectObj instanceof Map<?, ?> potionEffectMap) {
-				ConfigurationSection section = ConfigReaderUtil.mapToSection(potionEffectMap);
-
-				ConfigData<PotionEffectType> type = ConfigDataUtil.getPotionEffectType(section, "type", PotionEffectType.SPEED);
-				ConfigData<Integer> duration = ConfigDataUtil.getInteger(section, "duration", 0);
-				ConfigData<Integer> strength = ConfigDataUtil.getInteger(section, "strength", 0);
-				ConfigData<Boolean> ambient = ConfigDataUtil.getBoolean(section, "ambient", false);
-				ConfigData<Boolean> hidden = ConfigDataUtil.getBoolean(section, "hidden", false);
-				ConfigData<Boolean> icon = ConfigDataUtil.getBoolean(section, "icon", true);
-
-				ConfigData<PotionEffect> effect = spellData -> {
-					int d = duration.get(spellData);
-					if (spellPowerAffectsDuration) d = Math.round(d * spellData.power());
-
-					int s = strength.get(spellData);
-					if (spellPowerAffectsStrength) s = Math.round(s * spellData.power());
-
-					return new PotionEffect(
-						type.get(spellData),
-						d,
-						s,
-						ambient.get(spellData),
-						!hidden.get(spellData),
-						icon.get(spellData)
-					);
-				};
-
-				potionEffects.add(effect);
 			}
 		}
 
@@ -653,13 +595,11 @@ public class Util {
 	}
 
 	public static boolean checkPluginsEnabled(String[] plugins) {
-		boolean all = true;
-		for (String plugin : plugins) {
-			if (Bukkit.getPluginManager().isPluginEnabled(plugin)) continue;
-			MagicSpells.error("Plugin '" + plugin + "' is not enabled.");
-			all = false;
-		}
-		return all;
+		for (String plugin : plugins)
+			if (!Bukkit.getPluginManager().isPluginEnabled(plugin))
+				return false;
+
+		return true;
 	}
 
 	public static Component getLegacyFromString(String input) {
@@ -685,11 +625,11 @@ public class Util {
 		matcher = HEX_PATTERN.matcher(builder.toString());
 		builder.setLength(0);
 		while (matcher.find()) {
-			matcher.appendReplacement(builder, "<" + matcher.group(1) + ">");
+			matcher.appendReplacement(builder, "<#" + matcher.group(1) + ">");
 		}
 		matcher.appendTail(builder);
 
-		matcher = COLOR_PATTERN.matcher(builder.toString());
+		matcher = COLOR_AND_DECORATION_PATTERN.matcher(builder.toString());
 		builder.setLength(0);
 		while (matcher.find()) {
 			ChatColor color = ChatColor.getByChar(matcher.group(1).toLowerCase());
@@ -710,6 +650,12 @@ public class Util {
 	public static String getLegacyFromMiniMessage(String input) {
 		if (input.isEmpty()) return "";
 		return getLegacyFromComponent(getMiniMessage(input));
+	}
+
+	public static String getPlainString(String string) {
+		if (string == null) return null;
+
+		return PlainTextComponentSerializer.plainText().serialize(getMiniMessage(string));
 	}
 
 	public static String getPlainString(Component component) {
@@ -777,8 +723,49 @@ public class Util {
 		return component == null ? "" : MiniMessage.miniMessage().serialize(component);
 	}
 
-	public static String getStrictStringFromComponent(Component component) {
+	public static String getStrictString(Component component) {
 		return component == null ? "" : STRICT_SERIALIZER.serialize(component);
+	}
+
+	public static String getStrictString(String string) {
+		if (string == null) return null;
+
+		return STRICT_SERIALIZER.serialize(getMiniMessage(string));
+	}
+
+	@NotNull
+	public static TextColor getColor(@Nullable String color, @NotNull TextColor def) {
+		if (color == null) return def;
+
+		Matcher matcher = COLOR_PATTERN.matcher(color);
+		if (matcher.matches()) {
+			return switch (matcher.group(1).toLowerCase()) {
+				case "0" -> NamedTextColor.BLACK;
+				case "1" -> NamedTextColor.DARK_BLUE;
+				case "2" -> NamedTextColor.DARK_GREEN;
+				case "3" -> NamedTextColor.DARK_AQUA;
+				case "4" -> NamedTextColor.DARK_RED;
+				case "5" -> NamedTextColor.DARK_PURPLE;
+				case "6" -> NamedTextColor.GOLD;
+				case "7" -> NamedTextColor.GRAY;
+				case "8" -> NamedTextColor.DARK_GRAY;
+				case "9" -> NamedTextColor.BLUE;
+				case "a" -> NamedTextColor.GREEN;
+				case "b" -> NamedTextColor.AQUA;
+				case "c" -> NamedTextColor.RED;
+				case "d" -> NamedTextColor.LIGHT_PURPLE;
+				case "e" -> NamedTextColor.YELLOW;
+				case "f" -> NamedTextColor.WHITE;
+				default -> def;
+			};
+		}
+
+		matcher = HEX_PATTERN.matcher(color);
+		if (matcher.matches())
+			return TextColor.color(Integer.parseInt(matcher.group(1)));
+
+		TextColor textColor = NamedTextColor.NAMES.value(color.toLowerCase());
+		return textColor == null ? def : textColor;
 	}
 
 	public static String colorize(String string) {

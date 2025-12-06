@@ -35,8 +35,6 @@ public class WallSpell extends TargetedSpell implements TargetedLocationSpell {
 
 	private final String strAtCap;
 
-	private final String spellOnBreakName;
-
 	private Subspell spellOnBreak;
 
 	private final int capPerEntity;
@@ -73,8 +71,6 @@ public class WallSpell extends TargetedSpell implements TargetedLocationSpell {
 			}
 		}
 
-		spellOnBreakName = getConfigString("spell-on-break", "");
-
 		yOffset = getConfigDataInt("y-offset", -1);
 		wallWidth = getConfigDataInt("wall-width", 5);
 		wallDepth = getConfigDataInt("wall-depth", 1);
@@ -96,9 +92,7 @@ public class WallSpell extends TargetedSpell implements TargetedLocationSpell {
 	public void initialize() {
 		super.initialize();
 
-		spellOnBreak = initSubspell(spellOnBreakName,
-				"WallSpell '" + internalName + "' has an invalid spell-on-break defined!",
-				true);
+		spellOnBreak = initSubspell("spell-on-break", "", true);
 
 		if (breakListener == null) {
 			breakListener = new BreakListener();

@@ -7,10 +7,8 @@ import java.util.function.Predicate;
 
 import net.kyori.adventure.key.Key;
 
-import org.bukkit.Registry;
-import org.bukkit.entity.*;
-import org.bukkit.NamespacedKey;
 import org.bukkit.damage.DamageType;
+import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.inventory.ItemStack;
@@ -20,14 +18,12 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 
-import io.papermc.paper.registry.tag.Tag;
-import io.papermc.paper.registry.tag.TagKey;
 import io.papermc.paper.registry.RegistryKey;
-import io.papermc.paper.registry.RegistryAccess;
 
 import com.nisovin.magicspells.util.Name;
-import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.util.SpellData;
+import com.nisovin.magicspells.debug.MagicDebug;
+import com.nisovin.magicspells.util.conversion.*;
 import com.nisovin.magicspells.util.OverridePriority;
 import com.nisovin.magicspells.util.config.ConfigData;
 import com.nisovin.magicspells.util.config.ConfigDataUtil;
@@ -53,7 +49,7 @@ public class DamageListener extends PassiveListener {
 
 	@Override
 	public void initialize(@NotNull String var) {
-		MagicSpells.error("PassiveSpell '" + passiveSpell.getInternalName() + "' attempted to create a 'damage' trigger using the string format, which it does not support.");
+		MagicDebug.warn("The 'damage' trigger does not have a string format: %s", MagicDebug.resolveFullPath());
 	}
 
 	@Override
@@ -63,8 +59,17 @@ public class DamageListener extends PassiveListener {
 
 		damageTypes = initializeDamageTypes(config);
 
-		weaponItems = initializeItems(config, "weapon-items");
-		projectileItems = initializeItems(config, "projectile-items");
+		weaponItems = Conversion.convert(
+			ConversionSource.listFromConfig(config, "weapon-items"),
+			Converters.MAGIC_ITEM_DATA,
+			ConversionTarget.list()
+		);
+
+		projectileItems = Conversion.convert(
+			ConversionSource.listFromConfig(config, "projectile-items"),
+			Converters.MAGIC_ITEM_DATA,
+			ConversionTarget.list()
+		);
 
 		minimumDamage = ConfigDataUtil.getDouble(config, "minimum-damage", -1);
 
@@ -76,7 +81,7 @@ public class DamageListener extends PassiveListener {
 	private Mode getMode(@NotNull ConfigurationSection config) {
 		String modeString = config.getString("mode");
 		if (modeString == null) {
-			MagicSpells.error("No 'mode' defined in damage trigger on passive spell '" + passiveSpell.getInternalName() + "'.");
+			MagicDebug.warn("No 'mode' defined %s.", MagicDebug.resolveFullPath());
 			return null;
 		}
 
@@ -84,7 +89,7 @@ public class DamageListener extends PassiveListener {
 			case "give" -> Mode.GIVE;
 			case "take" -> Mode.TAKE;
 			default -> {
-				MagicSpells.error("Invalid 'mode' value '" + modeString + "' defined in damage trigger on passive spell '" + passiveSpell.getInternalName() + "'.");
+				MagicDebug.warn("Invalid 'mode' value '%s' defined %s'", modeString, MagicDebug.resolveFullPath());
 				yield null;
 			}
 		};
@@ -96,60 +101,13 @@ public class DamageListener extends PassiveListener {
 			return RegistryEntryPredicate.fromString(RegistryKey.DAMAGE_TYPE, damageTypesString);
 		}
 
-		List<String> damageTypeStrings = config.getStringList("damage-types");
-		if (damageTypeStrings.isEmpty()) return null;
-
-		Set<Key> types = new HashSet<>();
-
-		Registry<DamageType> registry = RegistryAccess.registryAccess().getRegistry(RegistryKey.DAMAGE_TYPE);
-		for (String damageTypeString : damageTypeStrings) {
-			if (!damageTypeString.startsWith("#")) {
-				NamespacedKey key = NamespacedKey.fromString(damageTypeString);
-				if (key == null || registry.get(key) == null) {
-					MagicSpells.error("Invalid damage type '" + damageTypeString + "' found in damage trigger on passive spell '" + passiveSpell.getInternalName() + "'.");
-					continue;
-				}
-
-				types.add(key);
-				continue;
-			}
-
-			NamespacedKey key = NamespacedKey.fromString(damageTypeString.substring(1));
-			if (key == null) {
-				MagicSpells.error("Invalid damage type tag '" + damageTypeString + "' found in damage trigger on passive spell '" + passiveSpell.getInternalName() + "'.");
-				continue;
-			}
-
-			TagKey<DamageType> tagKey = TagKey.create(RegistryKey.DAMAGE_TYPE, key);
-			if (!registry.hasTag(tagKey)) {
-				MagicSpells.error("Invalid damage type tag '" + damageTypeString + "' found in damage trigger on passive spell '" + passiveSpell.getInternalName() + "'.");
-				continue;
-			}
-
-			Tag<DamageType> tag = registry.getTag(tagKey);
-			tag.values().forEach(typedKey -> types.add(typedKey.key()));
-		}
+		Set<Key> types = Conversion.convert(
+			ConversionSource.listFromConfig(config, "damage-types"),
+			Converters.registryEntryOrTagKeys(RegistryKey.DAMAGE_TYPE),
+			ConversionTarget.set()
+		);
 
 		return entry -> types.contains(entry.key());
-	}
-
-	private List<MagicItemData> initializeItems(@NotNull ConfigurationSection config, @NotNull String path) {
-		List<String> itemStrings = config.getStringList(path);
-		if (itemStrings.isEmpty()) return null;
-
-		List<MagicItemData> items = new ArrayList<>();
-
-		for (String itemString : itemStrings) {
-			MagicItemData itemData = MagicItems.getMagicItemDataFromString(itemString);
-			if (itemData == null) {
-				MagicSpells.error("Invalid magic item '" + itemString + "' in damage trigger on passive spell '" + passiveSpell.getInternalName() + "'.");
-				continue;
-			}
-
-			items.add(itemData);
-		}
-
-		return items;
 	}
 
 	@OverridePriority

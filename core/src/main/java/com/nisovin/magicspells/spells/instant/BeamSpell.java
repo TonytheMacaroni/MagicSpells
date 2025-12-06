@@ -54,12 +54,6 @@ public class BeamSpell extends InstantSpell implements TargetedLocationSpell, Ta
 	private Subspell groundSpell;
 	private Subspell entityLocationSpell;
 
-	private final String hitSpellName;
-	private final String endSpellName;
-	private final String travelSpellName;
-	private final String groundSpellName;
-	private final String entityLocationSpellName;
-
 	private NoMagicZoneManager zoneManager;
 
 	private static final double ANGLE_Y = AccurateMath.toRadians(-90);
@@ -91,34 +85,17 @@ public class BeamSpell extends InstantSpell implements TargetedLocationSpell, Ta
 		changePitch = getConfigDataBoolean("change-pitch", true);
 		stopOnHitEntity = getConfigDataBoolean("stop-on-hit-entity", false);
 		stopOnHitGround = getConfigDataBoolean("stop-on-hit-ground", false);
-
-		hitSpellName = getConfigString("spell", "");
-		endSpellName = getConfigString("spell-on-end", "");
-		travelSpellName = getConfigString("spell-on-travel", "");
-		groundSpellName = getConfigString("spell-on-hit-ground", "");
-		entityLocationSpellName = getConfigString("spell-on-entity-location", "");
 	}
 
 	@Override
 	public void initialize() {
 		super.initialize();
 
-		String error = "BeamSpell '" + internalName + "' has an invalid '%s' defined!";
-		hitSpell = initSubspell(hitSpellName,
-				error.formatted("spell"),
-				true);
-		endSpell = initSubspell(endSpellName,
-				error.formatted("spell-on-end"),
-				true);
-		travelSpell = initSubspell(travelSpellName,
-				error.formatted("spell-on-travel"),
-				true);
-		groundSpell = initSubspell(groundSpellName,
-				error.formatted("spell-on-hit-ground"),
-				true);
-		entityLocationSpell = initSubspell(entityLocationSpellName,
-				error.formatted("spell-on-entity-location"),
-				true);
+		hitSpell = initSubspell("spell", "", true);
+		endSpell = initSubspell("spell-on-end", "", true);
+		travelSpell = initSubspell("spell-on-travel", "", true);
+		groundSpell = initSubspell("spell-on-hit-ground", "", true);
+		entityLocationSpell = initSubspell("spell-on-entity-location", "", true);
 
 		zoneManager = MagicSpells.getNoMagicZoneManager();
 	}

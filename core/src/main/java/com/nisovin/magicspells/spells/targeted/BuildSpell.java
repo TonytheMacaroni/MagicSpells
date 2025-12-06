@@ -1,9 +1,6 @@
 package com.nisovin.magicspells.spells.targeted;
 
 import java.util.Set;
-import java.util.List;
-import java.util.HashSet;
-import java.util.ArrayList;
 
 import org.bukkit.Effect;
 import org.bukkit.Material;
@@ -15,11 +12,13 @@ import org.bukkit.util.RayTraceResult;
 import org.bukkit.block.data.BlockData;
 
 import com.nisovin.magicspells.util.*;
-import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.spells.TargetedSpell;
 import com.nisovin.magicspells.util.compat.EventUtil;
 import com.nisovin.magicspells.util.config.ConfigData;
+import com.nisovin.magicspells.util.conversion.Conversion;
+import com.nisovin.magicspells.util.conversion.Converters;
 import com.nisovin.magicspells.spells.TargetedLocationSpell;
+import com.nisovin.magicspells.util.conversion.ConversionTarget;
 import com.nisovin.magicspells.events.MagicSpellsBlockPlaceEvent;
 
 public class BuildSpell extends TargetedSpell implements TargetedLocationSpell {
@@ -47,28 +46,11 @@ public class BuildSpell extends TargetedSpell implements TargetedLocationSpell {
 		checkPlugins = getConfigDataBoolean("check-plugins", true);
 		playBreakEffect = getConfigDataBoolean("show-effect", true);
 
-		List<String> materials = getConfigStringList("allowed-types", null);
-		if (materials == null) {
-			materials = new ArrayList<>();
-			materials.add("GRASS_BLOCK");
-			materials.add("STONE");
-			materials.add("DIRT");
-		}
-
-		allowedTypes = new HashSet<>();
-		for (String str : materials) {
-			Material material = Util.getMaterial(str);
-			if (material == null) {
-				MagicSpells.error("BuildSpell '" + internalName + "' has an invalid material '" + str + "' defined!");
-				continue;
-			}
-			if (!material.isBlock()) {
-				MagicSpells.error("BuildSpell '" + internalName + "' has a non block material '" + str + "' defined!");
-				continue;
-			}
-
-			allowedTypes.add(material);
-		}
+		allowedTypes = Conversion.convert(
+			getListSource("allowed-types"),
+			Converters.MATERIAL_BLOCK,
+			ConversionTarget.set(() -> Set.of(Material.GRASS_BLOCK, Material.STONE, Material.DIRT))
+		);
 	}
 
 	@Override

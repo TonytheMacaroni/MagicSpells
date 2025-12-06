@@ -32,7 +32,7 @@ public class EntityEditSpell extends TargetedSpell implements TargetedEntitySpel
 
 		List<?> attributeList = getConfigList("attributes", null);
 		if (attributeList != null && !attributeList.isEmpty())
-			attributes = AttributeHandler.getAttributeModifiers(attributeList, internalName);
+			attributes = AttributeHandler.getAttributeModifiers(attributeList, "attributes", internalName);
 
 		force = getConfigDataBoolean("force", false);
 		remove = getConfigDataBoolean("remove", false);

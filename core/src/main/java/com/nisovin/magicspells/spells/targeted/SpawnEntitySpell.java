@@ -93,16 +93,9 @@ public class SpawnEntitySpell extends TargetedSpell implements TargetedLocationS
 	private final ConfigData<Boolean> allowSpawnInMidair;
 
 	private Subspell attackSpell;
-	private final String attackSpellName;
-
 	private Subspell spellOnSpawn;
-	private final String spellOnSpawnName;
-
 	private Subspell spellOnDeath;
-	private final String spellOnDeathName;
-
 	private Subspell spellOnTarget;
-	private final String spellOnTargetName;
 
 	private List<PotionEffect> potionEffects;
 	private Multimap<Attribute, AttributeModifier> attributes;
@@ -190,14 +183,9 @@ public class SpawnEntitySpell extends TargetedSpell implements TargetedLocationS
 		addLookAtPlayerAI = getConfigDataBoolean("add-look-at-player-ai", false);
 		allowSpawnInMidair = getConfigDataBoolean("allow-spawn-in-midair", false);
 
-		attackSpellName = getConfigString("attack-spell", "");
-		spellOnSpawnName = getConfigString("spell-on-spawn", "");
-		spellOnDeathName = getConfigString("spell-on-death", "");
-		spellOnTargetName = getConfigString("spell-on-target", "");
-
 		List<?> attributeList = getConfigList("attributes", null);
 		if (attributeList != null && !attributeList.isEmpty())
-			attributes = AttributeHandler.getAttributeModifiers(attributeList, internalName);
+			attributes = AttributeHandler.getAttributeModifiers(attributeList, "attributes", internalName);
 
 		List<String> list = getConfigStringList("potion-effects", null);
 		if (list != null && !list.isEmpty()) {
@@ -240,18 +228,10 @@ public class SpawnEntitySpell extends TargetedSpell implements TargetedLocationS
 			entityData = null;
 		}
 
-		spellOnSpawn = initSubspell(spellOnSpawnName,
-				prefix + "spell-on-spawn: '" + spellOnSpawnName + "' defined!",
-				true);
-		spellOnDeath = initSubspell(spellOnDeathName,
-				prefix + "spell-on-death: '" + spellOnDeathName + "' defined!",
-				true);
-		spellOnTarget = initSubspell(spellOnTargetName,
-				prefix + "spell-on-target: '" + spellOnTargetName + "' defined!",
-				true);
-		attackSpell = initSubspell(attackSpellName,
-				prefix + "attack-spell: '" + spellOnSpawnName + "' defined!",
-				true);
+		spellOnSpawn = initSubspell("spell-on-spawn", "", true);
+		spellOnDeath = initSubspell("spell-on-death", "", true);
+		spellOnTarget = initSubspell("spell-on-target", "", true);
+		attackSpell = initSubspell("attack-spell", "", true);
 	}
 
 	@Override

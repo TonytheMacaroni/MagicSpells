@@ -20,6 +20,8 @@ import com.ezylang.evalex.Expression;
 import com.ezylang.evalex.parser.ParseException;
 
 import com.nisovin.magicspells.MagicSpells;
+import com.nisovin.magicspells.debug.DebugCategory;
+import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.util.RegexUtil;
 import com.nisovin.magicspells.util.SpellData;
 import com.nisovin.magicspells.variables.Variable;
@@ -40,11 +42,13 @@ public class FunctionData<T extends Number> implements ConfigData<T> {
 
 	private final Map<String, ConfigData<Double>> variables;
 	private final Function<Double, T> converter;
+	private final String expressionString;
 	private final Expression expression;
 	private final ConfigData<T> dataDef;
 	private final T def;
 
-	public FunctionData(@NotNull Expression expression, @NotNull Map<String, ConfigData<Double>> variables, @NotNull Function<Double, T> converter) {
+	public FunctionData(@NotNull Expression expression, @NotNull Map<String, ConfigData<Double>> variables, @NotNull Function<Double, T> converter, @NotNull String expressionString) {
+		this.expressionString = expressionString;
 		this.expression = expression;
 		this.variables = variables;
 		this.converter = converter;
@@ -52,7 +56,8 @@ public class FunctionData<T extends Number> implements ConfigData<T> {
 		this.def = null;
 	}
 
-	public FunctionData(@NotNull Expression expression, @NotNull Map<String, ConfigData<Double>> variables, @NotNull Function<Double, T> converter, @NotNull T def) {
+	public FunctionData(@NotNull Expression expression, @NotNull Map<String, ConfigData<Double>> variables, @NotNull Function<Double, T> converter, @NotNull String expressionString, @NotNull T def) {
+		this.expressionString = expressionString;
 		this.expression = expression;
 		this.variables = variables;
 		this.converter = converter;
@@ -60,7 +65,8 @@ public class FunctionData<T extends Number> implements ConfigData<T> {
 		this.def = def;
 	}
 
-	public FunctionData(@NotNull Expression expression, @NotNull Map<String, ConfigData<Double>> variables, @NotNull Function<Double, T> converter, @NotNull ConfigData<T> def) {
+	public FunctionData(@NotNull Expression expression, @NotNull Map<String, ConfigData<Double>> variables, @NotNull Function<Double, T> converter, @NotNull String expressionString, @NotNull ConfigData<T> def) {
+		this.expressionString = expressionString;
 		this.expression = expression;
 		this.variables = variables;
 		this.converter = converter;
@@ -80,7 +86,7 @@ public class FunctionData<T extends Number> implements ConfigData<T> {
 		Expression expression = buildExpression(expressionString, variables, silent);
 		if (expression == null) return null;
 
-		return new FunctionData<>(expression, variables, converter);
+		return new FunctionData<>(expression, variables, converter, expressionString);
 	}
 
 	@Nullable
@@ -95,7 +101,7 @@ public class FunctionData<T extends Number> implements ConfigData<T> {
 		Expression expression = buildExpression(expressionString, variables, silent);
 		if (expression == null) return null;
 
-		return new FunctionData<>(expression, variables, converter, def);
+		return new FunctionData<>(expression, variables, converter, expressionString, def);
 	}
 
 	@Nullable
@@ -110,7 +116,7 @@ public class FunctionData<T extends Number> implements ConfigData<T> {
 		Expression expression = buildExpression(expressionString, variables, silent);
 		if (expression == null) return null;
 
-		return new FunctionData<>(expression, variables, converter, def);
+		return new FunctionData<>(expression, variables, converter, expressionString, def);
 	}
 
 	@Nullable
@@ -138,11 +144,7 @@ public class FunctionData<T extends Number> implements ConfigData<T> {
 			expression.validate();
 			return expression;
 		} catch (ParseException e) {
-			if (!silent) {
-				MagicSpells.error("Invalid expression '" + expressionString + "'.");
-				e.printStackTrace();
-			}
-
+			if (!silent) MagicDebug.warn(e, "Invalid expression '%s'.", expressionString);
 			return null;
 		}
 	}
@@ -238,6 +240,11 @@ public class FunctionData<T extends Number> implements ConfigData<T> {
 	@Override
 	public boolean isConstant() {
 		return false;
+	}
+
+	@Override
+	public String toString() {
+		return expressionString;
 	}
 
 	public static class ArgumentData implements ConfigData<Double> {

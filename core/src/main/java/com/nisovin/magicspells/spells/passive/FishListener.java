@@ -1,5 +1,8 @@
 package com.nisovin.magicspells.spells.passive;
 
+import org.jetbrains.annotations.NotNull;
+
+import java.util.Set;
 import java.util.EnumSet;
 
 import org.bukkit.entity.Entity;
@@ -9,11 +12,10 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.player.PlayerFishEvent;
 
-import org.jetbrains.annotations.NotNull;
+import io.papermc.paper.registry.RegistryKey;
 
 import com.nisovin.magicspells.util.Name;
-import com.nisovin.magicspells.MagicSpells;
-import com.nisovin.magicspells.util.MobUtil;
+import com.nisovin.magicspells.util.conversion.*;
 import com.nisovin.magicspells.util.OverridePriority;
 import com.nisovin.magicspells.spells.passive.util.PassiveListener;
 
@@ -21,26 +23,18 @@ import com.nisovin.magicspells.spells.passive.util.PassiveListener;
 @Name("fish")
 public class FishListener extends PassiveListener {
 
-	private final EnumSet<PlayerFishEvent.State> states = EnumSet.noneOf(PlayerFishEvent.State.class);
-	private final EnumSet<EntityType> types = EnumSet.noneOf(EntityType.class);
+	private final Set<PlayerFishEvent.State> states = EnumSet.noneOf(PlayerFishEvent.State.class);
+	private final Set<EntityType> types = EnumSet.noneOf(EntityType.class);
 
 	@Override
 	public void initialize(@NotNull String var) {
 		if (var.isEmpty()) return;
-		for (String val : var.replace(" ", "").split(",")) {
-			try {
-				states.add(PlayerFishEvent.State.valueOf(val.toUpperCase()));
-			} catch (IllegalArgumentException e) {
-				EntityType type = MobUtil.getEntityType(val);
-				if (type == null) {
-					MagicSpells.error("Invalid fish event state or entity type '" + val
-						+ "' in fish trigger on passive spell '" + passiveSpell.getName() + "'");
-					continue;
-				}
 
-				types.add(type);
-			}
-		}
+		// TODO: Test this out
+		Conversion.multi(ConversionSource.split(var.replace(" ", ""), ","))
+			.target(Converters.enumConverter(PlayerFishEvent.State.class, "fishing state"), ConversionTarget.addTo(states))
+			.target(Converters.registryEntryOrTag(RegistryKey.ENTITY_TYPE), ConversionTarget.addTo(types))
+			.convert();
 	}
 
 	@OverridePriority

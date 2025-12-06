@@ -63,12 +63,6 @@ public class HomingProjectileSpell extends TargetedSpell implements TargetedEnti
 
 	private final ConfigData<Color> arrowColor;
 
-	private final String hitSpellName;
-	private final String airSpellName;
-	private final String groundSpellName;
-	private final String modifierSpellName;
-	private final String durationSpellName;
-
 	private Subspell hitSpell;
 	private Subspell airSpell;
 	private Subspell groundSpell;
@@ -76,7 +70,6 @@ public class HomingProjectileSpell extends TargetedSpell implements TargetedEnti
 	private Subspell durationSpell;
 
 	private ModifierSet homingModifiers;
-	private List<String> homingModifiersStrings;
 
 	public HomingProjectileSpell(MagicConfig config, String spellName) {
 		super(config, spellName);
@@ -107,46 +100,25 @@ public class HomingProjectileSpell extends TargetedSpell implements TargetedEnti
 
 		maxDuration = getConfigDataDouble("max-duration", 10);
 
-		hitSpellName = getConfigString("spell", "");
-		airSpellName = getConfigString("spell-on-hit-air", "");
 		projectileName = getConfigDataComponent("projectile-name", Component.empty());
-		groundSpellName = getConfigString("spell-on-hit-ground", "");
-		modifierSpellName = getConfigString("spell-on-modifier-fail", "");
-		durationSpellName = getConfigString("spell-after-duration", "");
-
-		homingModifiersStrings = getConfigStringList("homing-modifiers", null);
 	}
 
 	@Override
 	public void initializeModifiers() {
 		super.initializeModifiers();
 
-		if (homingModifiersStrings != null && !homingModifiersStrings.isEmpty()) {
-			homingModifiers = new ModifierSet(homingModifiersStrings, this);
-			homingModifiersStrings = null;
-		}
+		homingModifiers = initModifierSet("homing-modifiers");
 	}
 
 	@Override
 	public void initialize() {
 		super.initialize();
 
-		String error = "HomingProjectileSpell '" + internalName + "' has an invalid '%s' defined!";
-		hitSpell = initSubspell(hitSpellName,
-				error.formatted("spell"),
-				true);
-		groundSpell = initSubspell(groundSpellName,
-				error.formatted("spell-on-hit-ground"),
-				true);
-		airSpell = initSubspell(airSpellName,
-				error.formatted("spell-on-hit-air"),
-				true);
-		durationSpell = initSubspell(durationSpellName,
-				error.formatted("spell-after-duration"),
-				true);
-		modifierSpell = initSubspell(modifierSpellName,
-				error.formatted("spell-on-modifier-fail"),
-				true);
+		hitSpell = initSubspell("spell", "", true);
+		groundSpell = initSubspell("spell-on-hit-ground", "", true);
+		airSpell = initSubspell("spell-on-hit-air", "", true);
+		durationSpell = initSubspell("spell-after-duration", "", true);
+		modifierSpell = initSubspell("spell-on-modifier-fail", "", true);
 
 		zoneManager = MagicSpells.getNoMagicZoneManager();
 	}

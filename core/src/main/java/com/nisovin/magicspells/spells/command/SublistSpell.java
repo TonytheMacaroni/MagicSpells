@@ -1,7 +1,11 @@
 package com.nisovin.magicspells.spells.command;
 
+import org.checkerframework.checker.nullness.qual.NonNull;
+
 import java.util.List;
+import java.util.Objects;
 import java.util.Collection;
+import java.util.Collections;
 
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -9,10 +13,17 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
+
+import org.incendo.cloud.context.CommandInput;
+import org.incendo.cloud.context.CommandContext;
+import org.incendo.cloud.suggestion.BlockingSuggestionProvider;
+
+import io.papermc.paper.command.brigadier.CommandSourceStack;
 
 import com.nisovin.magicspells.Spell;
-import com.nisovin.magicspells.Spellbook;
 import com.nisovin.magicspells.util.*;
+import com.nisovin.magicspells.Spellbook;
 import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.spells.CommandSpell;
 import com.nisovin.magicspells.spells.PassiveSpell;
@@ -20,7 +31,8 @@ import com.nisovin.magicspells.util.config.ConfigData;
 
 // Advanced perm is for listing other player's spells
 
-public class SublistSpell extends CommandSpell {
+@SuppressWarnings("UnstableApiUsage")
+public class SublistSpell extends CommandSpell implements BlockingSuggestionProvider.Strings<CommandSourceStack> {
 
 	private final List<String> spellsToHide;
 	private final List<String> spellsToShow;
@@ -74,14 +86,15 @@ public class SublistSpell extends CommandSpell {
 			return new CastResult(PostCastAction.HANDLE_NORMALLY, data);
 		}
 
-		Component message = Util.getMiniMessage(MagicSpells.getTextColor() + strPrefix + " " + extra);
+		TextComponent.Builder message = Component.text().color(MagicSpells.getTextColor());
+		message.append(Util.getMiniMessage(strPrefix + " " + extra));
 
 		boolean prev = false;
 		for (Spell spell : spells) {
 			if (shouldListSpell(spell, spellbook, onlyShowCastableSpells)) {
-				if (prev) message = message.append(Component.text(", "));
+				if (prev) message.append(Component.text(", "));
 
-				message = message.append(Util.getMiniMessage(spell.getName()));
+				message.append(Util.getMiniMessage(spell.getName()));
 				prev = true;
 			}
 		}
@@ -122,8 +135,16 @@ public class SublistSpell extends CommandSpell {
 	}
 
 	@Override
-	public List<String> tabComplete(CommandSender sender, String[] args) {
-		return sender instanceof ConsoleCommandSender && args.length == 1 ? TxtUtil.tabCompletePlayerName(sender) : null;
+	public @NonNull Iterable<@NonNull String> stringSuggestions(@NonNull CommandContext<CommandSourceStack> context, @NonNull CommandInput input) {
+		CommandSourceStack stack = context.sender();
+
+		CommandSender executor = Objects.requireNonNullElse(stack.getExecutor(), stack.getSender());
+		if (executor instanceof Player caster) {
+			Spellbook spellbook = MagicSpells.getSpellbook(caster);
+			if (!spellbook.hasAdvancedPerm("list")) return Collections.emptyList();
+		} else if (!(executor instanceof ConsoleCommandSender)) return Collections.emptyList();
+
+		return TxtUtil.tabCompletePlayerName(executor);
 	}
 
 	private boolean shouldListSpell(Spell spell, Spellbook spellbook, boolean onlyShowCastableSpells) {

@@ -49,7 +49,7 @@ public class GlowSpell extends TargetedSpell implements TargetedEntitySpell {
 
 		color = getConfigDataEnum("color", ChatColor.class, ChatColor.WHITE);
 
-		MagicSpells.getDeprecationManager().addDeprecation(this, DEPRECATION_NOTICE);
+		MagicSpells.getDeprecationManager().addDeprecation(DEPRECATION_NOTICE);
 	}
 
 	@Override

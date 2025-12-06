@@ -1,21 +1,34 @@
 package com.nisovin.magicspells.spells.command;
 
+import org.checkerframework.checker.nullness.qual.NonNull;
+
 import java.util.Set;
 import java.util.List;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.ArrayList;
+import java.util.Collections;
+
+import org.incendo.cloud.context.CommandInput;
+import org.incendo.cloud.context.CommandContext;
+import org.incendo.cloud.suggestion.BlockingSuggestionProvider;
 
 import org.bukkit.entity.Player;
 import org.bukkit.command.CommandSender;
+
+import io.papermc.paper.command.brigadier.CommandSourceStack;
 
 import com.nisovin.magicspells.Spell;
 import com.nisovin.magicspells.util.*;
 import com.nisovin.magicspells.Spellbook;
 import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.spells.CommandSpell;
+import com.nisovin.magicspells.Spellbook.ItemBindings;
 import com.nisovin.magicspells.spelleffects.EffectPosition;
+import com.nisovin.magicspells.commands.parsers.SpellParser;
 
-public class UnbindSpell extends CommandSpell {
+@SuppressWarnings("UnstableApiUsage")
+public class UnbindSpell extends CommandSpell implements BlockingSuggestionProvider.Strings<CommandSourceStack> {
 
 	private Set<Spell> allowedSpells;
 
@@ -58,18 +71,23 @@ public class UnbindSpell extends CommandSpell {
 		Spellbook spellbook = MagicSpells.getSpellbook(caster);
 
 		if (data.args()[0] != null && data.args()[0].equalsIgnoreCase("*")) {
-			List<Spell> spells = new ArrayList<>();
+			if (allowedSpells == null) spellbook.removeCustomBindings(item);
+			else {
+				ItemBindings bindings = spellbook.getBindings(item);
 
-			for (CastItem i : spellbook.getItemSpells().keySet()) {
-				if (!i.equals(item)) continue;
-				spells.addAll(spellbook.getItemSpells().get(i));
-			}
+				if (bindings != null  && bindings.hasCustomBindings()) {
+					List<Spell> customBindings = bindings.getCustomBindings();
 
-			for (Spell s : spells) {
-				spellbook.removeCastItem(s, item);
+					for (Spell spell : customBindings) {
+						if (!allowedSpells.contains(spell)) continue;
+
+						spellbook.removeCustomBinding(item, spell);
+					}
+				}
 			}
 
 			spellbook.save();
+
 			sendMessage(strUnbindAll, caster, data);
 			playSpellEffects(EffectPosition.CASTER, caster, data);
 
@@ -92,7 +110,7 @@ public class UnbindSpell extends CommandSpell {
 			return new CastResult(PostCastAction.ALREADY_HANDLED, data);
 		}
 
-		boolean removed = spellbook.removeCastItem(spell, item);
+		boolean removed = spellbook.removeCustomBinding(item, spell);
 		if (!removed) {
 			sendMessage(strNotBound, caster, data);
 			return new CastResult(PostCastAction.ALREADY_HANDLED, data);
@@ -111,12 +129,28 @@ public class UnbindSpell extends CommandSpell {
 	}
 
 	@Override
-	public List<String> tabComplete(CommandSender sender, String[] args) {
-		if (!(sender instanceof Player) || args.length != 1) return null;
-		List<String> ret = new ArrayList<>();
-		ret.add("*");
-		ret.addAll(TxtUtil.tabCompleteSpellName(sender));
-		return ret;
+	public @NonNull Iterable<@NonNull String> stringSuggestions(@NonNull CommandContext<CommandSourceStack> context, @NonNull CommandInput input) {
+		CommandSourceStack stack = context.sender();
+
+		CommandSender executor = Objects.requireNonNullElse(stack.getExecutor(), stack.getSender());
+		if (!(executor instanceof Player caster)) return Collections.emptyList();
+
+		Spellbook spellbook = MagicSpells.getSpellbook(caster);
+		CastItem castItem = new CastItem(caster.getInventory().getItemInMainHand());
+
+		ItemBindings bindings = spellbook.getItemBindings().get(castItem);
+		if (bindings == null || !bindings.hasCustomBindings()) return Collections.emptyList();
+
+		List<Spell> customBindings = bindings.getCustomBindings();
+
+		List<String> suggestions = new ArrayList<>();
+		for (Spell spell : customBindings) {
+			if (allowedSpells != null && !allowedSpells.contains(spell)) continue;
+			suggestions.add(SpellParser.escapeIfRequired(Util.getPlainString(spell.getName())));
+		}
+		if (!suggestions.isEmpty()) suggestions.add("*");
+
+		return suggestions;
 	}
 
 	public Set<Spell> getAllowedSpells() {

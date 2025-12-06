@@ -7,13 +7,11 @@ import com.nisovin.magicspells.Subspell;
 import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.util.SpellData;
 import com.nisovin.magicspells.util.CastResult;
+import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.util.MagicConfig;
 import com.nisovin.magicspells.spells.InstantSpell;
 
 public class CastAtMarkSpell extends InstantSpell {
-
-	private final String markSpellName;
-	private final String spellToCastName;
 
 	private String strNoMark;
 
@@ -26,8 +24,6 @@ public class CastAtMarkSpell extends InstantSpell {
 		super(config, spellName);
 
 		strNoMark = getConfigString("str-no-mark", "You do not have a mark specified");
-		markSpellName = getConfigString("mark-spell", "");
-		spellToCastName = getConfigString("spell", "");
 	}
 	
 	@Override
@@ -36,16 +32,17 @@ public class CastAtMarkSpell extends InstantSpell {
 
 		if (initialized) return;
 
+		String markSpellName = getConfigString("mark-spell", "");
+
 		Spell spell = MagicSpells.getSpellByInternalName(markSpellName);
 		if (!(spell instanceof MarkSpell mark)) {
-			MagicSpells.error("CastAtMarkSpell '" + internalName + "' has an invalid mark-spell defined!");
+			MagicDebug.warn("Invalid spell '%s' %s.", markSpellName, MagicDebug.resolveFullPath("mark-spell"));
 			return;
 		}
-		
 		markSpell = mark;
 
-		spellToCast = initSubspell(spellToCastName, "CastAtMarkSpell '" + internalName + "' has an invalid spell defined!");
-		
+		spellToCast = initSubspell("spell", "", false);
+
 		initialized = true;
 	}
 

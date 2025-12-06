@@ -15,6 +15,7 @@ import com.nisovin.magicspells.Spellbook;
 import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.util.CastItem;
 import com.nisovin.magicspells.util.SpellData;
+import com.nisovin.magicspells.debug.MagicDebug;
 
 public class RightClickListener implements Listener {
 
@@ -28,7 +29,7 @@ public class RightClickListener implements Listener {
 
 				Spell old = rightClickCastItems.put(item, spell);
 				if (old != null)
-					MagicSpells.error("The spell '" + spell.getInternalName() + "' has same right-click-cast-item as '" + old.getInternalName() + "'!");
+					MagicDebug.warn("The spell '%s' has the same right-click-cast-item as '%s'!", spell, old);
 			}
 		}
 	}

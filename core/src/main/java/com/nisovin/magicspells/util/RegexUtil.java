@@ -8,4 +8,6 @@ public class RegexUtil {
 
 	public static final Pattern SIMPLE_INT_PATTERN = Pattern.compile("^\\d+$");
 
+	public static final Pattern BLOCK_DATA_SPLIT_PATTERN = Pattern.compile(",(?![^\\[]*])");
+
 }

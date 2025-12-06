@@ -19,8 +19,12 @@ import com.nisovin.magicspells.util.Name;
 import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.util.OverridePriority;
 import com.nisovin.magicspells.util.DeprecationNotice;
+import com.nisovin.magicspells.util.conversion.Conversion;
+import com.nisovin.magicspells.util.conversion.Converters;
 import com.nisovin.magicspells.util.magicitems.MagicItems;
 import com.nisovin.magicspells.util.magicitems.MagicItemData;
+import com.nisovin.magicspells.util.conversion.ConversionSource;
+import com.nisovin.magicspells.util.conversion.ConversionTarget;
 import com.nisovin.magicspells.spells.passive.util.PassiveListener;
 import com.nisovin.magicspells.util.magicitems.MagicItemDataParser;
 import com.nisovin.magicspells.events.MagicSpellsEntityDamageByEntityEvent;
@@ -41,30 +45,13 @@ public class TakeDamageListener extends PassiveListener {
 
 	@Override
 	public void initialize(@NotNull String var) {
-		MagicSpells.getDeprecationManager().addDeprecation(passiveSpell, DEPRECATION_NOTICE);
+		MagicSpells.getDeprecationManager().addDeprecation(DEPRECATION_NOTICE);
 		if (var.isEmpty()) return;
 
-		for (String s : var.split(MagicItemDataParser.DATA_REGEX)) {
-			s = s.trim();
-
-			boolean isDamCause = false;
-			for (DamageCause c : DamageCause.values()) {
-				if (!s.equalsIgnoreCase(c.name())) continue;
-
-				damageCauses.add(c);
-				isDamCause = true;
-				break;
-			}
-			if (isDamCause) continue;
-
-			MagicItemData itemData = MagicItems.getMagicItemDataFromString(s);
-			if (itemData == null) {
-				MagicSpells.error("Invalid damage cause or magic item '" + s + "' in takedamage trigger on passive spell '" + passiveSpell.getInternalName() + "'");
-				continue;
-			}
-
-			items.add(itemData);
-		}
+		Conversion.multi(ConversionSource.split(var, MagicItemDataParser.DATA_REGEX_PATTERN))
+			.target(Converters.enumConverter(DamageCause.class), ConversionTarget.addTo(damageCauses))
+			.target(Converters.MAGIC_ITEM_DATA, ConversionTarget.addTo(items))
+			.convert();
 	}
 
 	@OverridePriority

@@ -8,13 +8,10 @@ import org.bukkit.DyeColor;
 import org.bukkit.entity.Villager;
 import org.bukkit.entity.LivingEntity;
 
+import com.nisovin.magicspells.util.*;
 import com.nisovin.magicspells.MagicSpells;
-import com.nisovin.magicspells.util.DependsOn;
-import com.nisovin.magicspells.util.SpellData;
-import com.nisovin.magicspells.util.EntityData;
+import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.spells.BuffSpell;
-import com.nisovin.magicspells.util.MagicConfig;
-import com.nisovin.magicspells.handlers.DebugHandler;
 import com.nisovin.magicspells.util.config.ConfigData;
 import com.nisovin.magicspells.util.config.ConfigDataUtil;
 
@@ -25,6 +22,11 @@ import me.libraryaddict.disguise.utilities.parser.DisguiseParser;
 
 @DependsOn({"packetevents", "LibsDisguises"})
 public class DisguiseSpell extends BuffSpell {
+
+	private static final DeprecationNotice DEPRECATION_NOTICE = new DeprecationNotice(
+		"The legacy 'disguise' section is planned for removal.",
+		"Use a 'disguise' string instead."
+	);
 
 	private final Set<UUID> entities;
 
@@ -52,7 +54,8 @@ public class DisguiseSpell extends BuffSpell {
 		if (!isConfigSection("disguise")) return;
 
 		entityData = new EntityData(getConfigSection("disguise"));
-		MagicSpells.error("DisguiseSpell '" + internalName + "' is using the legacy 'disguise' section, which is planned for removal. Please switch to a 'disguise' string.");
+
+		MagicSpells.getDeprecationManager().addDeprecation(DEPRECATION_NOTICE);
 	}
 
 	@Override
@@ -63,7 +66,7 @@ public class DisguiseSpell extends BuffSpell {
 
 		String disguiseString = getConfigString("disguise", null);
 		if (disguiseString == null) {
-			MagicSpells.error("DisguiseSpell '" + internalName + "' has an invalid 'disguise' defined!");
+			MagicDebug.warn("Invalid or no 'disguise' defined %s.", MagicDebug.resolveFullPath());
 			return;
 		}
 
@@ -73,17 +76,20 @@ public class DisguiseSpell extends BuffSpell {
 				Disguise disguise = DisguiseParser.parseDisguise(disguiseString);
 				disguiseData = data -> disguise;
 			} catch (Throwable t) {
-				MagicSpells.error("DisguiseSpell '" + internalName + "' has an invalid 'disguise' defined.");
-				DebugHandler.debug(t);
+				MagicDebug.warn(t, "Invalid 'disguise' value '%s' defined %s.", disguiseString, MagicDebug.resolveFullPath());
 			}
 
 			return;
 		}
 
 		disguiseData = data -> {
+			String value = supplier.get(data);
+
 			try {
-				return DisguiseParser.parseDisguise(supplier.get(data));
-			} catch (Throwable ignored) {
+				return DisguiseParser.parseDisguise(value);
+			} catch (Throwable t) {
+				// TODO: Should this be a warning?
+				MagicDebug.info(t, "Resolved invalid 'disguise' value '%s'.", disguiseString);
 				return null;
 			}
 		};

@@ -9,10 +9,14 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.entity.EntityDeathEvent;
 
+import io.papermc.paper.registry.RegistryKey;
+
 import com.nisovin.magicspells.util.Name;
-import com.nisovin.magicspells.MagicSpells;
-import com.nisovin.magicspells.util.MobUtil;
 import com.nisovin.magicspells.util.OverridePriority;
+import com.nisovin.magicspells.util.conversion.Conversion;
+import com.nisovin.magicspells.util.conversion.Converters;
+import com.nisovin.magicspells.util.conversion.ConversionSource;
+import com.nisovin.magicspells.util.conversion.ConversionTarget;
 import com.nisovin.magicspells.spells.passive.util.PassiveListener;
 
 // Trigger variable is optional
@@ -26,15 +30,12 @@ public class KillListener extends PassiveListener {
 	@Override
 	public void initialize(@NotNull String var) {
 		if (var.isEmpty()) return;
-		for (String s : var.replace(" ", "").split(",")) {
-			EntityType type = MobUtil.getEntityType(s);
-			if (type == null) {
-				MagicSpells.error("Invalid entity type '" + s + "' in kill trigger on passive spell '" + passiveSpell.getInternalName() + "'");
-				continue;
-			}
 
-			types.add(type);
-		}
+		Conversion.convert(
+			ConversionSource.split(var.replace(" ", ""), ","),
+			Converters.registryEntryOrTag(RegistryKey.ENTITY_TYPE),
+			ConversionTarget.addTo(types)
+		);
 	}
 
 	@OverridePriority

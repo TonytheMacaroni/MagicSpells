@@ -10,7 +10,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.player.PlayerGameModeChangeEvent;
 
 import com.nisovin.magicspells.util.Name;
-import com.nisovin.magicspells.MagicSpells;
+import com.nisovin.magicspells.util.conversion.*;
 import com.nisovin.magicspells.util.OverridePriority;
 import com.nisovin.magicspells.spells.passive.util.PassiveListener;
 
@@ -22,15 +22,12 @@ public class GameModeChangeListener extends PassiveListener {
 	@Override
 	public void initialize(@NotNull String var) {
 		if (var.isEmpty()) return;
-		for (String s : var.split(",")) {
-			s = s.trim();
-			try {
-				GameMode mode = GameMode.valueOf(s.toUpperCase());
-				gameModes.add(mode);
-			} catch (IllegalArgumentException e) {
-				MagicSpells.error("Invalid game mode '" + s + "' in gamemodechange trigger on passive spell '" + passiveSpell.getInternalName() + "'");
-			}
-		}
+
+		Conversion.convert(
+			ConversionSource.split(var, ","),
+			Converters.enumConverter(GameMode.class),
+			ConversionTarget.addTo(gameModes)
+		);
 	}
 
 	@OverridePriority

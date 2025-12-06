@@ -29,6 +29,7 @@ cast-with-right-click: false
 cycle-spells-with-offhand-action: false
 cast-bound-bow-spells-from-offhand: false
 ignore-default-bindings: false
+sort-custom-bindings: true
 ignore-cast-item-enchants: true
 ignore-cast-item-names: false
 ignore-cast-item-amount: true

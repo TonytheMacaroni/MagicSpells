@@ -10,8 +10,7 @@ import org.bukkit.event.entity.EntityDismountEvent;
 import org.jetbrains.annotations.NotNull;
 
 import com.nisovin.magicspells.util.Name;
-import com.nisovin.magicspells.MagicSpells;
-import com.nisovin.magicspells.util.MobUtil;
+import com.nisovin.magicspells.util.conversion.*;
 import com.nisovin.magicspells.util.OverridePriority;
 import com.nisovin.magicspells.spells.passive.util.PassiveListener;
 
@@ -23,15 +22,12 @@ public class DismountListener extends PassiveListener {
 	@Override
 	public void initialize(@NotNull String var) {
 		if (var.isEmpty()) return;
-		for (String s : var.replace(" ", "").split(",")) {
-			EntityType type = MobUtil.getEntityType(s);
-			if (type == null) {
-				MagicSpells.error("Invalid entity type '" + s + "' in dismount trigger on passive spell '" + passiveSpell.getInternalName() + "'");
-				continue;
-			}
 
-			types.add(type);
-		}
+		Conversion.convert(
+			ConversionSource.split(var.replace(" ", ""), ","),
+			Converters.enumConverter(EntityType.class),
+			ConversionTarget.addTo(types)
+		);
 	}
 
 	@OverridePriority

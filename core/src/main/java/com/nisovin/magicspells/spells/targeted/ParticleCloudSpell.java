@@ -105,7 +105,7 @@ public class ParticleCloudSpell extends TargetedSpell implements TargetedLocatio
 		canTargetEntities = getConfigDataBoolean("can-target-entities", true);
 		canTargetLocation = getConfigDataBoolean("can-target-location", true);
 
-		potionEffects = Util.getPotionEffects(getConfigList("potion-effects", null), internalName);
+		potionEffects = Util.getPotionEffects(getConfigList("potion-effects", null));
 	}
 
 	@Override

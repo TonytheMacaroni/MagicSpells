@@ -11,7 +11,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.block.BlockPlaceEvent;
 
 import com.nisovin.magicspells.util.Name;
-import com.nisovin.magicspells.util.Util;
+import com.nisovin.magicspells.util.conversion.*;
 import com.nisovin.magicspells.util.OverridePriority;
 import com.nisovin.magicspells.spells.passive.util.PassiveListener;
 
@@ -24,12 +24,12 @@ public class BlockPlaceListener extends PassiveListener {
 	@Override
 	public void initialize(@NotNull String var) {
 		if (var.isEmpty()) return;
-		for (String s : var.split(",")) {
-			s = s.trim();
-			Material m = Util.getMaterial(s);
-			if (m == null) continue;
-			materials.add(m);
-		}
+
+		Conversion.convert(
+			ConversionSource.split(var, ","),
+			Converters.MATERIAL_BLOCK,
+			ConversionTarget.addTo(materials)
+		);
 	}
 
 	@OverridePriority

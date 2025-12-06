@@ -70,9 +70,6 @@ public abstract class BuffSpell extends TargetedSpell implements TargetedEntityS
 	private final boolean endSpellFromTarget;
 
 	protected String strFade;
-	protected String spellOnEndName;
-	protected String spellOnCostName;
-	protected String spellOnUseIncrementName;
 
 	protected SpellFilter filter;
 
@@ -108,9 +105,6 @@ public abstract class BuffSpell extends TargetedSpell implements TargetedEntityS
 		endSpellFromTarget = getConfigBoolean("end-spell-from-target", true);
 
 		strFade = getConfigString("str-fade", "");
-		spellOnEndName = getConfigString("spell-on-end", "");
-		spellOnCostName = getConfigString("spell-on-cost", "");
-		spellOnUseIncrementName = getConfigString("spell-on-use-increment", "");
 
 		if (cancelOnGiveDamage || cancelOnTakeDamage) registerEvents(new DamageListener());
 		if (cancelOnDeath) registerEvents(new PlayerDeathListener());
@@ -131,16 +125,9 @@ public abstract class BuffSpell extends TargetedSpell implements TargetedEntityS
 	public void initialize() {
 		super.initialize();
 
-		String error = "BuffSpell '" + internalName + "' has an invalid '%s' defined!";
-		spellOnUseIncrement = initSubspell(spellOnUseIncrementName,
-				error.formatted("spell-on-use-increment"),
-				true);
-		spellOnCost = initSubspell(spellOnCostName,
-				error.formatted("spell-on-cost"),
-				true);
-		spellOnEnd = initSubspell(spellOnEndName,
-				error.formatted("spell-on-end"),
-				true);
+		spellOnUseIncrement = initSubspell("spell-on-use-increment", "", true);
+		spellOnCost = initSubspell("spell-on-cost", "", true);
+		spellOnEnd = initSubspell("spell-on-end", "", true);
 
 		filter = getConfigSpellFilter();
 	}

@@ -9,10 +9,12 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.inventory.ItemStack;
 
 import com.nisovin.magicspells.util.*;
-import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.spells.TargetedSpell;
 import com.nisovin.magicspells.util.config.ConfigData;
+import com.nisovin.magicspells.util.conversion.Conversion;
+import com.nisovin.magicspells.util.conversion.Converters;
 import com.nisovin.magicspells.spells.TargetedLocationSpell;
+import com.nisovin.magicspells.util.conversion.ConversionTarget;
 import com.nisovin.magicspells.events.MagicSpellsBlockBreakEvent;
 
 public class ZapSpell extends TargetedSpell implements TargetedLocationSpell {
@@ -30,31 +32,8 @@ public class ZapSpell extends TargetedSpell implements TargetedLocationSpell {
 	public ZapSpell(MagicConfig config, String spellName) {
 		super(config, spellName);
 
-		List<String> allowed = getConfigStringList("allowed-block-types", null);
-		if (allowed != null && !allowed.isEmpty()) {
-			allowedBlockTypes = new HashSet<>();
-			for (String s : allowed) {
-				try {
-					BlockData bd = Bukkit.createBlockData(s.toLowerCase());
-					allowedBlockTypes.add(bd);
-				} catch (IllegalArgumentException e) {
-					MagicSpells.error("Invalid allowed block type '" + s + "' in ZapSpell '" + internalName + "'.");
-				}
-			}
-		} else allowedBlockTypes = null;
-
-		List<String> disallowed = getConfigStringList("disallowed-block-types", Arrays.asList("bedrock", "lava", "water"));
-		if (disallowed != null && !disallowed.isEmpty()) {
-			disallowedBlockTypes = new HashSet<>();
-			for (String s : disallowed) {
-				try {
-					BlockData bd = Bukkit.createBlockData(s.toLowerCase());
-					disallowedBlockTypes.add(bd);
-				} catch (IllegalArgumentException e) {
-					MagicSpells.error("Invalid disallowed block type '" + s + "' in ZapSpell '" + internalName + "'.");
-				}
-			}
-		} else disallowedBlockTypes = null;
+		allowedBlockTypes = Conversion.convert(getListSource("allowed-block-types"), Converters.BLOCK_DATA, ConversionTarget.set(true));
+		disallowedBlockTypes = Conversion.convert(getListSource("disallowed-block-types"), Converters.BLOCK_DATA, ConversionTarget.set(true));
 
 		strCantZap = getConfigString("str-cant-zap", "");
 

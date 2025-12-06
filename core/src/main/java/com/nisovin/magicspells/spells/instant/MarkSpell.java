@@ -18,6 +18,7 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 
+import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.util.*;
 import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.spells.InstantSpell;
@@ -44,10 +45,7 @@ public class MarkSpell extends InstantSpell implements TargetedLocationSpell {
 
 		if (enableDefaultMarks) {
 			defaultMark = LocationUtil.fromString(getConfigString("default-mark", "world,0,0,0"));
-			if (defaultMark == null) {
-				MagicSpells.error("MarkSpell '" + internalName + "' has an invalid default-mark defined!");
-				MagicSpells.error("Invalid default mark on MarkSpell '" + spellName + '\'');
-			}
+			if (defaultMark == null) MagicDebug.warn("Invalid 'default-mark' defined %s.", MagicDebug.resolveFullPath());
 		}
 
 		if (permanentMarks) loadMarks();
@@ -146,13 +144,13 @@ public class MarkSpell extends InstantSpell implements TargetedLocationSpell {
 
 						marks.put(uuid, new Location(world, x, y, z, yaw, pitch));
 					} catch (Exception e) {
-						MagicSpells.error("MarkSpell '" + internalName + "' failed to load mark: " + line);
+						MagicDebug.warn(e, "Failed to load mark '%s' for MarkSpell '%s'.", line, this);
 					}
 				}
 			}
 			scanner.close();
 		} catch (Exception e) {
-			MagicSpells.debug("Failed to load marks file (does it exist?) " + e.getCause() + " " + e.getMessage());
+			MagicDebug.warn(e, "Failed to load marks file for MarkSpell '%s'.", this);
 		}
 	}
 
@@ -181,6 +179,7 @@ public class MarkSpell extends InstantSpell implements TargetedLocationSpell {
 			}
 			writer.close();
 		} catch (Exception e) {
+			MagicDebug.warn(e, "Failed to save marks file for MarkSpell '%s'.", this);
 			MagicSpells.error("Error saving marks with MarkSpell: " + internalName);
 		}
 	}

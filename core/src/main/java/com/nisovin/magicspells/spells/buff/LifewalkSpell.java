@@ -1,6 +1,8 @@
 package com.nisovin.magicspells.spells.buff;
 
 import java.util.*;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -14,6 +16,7 @@ import org.bukkit.entity.LivingEntity;
 import com.nisovin.magicspells.util.*;
 import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.spells.BuffSpell;
+import com.nisovin.magicspells.util.conversion.*;
 
 public class LifewalkSpell extends BuffSpell {
 	
@@ -34,29 +37,35 @@ public class LifewalkSpell extends BuffSpell {
 
 		entities = new HashSet<>();
 
-		List<String> blockList = getConfigStringList("blocks", null);
-		if (blockList != null) {
-			for (String str : blockList) {
-				String[] string = str.split(" ");
-				Material material;
-				int chance = 0;
-				if (string.length < 2) MagicSpells.error("LifewalkSpell " + internalName + " has an invalid block defined");
-
-				material = Util.getMaterial(string[0]);
-				if (material == null) MagicSpells.error("LifewalkSpell " + internalName + " has an invalid block defined: " + string[0]);
-				if (string.length >= 2 && string[1] == null) MagicSpells.error("LifewalkSpell " + internalName + " has an invalid chance defined for block: " + string[0]);
-				else if (string.length >= 2) chance = Integer.parseInt(string[1]);
-
-				if (material != null && chance > 0) blocks.put(material, chance);
-			}
-		} else {
+		if (!isConfigList("blocks")) {
 			blocks.put(Material.TALL_GRASS, 25);
 			blocks.put(Material.FERN, 20);
 			blocks.put(Material.POPPY, 15);
 			blocks.put(Material.DANDELION, 10);
 			blocks.put(Material.OAK_SAPLING, 5);
+			return;
 		}
 
+		record MaterialWithChance(Material material, int chance) {
+
+			MaterialWithChance material(Material material) {
+				return new MaterialWithChance(material, this.chance);
+			}
+
+			MaterialWithChance chance(int chance) {
+				return new MaterialWithChance(this.material, chance);
+			}
+
+		}
+
+		Conversion.convert(
+			getListSource("blocks"),
+			Converters.<MaterialWithChance>sequential2("block entry")
+				.supplier(new MaterialWithChance(null, 0))
+				.step(Converters.MATERIAL_BLOCK, (block, value) -> value.material(block))
+				.step(Converters.rangedInteger(0, "chance"), (chance, value) -> value.chance(chance)),
+			ConversionTarget.consumer(entry -> blocks.put(entry.material, entry.chance))
+		);
 	}
 
 	@Override

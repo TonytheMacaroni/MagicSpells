@@ -4,7 +4,6 @@ import java.util.*;
 
 import com.google.common.collect.Multimap;
 import com.google.common.collect.HashMultimap;
-import com.google.common.collect.LinkedListMultimap;
 
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -24,7 +23,7 @@ import com.nisovin.magicspells.castmodifiers.ModifierSet;
 import com.nisovin.magicspells.spells.TargetedEntitySpell;
 import com.nisovin.magicspells.spelleffects.EffectPosition;
 import com.nisovin.magicspells.spells.TargetedLocationSpell;
-import com.nisovin.magicspells.util.managers.VariableManager;
+import com.nisovin.magicspells.util.VariableMod.VariableOwner;
 import com.nisovin.magicspells.events.SpellTargetLocationEvent;
 
 public class LoopSpell extends TargetedSpell implements TargetedEntitySpell, TargetedLocationSpell {
@@ -60,20 +59,11 @@ public class LoopSpell extends TargetedSpell implements TargetedEntitySpell, Tar
 	private final String strFadeTarget;
 
 	private Subspell spellOnEnd;
-	private final String spellOnEndName;
 
 	private List<Subspell> spells;
-	private List<String> spellNames;
 
-	private List<String> varModsLoop;
-	private List<String> varModsTargetLoop;
-
-	private Multimap<String, VariableMod> variableModsLoop;
-	private Multimap<String, VariableMod> variableModsTargetLoop;
-
-	private List<String> loopModifierStrings;
-	private List<String> loopTargetModifierStrings;
-	private List<String> loopLocationModifierStrings;
+	private VariableModSet variableModsLoop;
+	private VariableModSet variableModsTargetLoop;
 
 	private ModifierSet loopModifiers;
 	private ModifierSet loopTargetModifiers;
@@ -109,14 +99,6 @@ public class LoopSpell extends TargetedSpell implements TargetedEntitySpell, Tar
 
 		strFadeSelf = getConfigString("str-fade-self", "");
 		strFadeTarget = getConfigString("str-fade-target", "");
-		spellOnEndName = getConfigString("spell-on-end", "");
-
-		spellNames = getConfigStringList("spells", null);
-		varModsLoop = getConfigStringList("variable-mods-loop", null);
-		varModsTargetLoop = getConfigStringList("variable-mods-target-loop", null);
-		loopModifierStrings = getConfigStringList("loop-modifiers", null);
-		loopTargetModifierStrings = getConfigStringList("loop-target-modifiers", null);
-		loopLocationModifierStrings = getConfigStringList("loop-location-modifiers", null);
 	}
 
 	@Override
@@ -128,81 +110,25 @@ public class LoopSpell extends TargetedSpell implements TargetedEntitySpell, Tar
 			registerEvents(deathListener);
 		}
 
-		spellOnEnd = initSubspell(spellOnEndName,
-				"LoopSpell '" + internalName + "' has an invalid spell-on-end '" + spellOnEndName + "' defined!",
-				true);
-
-		if (spellNames != null && !spellNames.isEmpty()) {
-			spells = new ArrayList<>();
-
-			Subspell spell;
-			for (String spellName : spellNames) {
-				spell = initSubspell(spellName,
-						"LoopSpell '" + internalName + "' has an invalid spell '" + spellName + "' defined!");
-				if (spell == null) continue;
-
-				spells.add(spell);
-			}
-
-			if (spells.isEmpty()) spells = null;
-		}
-		spellNames = null;
+		spells = initSubspells("spells");
+		spellOnEnd = initSubspell("spell-on-end", "", true);
 	}
 
 	@Override
 	protected void initializeVariables() {
 		super.initializeVariables();
 
-		if (varModsLoop != null && !varModsLoop.isEmpty()) {
-			variableModsLoop = LinkedListMultimap.create();
-
-			for (String s : varModsLoop) {
-				try {
-					String[] data = s.split(" ", 2);
-					variableModsLoop.put(data[0], new VariableMod(data[1]));
-				} catch (Exception e) {
-					MagicSpells.error("Invalid variable-mods-loop option for spell '" + internalName + "': " + s);
-				}
-			}
-
-			if (variableModsLoop.isEmpty()) variableModsLoop = null;
-		}
-
-		if (varModsTargetLoop != null && !varModsTargetLoop.isEmpty()) {
-			variableModsTargetLoop = LinkedListMultimap.create();
-
-			for (String s : varModsTargetLoop) {
-				try {
-					String[] data = s.split(" ", 2);
-					variableModsTargetLoop.put(data[0], new VariableMod(data[1]));
-				} catch (Exception e) {
-					MagicSpells.error("Invalid variable-mods-target-loop option for spell '" + internalName + "': " + s);
-				}
-			}
-
-			if (variableModsTargetLoop.isEmpty()) variableModsTargetLoop = null;
-		}
-
-		varModsLoop = null;
-		varModsTargetLoop = null;
+		variableModsLoop = initVariableModSet("variable-mods-loop");
+		variableModsTargetLoop = initVariableModSet("variable-mods-target-loop");
 	}
 
 	@Override
 	protected void initializeModifiers() {
 		super.initializeModifiers();
 
-		if (loopModifierStrings != null && !loopModifierStrings.isEmpty())
-			loopModifiers = new ModifierSet(loopModifierStrings, this);
-
-		if (loopTargetModifierStrings != null && !loopTargetModifierStrings.isEmpty())
-			loopTargetModifiers = new ModifierSet(loopTargetModifierStrings, this);
-
-		if (loopLocationModifierStrings != null && !loopLocationModifierStrings.isEmpty())
-			loopLocationModifiers = new ModifierSet(loopLocationModifierStrings, this);
-
-		loopModifierStrings = null;
-		loopTargetModifierStrings = null;
-		loopLocationModifierStrings = null;
+		loopModifiers = initModifierSet("loop-modifiers");
+		loopTargetModifiers = initModifierSet("loop-target-modifiers");
+		loopLocationModifiers = initModifierSet("loop-location-modifiers");
 	}
 
 	@Override
@@ -358,27 +284,11 @@ public class LoopSpell extends TargetedSpell implements TargetedEntitySpell, Tar
 				return;
 			}
 
-			if (variableModsLoop != null && (!skipFirstVariableModsLoop || !firstIteration) && data.caster() instanceof Player playerCaster) {
-				VariableManager variableManager = MagicSpells.getVariableManager();
+			if (!variableModsLoop.isEmpty() && (!skipFirstVariableModsLoop || !firstIteration))
+				variableModsLoop.process(data);
 
-				for (Map.Entry<String, VariableMod> entry : variableModsLoop.entries()) {
-					VariableMod mod = entry.getValue();
-					if (mod == null) continue;
-
-					variableManager.processVariableMods(entry.getKey(), mod, playerCaster, data);
-				}
-			}
-
-			if (variableModsTargetLoop != null && (!skipFirstVariableModsTargetLoop || !firstIteration) && data.target() instanceof Player playerTarget) {
-				VariableManager variableManager = MagicSpells.getVariableManager();
-
-				for (Map.Entry<String, VariableMod> entry : variableModsTargetLoop.entries()) {
-					VariableMod mod = entry.getValue();
-					if (mod == null) continue;
-
-					variableManager.processVariableMods(entry.getKey(), mod, playerTarget, data);
-				}
-			}
+			if (!variableModsTargetLoop.isEmpty() && (!skipFirstVariableModsTargetLoop || !firstIteration))
+				variableModsTargetLoop.process(VariableOwner.TARGET, data);
 
 			if (data.hasCaster() && loopModifiers != null && (!skipFirstLoopModifiers || !firstIteration)) {
 				ModifierResult result = loopModifiers.apply(data.caster(), data);
@@ -413,7 +323,7 @@ public class LoopSpell extends TargetedSpell implements TargetedEntitySpell, Tar
 			firstIteration = false;
 
 			boolean activated = false;
-			if (spells != null) {
+			if (!spells.isEmpty()) {
 				if (castRandomSpellInstead) {
 					Subspell spell = spells.get(random.nextInt(spells.size()));
 					activated = cast(spell);

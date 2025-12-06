@@ -31,10 +31,13 @@ import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.events.SpellCastEvent;
 import com.nisovin.magicspells.util.config.ConfigData;
 import com.nisovin.magicspells.events.SpellTargetEvent;
+import com.nisovin.magicspells.util.conversion.Conversion;
+import com.nisovin.magicspells.util.conversion.Converters;
 import com.nisovin.magicspells.util.magicitems.MagicItems;
 import com.nisovin.magicspells.spelleffects.EffectPosition;
 import com.nisovin.magicspells.util.magicitems.MagicItemData;
 import com.nisovin.magicspells.events.SpellTargetLocationEvent;
+import com.nisovin.magicspells.util.conversion.ConversionTarget;
 
 public class BowSpell extends Spell {
 
@@ -51,11 +54,6 @@ public class BowSpell extends Spell {
 	private final List<MagicItemData> disallowedAmmoItems;
 
 	private final ValidTargetList triggerList;
-
-	private String spellOnShootName;
-	private String spellOnHitEntityName;
-	private String spellOnHitGroundName;
-	private String spellOnEntityLocationName;
 
 	private Subspell spellOnShoot;
 	private Subspell spellOnHitEntity;
@@ -100,15 +98,10 @@ public class BowSpell extends Spell {
 			triggerList = new ValidTargetList(this, targets);
 		} else triggerList = new ValidTargetList(this, getConfigString("can-trigger", "players"));
 
-		bowItems = getFilter("bow-items");
-		ammoItems = getFilter("ammo-items");
-		disallowedBowItems = getFilter("disallowed-bow-items");
-		disallowedAmmoItems = getFilter("disallowed-ammo-items");
-
-		spellOnShootName = getConfigString("spell", "");
-		spellOnHitEntityName = getConfigString("spell-on-hit-entity", "");
-		spellOnHitGroundName = getConfigString("spell-on-hit-ground", "");
-		spellOnEntityLocationName = getConfigString("spell-on-entity-location", "");
+		bowItems = Conversion.convert(getListSource("bow-items"), Converters.MAGIC_ITEM_DATA, ConversionTarget.list(true));
+		ammoItems = Conversion.convert(getListSource("ammo-items"), Converters.MAGIC_ITEM_DATA, ConversionTarget.list(true));
+		disallowedBowItems = Conversion.convert(getListSource("disallowed-bow-items"), Converters.MAGIC_ITEM_DATA, ConversionTarget.list(true));
+		disallowedAmmoItems = Conversion.convert(getListSource("disallowed-ammo-items"), Converters.MAGIC_ITEM_DATA, ConversionTarget.list(true));
 
 		bindable = getConfigBoolean("bindable", false);
 		requireBind = getConfigBoolean("require-bind", false);
@@ -122,46 +115,14 @@ public class BowSpell extends Spell {
 		maximumForce = getConfigDataFloat("maximum-force", 0F);
 	}
 
-	private List<MagicItemData> getFilter(String key) {
-		List<String> itemStrings = getConfigStringList(key, null);
-		if (itemStrings == null || itemStrings.isEmpty()) return null;
-
-		List<MagicItemData> itemData = new ArrayList<>();
-		for (String itemString : itemStrings) {
-			MagicItemData data = MagicItems.getMagicItemDataFromString(itemString);
-			if (data == null) {
-				MagicSpells.error("BowSpell '" + internalName + "' has an magic item '" + itemString + "' defined!");
-				continue;
-			}
-
-			itemData.add(data);
-		}
-
-		return itemData.isEmpty() ? null : itemData;
-	}
-
 	@Override
 	public void initialize() {
 		super.initialize();
 
-		String error = "BowSpell '" + internalName + "' has an invalid '%s' defined!";
-		spellOnShoot = initSubspell(spellOnShootName,
-				error.formatted("spell"),
-				true);
-		spellOnHitEntity = initSubspell(spellOnHitEntityName,
-				error.formatted("spell-on-hit-entity"),
-				true);
-		spellOnHitGround = initSubspell(spellOnHitGroundName,
-				error.formatted("spell-on-hit-ground"),
-				true);
-		spellOnEntityLocation = initSubspell(spellOnEntityLocationName,
-				error.formatted("spell-on-entity-location"),
-				true);
-
-		spellOnShootName = null;
-		spellOnHitEntityName = null;
-		spellOnHitGroundName = null;
-		spellOnEntityLocationName = null;
+		spellOnShoot = initSubspell("spell", "", true);
+		spellOnHitEntity = initSubspell("spell-on-hit-entity", "", true);
+		spellOnHitGround = initSubspell("spell-on-hit-ground", "", true);
+		spellOnEntityLocation = initSubspell("spell-on-entity-location", "", true);
 
 		if (hitListener == null) {
 			hitListener = new HitListener();

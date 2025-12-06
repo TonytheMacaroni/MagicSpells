@@ -34,9 +34,6 @@ public class DodgeSpell extends BuffSpell {
 	private Subspell spellBeforeDodge;
 	private Subspell spellAfterDodge;
 
-	private final String spellBeforeDodgeName;
-	private final String spellAfterDodgeName;
-
 	public DodgeSpell(MagicConfig config, String spellName) {
 		super(config, spellName);
 
@@ -46,21 +43,14 @@ public class DodgeSpell extends BuffSpell {
 
 		distance = getConfigDataDouble("distance", 2);
 
-		spellBeforeDodgeName = getConfigString("spell-before-dodge", "");
-		spellAfterDodgeName = getConfigString("spell-after-dodge", "");
 	}
 
 	@Override
 	public void initialize() {
 		super.initialize();
 
-		String error = "DodgeSpell '" + internalName + "' has an invalid '%s' defined!";
-		spellBeforeDodge = initSubspell(spellBeforeDodgeName,
-				error.formatted("spell-before-dodge"),
-				true);
-		spellAfterDodge = initSubspell(spellAfterDodgeName,
-				error.formatted("spell-after-dodge"),
-				true);
+		spellBeforeDodge = initSubspell("spell-before-dodge", "", true);
+		spellAfterDodge = initSubspell("spell-after-dodge", "", true);
 
 		filter = getConfigSpellFilter();
 	}

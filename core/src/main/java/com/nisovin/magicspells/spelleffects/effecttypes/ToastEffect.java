@@ -2,11 +2,13 @@ package com.nisovin.magicspells.spelleffects.effecttypes;
 
 import net.kyori.adventure.text.Component;
 
+import org.bukkit.Material;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.configuration.ConfigurationSection;
 
+import com.nisovin.magicspells.util.ConfigReaderUtil;
 import com.nisovin.magicspells.util.Name;
 import com.nisovin.magicspells.util.Util;
 import com.nisovin.magicspells.MagicSpells;
@@ -34,10 +36,7 @@ public class ToastEffect extends SpellEffect {
 		text = config.getString("text", "");
 		frame = ConfigDataUtil.getEnum(config, "frame", Frame.class, Frame.TASK);
 
-		String magicItemString = config.getString("icon", "air");
-		MagicItem magicItem = MagicItems.getMagicItemFromString(magicItemString);
-		if (magicItem == null) MagicSpells.error("Invalid toast effect icon specified: '" + magicItemString + "'");
-		else icon = magicItem.getItemStack();
+		icon = ConfigReaderUtil.getConfigItemStack(config, "icon", new ItemStack(Material.AIR));
 
 		broadcast = ConfigDataUtil.getBoolean(config, "broadcast", false);
 		useViewerAsTarget = ConfigDataUtil.getBoolean(config, "use-viewer-as-target", false);

@@ -21,6 +21,7 @@ import net.kyori.adventure.text.Component;
 import com.nisovin.magicspells.util.*;
 import com.nisovin.magicspells.Subspell;
 import com.nisovin.magicspells.MagicSpells;
+import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.spells.TargetedSpell;
 import com.nisovin.magicspells.events.SpellTargetEvent;
 import com.nisovin.magicspells.util.config.ConfigData;
@@ -63,13 +64,9 @@ public class TotemSpell extends TargetedSpell implements TargetedLocationSpell {
 	private ItemStack mainHand;
 	private ItemStack offHand;
 
-	private final List<String> spellNames;
 	private List<Subspell> spells;
 
-	private final String spellOnBreakName;
 	private Subspell spellOnBreak;
-
-	private final String spellOnSpawnName;
 	private Subspell spellOnSpawn;
 
 	public TotemSpell(MagicConfig config, String spellName) {
@@ -139,10 +136,6 @@ public class TotemSpell extends TargetedSpell implements TargetedLocationSpell {
 		strAtCap = getConfigString("str-at-cap", "You have too many effects at once.");
 		totemName = getConfigDataComponent("totem-name", null);
 
-		spellNames = getConfigStringList("spells", null);
-		spellOnBreakName = getConfigString("spell-on-break", "");
-		spellOnSpawnName = getConfigString("spell-on-spawn", "");
-
 		totems = HashMultimap.create();
 	}
 
@@ -150,28 +143,11 @@ public class TotemSpell extends TargetedSpell implements TargetedLocationSpell {
 	public void initialize() {
 		super.initialize();
 
-		String prefix = "TotemSpell '" + internalName + "' has an invalid ";
+		spellOnBreak = initSubspell("spell-on-break", "", true);
+		spellOnSpawn = initSubspell("spell-on-spawn", "", true);
 
-		spells = new ArrayList<>();
-		if (spellNames != null && !spellNames.isEmpty()) {
-			Subspell spell;
-
-			for (String spellName : spellNames) {
-				spell = initSubspell(spellName, prefix + "spell: '" + spellName + "' defined!");
-				if (spell == null) continue;
-
-				spells.add(spell);
-			}
-		}
-
-		spellOnBreak = initSubspell(spellOnBreakName,
-			prefix + "spell-on-break: '" + spellOnBreakName + "' defined!",
-			true);
-		spellOnSpawn = initSubspell(spellOnSpawnName,
-			prefix + "spell-on-spawn: '" + spellOnSpawnName + "' defined!",
-			true);
-
-		if (spells.isEmpty()) MagicSpells.error("TotemSpell '" + internalName + "' has no spells defined!");
+		spells = initSubspells("spells");
+		if (spells.isEmpty()) MagicDebug.warn("TotemSpell %s has no spells defined!", MagicDebug.resolveFullPath());
 	}
 
 	@Override

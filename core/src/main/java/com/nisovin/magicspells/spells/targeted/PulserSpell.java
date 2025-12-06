@@ -22,6 +22,7 @@ import com.destroystokyo.paper.event.block.BlockDestroyEvent;
 import com.nisovin.magicspells.util.*;
 import com.nisovin.magicspells.Subspell;
 import com.nisovin.magicspells.MagicSpells;
+import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.spells.TargetedSpell;
 import com.nisovin.magicspells.util.config.ConfigData;
 import com.nisovin.magicspells.spelleffects.EffectPosition;
@@ -45,10 +46,8 @@ public class PulserSpell extends TargetedSpell implements TargetedLocationSpell 
 	private final ConfigData<Boolean> unbreakable;
 	private final ConfigData<Boolean> onlyCountOnSuccess;
 
-	private final List<String> spellNames;
 	private List<Subspell> spells;
 
-	private final String spellOnBreakName;
 	private Subspell spellOnBreak;
 
 	private final String strAtCap;
@@ -69,9 +68,6 @@ public class PulserSpell extends TargetedSpell implements TargetedLocationSpell 
 		unbreakable = getConfigDataBoolean("unbreakable", false);
 		onlyCountOnSuccess = getConfigDataBoolean("only-count-on-success", false);
 
-		spellNames = getConfigStringList("spells", null);
-		spellOnBreakName = getConfigString("spell-on-break", "");
-
 		strAtCap = getConfigString("str-at-cap", "You have too many effects at once.");
 
 		pulsers = new HashMap<>();
@@ -81,24 +77,10 @@ public class PulserSpell extends TargetedSpell implements TargetedLocationSpell 
 	public void initialize() {
 		super.initialize();
 
-		String prefix = "PulserSpell '" + internalName + "' has ";
+		spellOnBreak = initSubspell("spell-on-break", "", true);
 
-		spells = new ArrayList<>();
-		if (spellNames != null && !spellNames.isEmpty()) {
-			Subspell spell;
-			for (String spellName : spellNames) {
-				spell = initSubspell(spellName, prefix + "an invalid spell: '" + spellName + "' defined!");
-				if (spell == null) continue;
-
-				spells.add(spell);
-			}
-		}
-
-		spellOnBreak = initSubspell(spellOnBreakName,
-			prefix + "an invalid spell-on-break defined!",
-			true);
-
-		if (spells.isEmpty()) MagicSpells.error(prefix + "no spells defined!");
+		spells = initSubspells("spells");
+		if (spells.isEmpty()) MagicDebug.warn("PulserSpell %s has no spells defined!", MagicDebug.resolveFullPath());
 	}
 
 	@Override

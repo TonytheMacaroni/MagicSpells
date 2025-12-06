@@ -1,5 +1,6 @@
 package com.nisovin.magicspells.spells.passive;
 
+import java.util.Set;
 import java.util.EnumSet;
 
 import org.jetbrains.annotations.NotNull;
@@ -12,8 +13,7 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.player.PlayerInteractAtEntityEvent;
 
 import com.nisovin.magicspells.util.Name;
-import com.nisovin.magicspells.MagicSpells;
-import com.nisovin.magicspells.util.MobUtil;
+import com.nisovin.magicspells.util.conversion.*;
 import com.nisovin.magicspells.util.OverridePriority;
 import com.nisovin.magicspells.spells.passive.util.PassiveListener;
 
@@ -23,20 +23,17 @@ import com.nisovin.magicspells.spells.passive.util.PassiveListener;
 @Name("rightclickentity")
 public class RightClickEntityListener extends PassiveListener {
 
-	private final EnumSet<EntityType> entities = EnumSet.noneOf(EntityType.class);
+	private final Set<EntityType> entities = EnumSet.noneOf(EntityType.class);
 
 	@Override
 	public void initialize(@NotNull String var) {
 		if (var.isEmpty()) return;
-		for (String s : var.replace(" ", "").split(",")) {
-			EntityType type = MobUtil.getEntityType(s);
-			if (type == null) {
-				MagicSpells.error("Invalid entity type '" + s + "' in rightclickentity trigger on passive spell '" + passiveSpell.getInternalName() + "'");
-				continue;
-			}
 
-			entities.add(type);
-		}
+		Conversion.convert(
+			ConversionSource.split(var.replace(" ", ""), ","),
+			Converters.enumConverter(EntityType.class),
+			ConversionTarget.addTo(entities)
+		);
 	}
 
 	@OverridePriority

@@ -13,9 +13,13 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.event.entity.EntityPotionEffectEvent;
 import org.bukkit.event.entity.EntityPotionEffectEvent.*;
 
+import io.papermc.paper.registry.RegistryKey;
+
 import com.nisovin.magicspells.util.Name;
-import com.nisovin.magicspells.MagicSpells;
-import com.nisovin.magicspells.handlers.PotionEffectHandler;
+import com.nisovin.magicspells.util.conversion.Conversion;
+import com.nisovin.magicspells.util.conversion.Converters;
+import com.nisovin.magicspells.util.conversion.ConversionSource;
+import com.nisovin.magicspells.util.conversion.ConversionTarget;
 import com.nisovin.magicspells.spells.passive.util.PassiveListener;
 
 @Name("potioneffect")
@@ -33,36 +37,27 @@ public class PotionEffectListener extends PassiveListener {
 		String[] splits = var.toUpperCase().split(" ");
 		if (splits[0].equals("*")) isAnyType = true;
 		else {
-			for (String s : splits[0].split(",")) {
-				PotionEffectType type = PotionEffectHandler.getPotionEffectType(s);
-
-				if (type == null) {
-					MagicSpells.error("Invalid effect '" + s + "' in potioneffect trigger on passive spell '" + passiveSpell.getInternalName() + "'");
-				}
-				else types.add(type);
-			}
+			Conversion.convert(
+				ConversionSource.split(splits[0], ","),
+				Converters.registryEntryOrTag(RegistryKey.MOB_EFFECT),
+				ConversionTarget.addTo(types)
+			);
 		}
 
 		if (splits.length > 1 && !splits[1].equals("*")) {
-			for (String s : splits[1].split(",")) {
-				try {
-					Action action = Action.valueOf(s);
-					actions.add(action);
-				} catch (IllegalArgumentException e) {
-					MagicSpells.error("Invalid action '" + s + "' in potioneffect trigger on passive spell '" + passiveSpell.getInternalName() + "'");
-				}
-			}
+			Conversion.convert(
+				ConversionSource.split(splits[1], ","),
+				Converters.enumConverter(Action.class),
+				ConversionTarget.addTo(actions)
+			);
 		} else actions = EnumSet.allOf(Action.class);
 
 		if (splits.length > 1 && !splits[2].equals("*")) {
-			for (String s : splits[2].split(",")) {
-				try {
-					Cause cause = Cause.valueOf(s);
-					causes.add(cause);
-				} catch (IllegalArgumentException e) {
-					MagicSpells.error("Invalid cause '" + s + "' in potioneffect trigger on passive spell '" + passiveSpell.getInternalName() + "'");
-				}
-			}
+			Conversion.convert(
+				ConversionSource.split(splits[1], ","),
+				Converters.enumConverter(Cause.class),
+				ConversionTarget.addTo(causes)
+			);
 		} else causes = EnumSet.allOf(Cause.class);
 	}
 

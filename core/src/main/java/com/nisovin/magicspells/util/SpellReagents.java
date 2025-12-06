@@ -8,7 +8,7 @@ import java.util.HashSet;
 import java.util.Collection;
 
 import com.nisovin.magicspells.util.magicitems.MagicItemData;
-import com.nisovin.magicspells.util.magicitems.MagicItemData.MagicItemAttribute;
+import com.nisovin.magicspells.util.magicitems.MagicItemData.MagicItemAttributes;
 
 public class SpellReagents {
 	
@@ -223,7 +223,7 @@ public class SpellReagents {
 
 		public ReagentItem(MagicItemData magicItemData, int amount) {
 			this.magicItemData = magicItemData.clone();
-			this.magicItemData.getIgnoredAttributes().add(MagicItemAttribute.AMOUNT);
+			this.magicItemData.getIgnoredAttributes().add(MagicItemAttributes.AMOUNT);
 
 			this.amount = amount;
 		}

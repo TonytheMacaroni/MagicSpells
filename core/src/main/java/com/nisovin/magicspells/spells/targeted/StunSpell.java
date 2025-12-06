@@ -18,6 +18,7 @@ import org.bukkit.event.player.PlayerInteractEvent;
 
 import com.nisovin.magicspells.util.*;
 import com.nisovin.magicspells.MagicSpells;
+import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.spells.TargetedSpell;
 import com.nisovin.magicspells.util.config.ConfigData;
 import com.nisovin.magicspells.spells.TargetedEntitySpell;
@@ -56,7 +57,7 @@ public class StunSpell extends TargetedSpell implements TargetedEntitySpell {
 		super.initialize();
 
 		if ((stunBody.isConstant() && !stunBody.get()) && (stunMonitor.isConstant() && !stunMonitor.get())) {
-			MagicSpells.error("StunSpell '" + internalName + "' is not attempting to stun the body or the monitor.");
+			MagicDebug.warn("StunSpell '%s' is not attempting to stun the body or the monitor.", MagicDebug.resolveFullPath());
 			return;
 		}
 

@@ -12,6 +12,7 @@ import org.bukkit.configuration.ConfigurationSection;
 
 import com.nisovin.magicspells.Spell;
 import com.nisovin.magicspells.MagicSpells;
+import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.util.grammars.*;
 
 public class SpellFilter {
@@ -218,9 +219,7 @@ public class SpellFilter {
 
 			return new SpellFilter(spells);
 		} catch (Exception e) {
-			MagicSpells.error("Encountered an error while parsing spell filter '" + string + "'");
-			e.printStackTrace();
-
+			MagicDebug.warn(e, "Encountered an error while parsing spell filter '%s' %s.", string, MagicDebug.resolveFullPath());
 			return new SpellFilter();
 		}
 	}

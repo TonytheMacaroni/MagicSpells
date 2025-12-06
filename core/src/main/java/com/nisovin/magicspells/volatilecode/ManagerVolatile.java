@@ -7,6 +7,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import com.nisovin.magicspells.MagicSpells;
+import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.volatilecode.latest.VolatileCodeLatest;
 
 public class ManagerVolatile {
@@ -52,16 +53,16 @@ public class ManagerVolatile {
 			Class<?> volatileCode = Class.forName("com.nisovin.magicspells.volatilecode." + version + ".VolatileCode_" + version);
 
 			handle = (VolatileCodeHandle) volatileCode.getConstructor(VolatileCodeHelper.class).newInstance(helper);
-			MagicSpells.log("Found volatile code handler for " + mcVersion + ".");
+			MagicDebug.info("Found volatile code handler for %s.", mcVersion);
 			return handle;
 		} catch (Throwable ignored) {}
 
 		try {
 			handle = new VolatileCodeLatest(helper);
-			MagicSpells.log("Using latest volatile code handler.");
+			MagicDebug.info("Using latest volatile code handler.");
 		} catch (Throwable ignored) {
 			handle = new VolatileCodeDisabled();
-			MagicSpells.error("Volatile code handler could not be initialized.");
+			MagicDebug.error("Volatile code handler could not be initialized.");
 		}
 
 		return handle;

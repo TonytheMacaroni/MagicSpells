@@ -12,21 +12,18 @@ import com.nisovin.magicspells.events.SpellTargetEvent;
 
 public class CreatureTargetSpell extends InstantSpell {
 
-	private final String targetSpellName;
 	private Subspell targetSpell;
 
 	public CreatureTargetSpell(MagicConfig config, String spellName) {
 		super(config, spellName);
 
-		targetSpellName = getConfigString("spell", "");
 	}
 
 	@Override
 	public void initialize() {
 		super.initialize();
 
-		targetSpell = initSubspell(targetSpellName,
-				"CreatureTargetSpell '" + internalName + "' has an invalid spell defined!");
+		targetSpell = initSubspell("spell", "", false);
 	}
 
 	@Override

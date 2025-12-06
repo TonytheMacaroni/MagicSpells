@@ -11,8 +11,8 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.block.BlockBreakEvent;
 
 import com.nisovin.magicspells.util.Name;
-import com.nisovin.magicspells.util.Util;
 import com.nisovin.magicspells.util.OverridePriority;
+import com.nisovin.magicspells.util.conversion.*;
 import com.nisovin.magicspells.spells.passive.util.PassiveListener;
 
 // Optional trigger variable of a comma separated list of blocks to accept
@@ -24,12 +24,12 @@ public class BlockBreakListener extends PassiveListener {
 	@Override
 	public void initialize(@NotNull String var) {
 		if (var.isEmpty()) return;
-		for (String s : var.split(",")) {
-			s = s.trim();
-			Material m = Util.getMaterial(s);
-			if (m == null) continue;
-			materials.add(m);
-		}
+
+		Conversion.single(
+			ConversionSource.split(var, ","),
+			Converters.MATERIAL_BLOCK,
+			ConversionTarget.addTo(materials)
+		);
 	}
 
 	@OverridePriority

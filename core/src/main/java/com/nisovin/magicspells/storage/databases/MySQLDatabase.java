@@ -13,13 +13,13 @@ import com.nisovin.magicspells.storage.Database;
 
 public class MySQLDatabase extends Database {
 
-	public MySQLDatabase(MagicSpells plugin, String dbLocation) {
-		super(plugin, dbLocation);
+	public MySQLDatabase(String dbLocation) {
+		super(dbLocation);
 	}
 
 	@Override
 	public Connection openConnection() {
-		File folder = plugin.getInstance().getDataFolder();
+		File folder = MagicSpells.getInstance().getDataFolder();
 		if (!folder.exists()) folder.mkdirs();
 
 		File file = new File(folder, dbLocation);

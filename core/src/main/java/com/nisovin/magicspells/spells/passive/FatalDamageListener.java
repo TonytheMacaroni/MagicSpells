@@ -11,6 +11,7 @@ import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 
 import com.nisovin.magicspells.util.Name;
 import com.nisovin.magicspells.MagicSpells;
+import com.nisovin.magicspells.util.conversion.*;
 import com.nisovin.magicspells.util.OverridePriority;
 import com.nisovin.magicspells.util.DeprecationNotice;
 import com.nisovin.magicspells.spells.passive.util.PassiveListener;
@@ -29,20 +30,14 @@ public class FatalDamageListener extends PassiveListener {
 
 	@Override
 	public void initialize(@NotNull String var) {
-		MagicSpells.getDeprecationManager().addDeprecation(passiveSpell, DEPRECATION_NOTICE);
+		MagicSpells.getDeprecationManager().addDeprecation(DEPRECATION_NOTICE);
 		if (var.isEmpty()) return;
 
-		for (String causeName : var.split("\\|")) {
-			DamageCause cause = null;
-			try {
-				cause = DamageCause.valueOf(causeName.toUpperCase());
-			} catch (IllegalArgumentException ignored) {}
-			if (cause == null) {
-				MagicSpells.error("Invalid damage cause '" + causeName + "' in fataldamage trigger on passive spell '" + passiveSpell.getInternalName() + "'");
-				return;
-			}
-			damageCauses.add(cause);
-		}
+		Conversion.convert(
+			ConversionSource.split(var, "\\|"),
+			Converters.enumConverter(DamageCause.class),
+			ConversionTarget.addTo(damageCauses)
+		);
 	}
 
 	@OverridePriority

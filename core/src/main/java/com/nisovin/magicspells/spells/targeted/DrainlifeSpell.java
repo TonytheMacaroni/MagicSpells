@@ -51,7 +51,6 @@ public class DrainlifeSpell extends TargetedSpell implements TargetedEntitySpell
 	private final ConfigData<Boolean> avoidDamageModification;
 
 	private Subspell spellOnAnimation;
-	private final String spellOnAnimationName;
 
 	private final ConfigData<DamageCause> damageType;
 
@@ -74,13 +73,11 @@ public class DrainlifeSpell extends TargetedSpell implements TargetedEntitySpell
 		powerAffectsAmount = getConfigDataBoolean("power-affects-amount", true);
 		avoidDamageModification = getConfigDataBoolean("avoid-damage-modification", true);
 
-		spellOnAnimationName = getConfigString("spell-on-animation", "");
-
 		damageType = getConfigDataEnum("damage-type", DamageCause.class, null);
 		drainDamageType = getConfigDataRegistryEntry("drain-damage-type", RegistryKey.DAMAGE_TYPE, null)
 			.orDefault(data -> data.caster() instanceof Player ? DamageType.PLAYER_ATTACK : DamageType.MOB_ATTACK);
 
-		MagicSpells.getDeprecationManager().addDeprecation(this, HEALTH_DEPRECATION_NOTICE,
+		MagicSpells.getDeprecationManager().addDeprecation(HEALTH_DEPRECATION_NOTICE,
 			takeType.isConstant() && takeType.get() == DrainType.HEALTH ||
 				giveType.isConstant() && giveType.get() == DrainType.HEALTH
 		);
@@ -90,9 +87,7 @@ public class DrainlifeSpell extends TargetedSpell implements TargetedEntitySpell
 	public void initialize() {
 		super.initialize();
 
-		spellOnAnimation = initSubspell(spellOnAnimationName,
-				"DrainlifeSpell '" + internalName + "' has an invalid spell-on-animation defined!",
-				true);
+		spellOnAnimation = initSubspell("spell-on-animation", "", true);
 	}
 
 	@Override

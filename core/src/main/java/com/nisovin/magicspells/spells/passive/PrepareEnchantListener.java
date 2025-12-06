@@ -14,6 +14,10 @@ import org.bukkit.event.enchantment.PrepareItemEnchantEvent;
 import com.nisovin.magicspells.util.Name;
 import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.util.OverridePriority;
+import com.nisovin.magicspells.util.conversion.Conversion;
+import com.nisovin.magicspells.util.conversion.ConversionSource;
+import com.nisovin.magicspells.util.conversion.ConversionTarget;
+import com.nisovin.magicspells.util.conversion.Converters;
 import com.nisovin.magicspells.util.magicitems.MagicItems;
 import com.nisovin.magicspells.util.magicitems.MagicItemData;
 import com.nisovin.magicspells.spells.passive.util.PassiveListener;
@@ -27,19 +31,12 @@ public class PrepareEnchantListener extends PassiveListener {
 	@Override
 	public void initialize(@NotNull String var) {
 		if (var.isEmpty()) return;
-		items = new HashSet<>();
 
-		for (String item : var.split(MagicItemDataParser.DATA_REGEX)) {
-			MagicItemData itemData = MagicItems.getMagicItemDataFromString(item);
-			if (itemData == null) {
-				MagicSpells.error("Invalid magic item '" + item + "' in enchant trigger on passive spell '" + passiveSpell.getInternalName() + "'.");
-				continue;
-			}
-
-			items.add(itemData);
-		}
-
-		if (items.isEmpty()) items = null;
+		items = Conversion.convert(
+			ConversionSource.split(var, MagicItemDataParser.DATA_REGEX_PATTERN),
+			Converters.MAGIC_ITEM_DATA,
+			ConversionTarget.set(true)
+		);
 	}
 
 	@OverridePriority

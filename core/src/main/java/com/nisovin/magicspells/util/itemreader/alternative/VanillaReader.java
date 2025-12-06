@@ -5,6 +5,8 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 
+import com.nisovin.magicspells.debug.MagicDebug;
+
 public class VanillaReader implements ItemConfigTransformer {
 
 	@Override
@@ -18,6 +20,7 @@ public class VanillaReader implements ItemConfigTransformer {
 		try {
 			item = Bukkit.getItemFactory().createItemStack(data);
 		} catch (IllegalArgumentException e) {
+			MagicDebug.warn(e, "Invalid 'data' value '%s' for type 'external::vanilla' %s.", data, MagicDebug.resolveFullPath());
 			return null;
 		}
 

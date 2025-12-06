@@ -17,6 +17,7 @@ import org.bukkit.event.player.PlayerInteractEntityEvent;
 import com.nisovin.magicspells.Spell;
 import com.nisovin.magicspells.util.*;
 import com.nisovin.magicspells.MagicSpells;
+import com.nisovin.magicspells.debug.MagicDebug;
 import com.nisovin.magicspells.spells.InstantSpell;
 import com.nisovin.magicspells.util.config.ConfigData;
 import com.nisovin.magicspells.spelleffects.EffectPosition;
@@ -36,7 +37,6 @@ public class RitualSpell extends InstantSpell {
 	private final ConfigData<Boolean> needSpellToParticipate;
 	private final ConfigData<Boolean> chargeReagentsImmediately;
 
-	private String spellToCastName;
 	private Spell spellToCast;
 
 	private final String strRitualLeft;
@@ -61,8 +61,6 @@ public class RitualSpell extends InstantSpell {
 		needSpellToParticipate = getConfigDataBoolean("need-spell-to-participate", false);
 		chargeReagentsImmediately = getConfigDataBoolean("charge-reagents-immediately", true);
 
-		spellToCastName = getConfigString("spell", "");
-
 		strRitualLeft = getConfigString("str-ritual-left", "");
 		strRitualJoined = getConfigString("str-ritual-joined", "");
 		strRitualFailed = getConfigString("str-ritual-failed", "");
@@ -74,9 +72,15 @@ public class RitualSpell extends InstantSpell {
 	public void initialize() {
 		super.initialize();
 
+		String spellToCastName = getConfigString("spell", null);
+		if (spellToCastName == null) {
+			MagicDebug.warn("No 'spell' defined %s.", MagicDebug.resolveFullPath());
+			return;
+		}
+
 		spellToCast = MagicSpells.getSpellByInternalName(spellToCastName);
-		if (spellToCast == null) MagicSpells.error("RitualSpell '" + internalName + "' has an invalid spell defined!");
-		spellToCastName = null;
+		if (spellToCast == null)
+			MagicDebug.warn("Invalid spell '%s' defined %s.", spellToCastName, MagicDebug.resolveFullPath("spell"));
 	}
 
 	@Override

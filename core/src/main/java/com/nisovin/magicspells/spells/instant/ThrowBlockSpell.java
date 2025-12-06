@@ -57,8 +57,6 @@ public class ThrowBlockSpell extends InstantSpell implements TargetedLocationSpe
 	private final ConfigData<Boolean> projectileHasGravity;
 	private final ConfigData<Boolean> applySpellPowerToVelocity;
 
-	private final String spellOnLandName;
-
 	private Subspell spellOnLand;
 
 	public ThrowBlockSpell(MagicConfig config, String spellName) {
@@ -74,7 +72,7 @@ public class ThrowBlockSpell extends InstantSpell implements TargetedLocationSpe
 				int fuse = Integer.parseInt(split[1]);
 				tntFuse = data -> fuse;
 			} catch (NumberFormatException e) {
-				tntFuse = FunctionData.build(split[1], Double::intValue, 0);
+				tntFuse = FunctionData.build(split[1], Double::intValue, 0, true);
 				if (tntFuse == null)
 					MagicSpells.error("Invalid tnt fuse '" + split[1] + "' for ThrowBlockSpell '" + internalName + "'.");
 			}
@@ -100,21 +98,16 @@ public class ThrowBlockSpell extends InstantSpell implements TargetedLocationSpe
 		powerAffectsDamage = getConfigDataBoolean("power-affects-damage", true);
 		projectileHasGravity = getConfigDataBoolean("gravity", true);
 		applySpellPowerToVelocity = getConfigDataBoolean("apply-spell-power-to-velocity", false);
-
-		spellOnLandName = getConfigString("spell-on-land", "");
 	}
 
 	@Override
 	public void initialize() {
 		super.initialize();
 
-		if (material == null && tntFuse == null) {
+		if (material == null && tntFuse == null)
 			MagicSpells.error("ThrowBlockSpell '" + internalName + "' has an invalid block-type defined!");
-		}
 
-		spellOnLand = initSubspell(spellOnLandName,
-				"ThrowBlockSpell '" + internalName + "' has an invalid spell-on-land defined!",
-				true);
+		spellOnLand = initSubspell("spell-on-land", "", true);
 
 		if (throwBlockListener == null) {
 			throwBlockListener = new ThrowBlockListener();

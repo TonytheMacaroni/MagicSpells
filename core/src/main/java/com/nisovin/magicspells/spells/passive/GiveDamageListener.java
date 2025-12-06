@@ -11,12 +11,12 @@ import org.bukkit.entity.Projectile;
 import org.bukkit.event.EventHandler;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.EntityEquipment;
-import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 
 import com.nisovin.magicspells.util.Name;
 import com.nisovin.magicspells.MagicSpells;
+import com.nisovin.magicspells.util.conversion.*;
 import com.nisovin.magicspells.util.OverridePriority;
 import com.nisovin.magicspells.util.DeprecationNotice;
 import com.nisovin.magicspells.util.magicitems.MagicItems;
@@ -41,30 +41,14 @@ public class GiveDamageListener extends PassiveListener {
 
 	@Override
 	public void initialize(@NotNull String var) {
-		MagicSpells.getDeprecationManager().addDeprecation(passiveSpell, DEPRECATION_NOTICE);
+		MagicSpells.getDeprecationManager().addDeprecation(DEPRECATION_NOTICE);
 		if (var.isEmpty()) return;
 
-		for (String s : var.split(MagicItemDataParser.DATA_REGEX)) {
-			s = s.trim();
-
-			boolean isDamCause = false;
-			for (EntityDamageEvent.DamageCause c : EntityDamageEvent.DamageCause.values()) {
-				if (!s.equalsIgnoreCase(c.name())) continue;
-
-				damageCauses.add(c);
-				isDamCause = true;
-				break;
-			}
-			if (isDamCause) continue;
-
-			MagicItemData itemData = MagicItems.getMagicItemDataFromString(s);
-			if (itemData == null) {
-				MagicSpells.error("Invalid damage cause or magic item '" + s + "' in givedamage trigger on passive spell '" + passiveSpell.getInternalName() + "'");
-				continue;
-			}
-
-			items.add(itemData);
-		}
+		// TODO: Test this out
+		Conversion.multi(ConversionSource.split(var, MagicItemDataParser.DATA_REGEX_PATTERN))
+			.target(Converters.enumConverter(DamageCause.class), ConversionTarget.addTo(damageCauses))
+			.target(Converters.MAGIC_ITEM_DATA, ConversionTarget.addTo(items))
+			.convert();
 	}
 
 	@OverridePriority

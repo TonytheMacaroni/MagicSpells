@@ -51,15 +51,6 @@ public class PlayerMenuSpell extends TargetedSpell implements TargetedEntitySpel
 	private final ConfigData<Boolean> addOpener;
 	private final ConfigData<Boolean> castSpellsOnTarget;
 
-	private final String spellRangeName;
-	private final String spellOfflineName;
-	private final String spellOnLeftName;
-	private final String spellOnRightName;
-	private final String spellOnDropName;
-	private final String spellOnSwapName;
-	private final String spellOnSneakLeftName;
-	private final String spellOnSneakRightName;
-
 	private Subspell spellRange;
 	private Subspell spellOffline;
 	private Subspell spellOnLeft;
@@ -68,8 +59,6 @@ public class PlayerMenuSpell extends TargetedSpell implements TargetedEntitySpel
 	private Subspell spellOnSwap;
 	private Subspell spellOnSneakLeft;
 	private Subspell spellOnSneakRight;
-
-	private final List<String> playerModifiersStrings;
 
 	private ModifierSet playerModifiers;
 
@@ -96,17 +85,6 @@ public class PlayerMenuSpell extends TargetedSpell implements TargetedEntitySpel
 		addOpener = getConfigDataBoolean("add-opener", false);
 		castSpellsOnTarget = getConfigDataBoolean("cast-spells-on-target", true);
 
-		spellRangeName = getConfigString("spell-range", "");
-		spellOfflineName = getConfigString("spell-offline", "");
-		spellOnLeftName = getConfigString("spell-on-left", "");
-		spellOnRightName = getConfigString("spell-on-right", "");
-		spellOnDropName = getConfigString("spell-on-drop", "");
-		spellOnSwapName = getConfigString("spell-on-swap", "");
-		spellOnSneakLeftName = getConfigString("spell-on-sneak-left", "");
-		spellOnSneakRightName = getConfigString("spell-on-sneak-right", "");
-
-		playerModifiersStrings = getConfigStringList("player-modifiers", null);
-
 		previousPageItem = createItem("previous-page-item", "Previous Page");
 		nextPageItem = createItem("next-page-item", "Next Page");
 	}
@@ -115,39 +93,21 @@ public class PlayerMenuSpell extends TargetedSpell implements TargetedEntitySpel
 	public void initializeModifiers() {
 		super.initializeModifiers();
 
-		if (playerModifiersStrings == null || playerModifiersStrings.isEmpty()) return;
-		playerModifiers = new ModifierSet(playerModifiersStrings, this);
+		playerModifiers = initModifierSet("player-modifiers");
 	}
 
 	@Override
 	public void initialize() {
 		super.initialize();
 
-		String error = "PlayerMenuSpell '" + internalName + "' has an invalid '%s' defined!";
-		spellRange = initSubspell(spellRangeName,
-				error.formatted("spell-range"),
-				true);
-		spellOffline = initSubspell(spellOfflineName,
-				error.formatted("spell-offline"),
-				true);
-		spellOnLeft = initSubspell(spellOnLeftName,
-				error.formatted("spell-on-left"),
-				true);
-		spellOnRight = initSubspell(spellOnRightName,
-				error.formatted("spell-on-right"),
-				true);
-		spellOnDrop = initSubspell(spellOnDropName,
-				error.formatted("spell-on-drop"),
-				true);
-		spellOnSwap = initSubspell(spellOnSwapName,
-				error.formatted("spell-on-swap"),
-				true);
-		spellOnSneakLeft = initSubspell(spellOnSneakLeftName,
-				error.formatted("spell-on-sneak-left"),
-				true);
-		spellOnSneakRight = initSubspell(spellOnSneakRightName,
-				error.formatted("spell-on-sneak-right"),
-				true);
+		spellRange = initSubspell("spell-range", "", true);
+		spellOffline = initSubspell("spell-offline", "", true);
+		spellOnLeft = initSubspell("spell-on-left", "", true);
+		spellOnRight = initSubspell("spell-on-right", "", true);
+		spellOnDrop = initSubspell("spell-on-drop", "", true);
+		spellOnSwap = initSubspell("spell-on-swap", "", true);
+		spellOnSneakLeft = initSubspell("spell-on-sneak-left", "", true);
+		spellOnSneakRight = initSubspell("spell-on-sneak-right", "", true);
 	}
 
 	@Override

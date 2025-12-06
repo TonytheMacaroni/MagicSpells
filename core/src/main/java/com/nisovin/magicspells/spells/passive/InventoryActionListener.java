@@ -10,8 +10,8 @@ import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 
 import com.nisovin.magicspells.util.Name;
-import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.util.OverridePriority;
+import com.nisovin.magicspells.util.conversion.*;
 import com.nisovin.magicspells.spells.passive.util.PassiveListener;
 
 @Name("inventoryaction")
@@ -22,14 +22,12 @@ public class InventoryActionListener extends PassiveListener {
 	@Override
 	public void initialize(@NotNull String var) {
 		if (var.isEmpty()) return;
-		for (String s : var.replace(" ", "").split(",")) {
-			try {
-				InventoryAction action = InventoryAction.valueOf(s.toUpperCase());
-				actions.add(action);
-			} catch (IllegalArgumentException e) {
-				MagicSpells.error("Invalid inventory action '" + s + "' in inventory trigger on passive spell '" + passiveSpell.getInternalName() + "'");
-			}
-		}
+
+		Conversion.convert(
+			ConversionSource.split(var.replace(" ", ""), ","),
+			Converters.enumConverter(InventoryAction.class),
+			ConversionTarget.addTo(actions)
+		);
 	}
 
 	@OverridePriority

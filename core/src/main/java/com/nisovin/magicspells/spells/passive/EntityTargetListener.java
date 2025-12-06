@@ -10,7 +10,7 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.entity.EntityTargetEvent;
 
 import com.nisovin.magicspells.util.Name;
-import com.nisovin.magicspells.MagicSpells;
+import com.nisovin.magicspells.util.conversion.*;
 import com.nisovin.magicspells.util.OverridePriority;
 import com.nisovin.magicspells.spells.passive.util.PassiveListener;
 
@@ -24,14 +24,12 @@ public class EntityTargetListener extends PassiveListener {
 	@Override
 	public void initialize(@NotNull String var) {
 		if (var.isEmpty()) return;
-		for (String s : var.split("\\|")) {
-			try {
-				TargetReason reason = TargetReason.valueOf(s.trim().toUpperCase());
-				targetReasons.add(reason);
-			} catch (IllegalArgumentException e) {
-				MagicSpells.error("Invalid target reason'" + s + "' in entitytarget trigger on passive spell '" + passiveSpell.getInternalName() + "'.");
-			}
-		}
+
+		Conversion.convert(
+			ConversionSource.split(var, "\\|"),
+			Converters.enumConverter(TargetReason.class),
+			ConversionTarget.addTo(targetReasons)
+		);
 	}
 
 	@OverridePriority

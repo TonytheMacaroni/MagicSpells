@@ -1,7 +1,6 @@
 package com.nisovin.magicspells.spells.passive;
 
 import java.util.Set;
-import java.util.HashSet;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -15,8 +14,8 @@ import org.bukkit.inventory.GrindstoneInventory;
 import com.destroystokyo.paper.event.inventory.PrepareResultEvent;
 
 import com.nisovin.magicspells.util.Name;
-import com.nisovin.magicspells.MagicSpells;
 import com.nisovin.magicspells.util.OverridePriority;
+import com.nisovin.magicspells.util.conversion.*;
 import com.nisovin.magicspells.util.magicitems.MagicItems;
 import com.nisovin.magicspells.util.magicitems.MagicItemData;
 import com.nisovin.magicspells.spells.passive.util.PassiveListener;
@@ -34,60 +33,29 @@ public class GrindstoneListener extends PassiveListener {
 		if (var.isEmpty()) return;
 		String[] split = var.split(" ", 3);
 
-		if (split.length > 0) {
-			if (!split[0].equals("any")) {
-				String[] items = split[0].split(MagicItemDataParser.DATA_REGEX);
-				upperItem = new HashSet<>();
-
-				for (String item : items) {
-					MagicItemData itemData = MagicItems.getMagicItemDataFromString(item);
-					if (itemData == null) {
-						MagicSpells.error("Invalid magic item '" + item + "' in grindstone trigger on passive spell '" + passiveSpell.getInternalName() + "'.");
-						continue;
-					}
-
-					upperItem.add(itemData);
-				}
-			}
+		if (split.length > 0 && !split[0].equals("any")) {
+			upperItem = Conversion.convert(
+				ConversionSource.split(split[0], MagicItemDataParser.DATA_REGEX_PATTERN),
+				Converters.MAGIC_ITEM_DATA,
+				ConversionTarget.set(true)
+			);
 		}
 
-		if (split.length > 1) {
-			if (!split[1].equals("any")) {
-				String[] items = split[1].split(MagicItemDataParser.DATA_REGEX);
-				lowerItem = new HashSet<>();
-
-				for (String item : items) {
-					MagicItemData itemData = MagicItems.getMagicItemDataFromString(item);
-					if (itemData == null) {
-						MagicSpells.error("Invalid magic item '" + item + "' in grindstone trigger on passive spell '" + passiveSpell.getInternalName() + "'.");
-						continue;
-					}
-
-					lowerItem.add(itemData);
-				}
-			}
+		if (split.length > 1 && !split[1].equals("any")) {
+			lowerItem = Conversion.convert(
+				ConversionSource.split(split[1], MagicItemDataParser.DATA_REGEX_PATTERN),
+				Converters.MAGIC_ITEM_DATA,
+				ConversionTarget.set(true)
+			);
 		}
 
-		if (split.length > 2) {
-			if (!split[2].equals("any")) {
-				String[] items = split[2].split(MagicItemDataParser.DATA_REGEX);
-				resultItem = new HashSet<>();
-
-				for (String item : items) {
-					MagicItemData itemData = MagicItems.getMagicItemDataFromString(item);
-					if (itemData == null) {
-						MagicSpells.error("Invalid magic item '" + item + "' in grindstone trigger on passive spell '" + passiveSpell.getInternalName() + "'.");
-						continue;
-					}
-
-					resultItem.add(itemData);
-				}
-			}
+		if (split.length > 2 && !split[2].equals("any")) {
+			resultItem = Conversion.convert(
+				ConversionSource.split(split[0], MagicItemDataParser.DATA_REGEX_PATTERN),
+				Converters.MAGIC_ITEM_DATA,
+				ConversionTarget.set(true)
+			);
 		}
-
-		if (upperItem != null && upperItem.isEmpty()) upperItem = null;
-		if (lowerItem != null && lowerItem.isEmpty()) lowerItem = null;
-		if (resultItem != null && resultItem.isEmpty()) resultItem = null;
 	}
 
 	@OverridePriority
